@@ -1,0 +1,101 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}{{ classroom.name }} — Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    <aside class="exam-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+            <div><span class="sidebar-brand-name">Examinator Admin</span><span class="sidebar-brand-sub">Instructor Panel</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
+            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
+        </nav>
+    </aside>
+    <main class="exam-main">
+        <a href="{% url 'siteapp:admin_classrooms' %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> All Classrooms</a>
+        <div class="classroom-detail-header" style="border-left: 5px solid {{ classroom.cover_color }}; margin-top:16px;">
+            <h1 class="exam-page-title">{{ classroom.name }}</h1>
+            <p class="exam-page-sub">{{ classroom.description }}</p>
+            <div class="classroom-detail-meta">
+                <span><i class="fa-solid fa-users"></i> {{ classroom.enrolled_count }} enrolled</span>
+                <span><i class="fa-solid fa-clipboard-list"></i> {{ assignments.count }} assignments</span>
+            </div>
+        </div>
+
+        {% if messages %}{% for message in messages %}<div class="exam-alert exam-alert-{{ message.tags }}"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>{% endfor %}{% endif %}
+
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="showTab('assignments')">Assignments</button>
+            <button class="admin-tab" onclick="showTab('students')">Students ({{ enrollments|length }})</button>
+        </div>
+
+        <div id="tab-assignments">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+                <a href="{% url 'siteapp:admin_create_assignment' classroom.slug %}" class="btn-exam-primary"><i class="fa-solid fa-plus"></i> Add Assignment</a>
+            </div>
+            {% if assignments %}
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Title</th><th>Type</th><th>Marks</th><th>Deadline</th><th>Submissions</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {% for assignment in assignments %}
+                        <tr>
+                            <td>{{ assignment.title }}</td>
+                            <td><span class="assignment-type-badge assignment-type-{{ assignment.assignment_type }}">{{ assignment.get_assignment_type_display }}</span></td>
+                            <td>{{ assignment.total_marks }}</td>
+                            <td>{{ assignment.deadline|date:"M d, Y" }}</td>
+                            <td>{{ assignment.submissions.count }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'siteapp:admin_submissions' assignment.id %}" class="action-btn"><i class="fa-solid fa-eye"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="exam-empty-state"><div class="empty-icon"><i class="fa-solid fa-clipboard"></i></div><h3>No assignments yet</h3></div>
+            {% endif %}
+        </div>
+
+        <div id="tab-students" style="display:none;">
+            {% if enrollments %}
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Student</th><th>Email</th><th>Enrolled</th></tr></thead>
+                    <tbody>
+                        {% for enrollment in enrollments %}
+                        <tr>
+                            <td>{{ enrollment.student.get_full_name }}</td>
+                            <td>{{ enrollment.student.email }}</td>
+                            <td>{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="exam-empty-state"><div class="empty-icon"><i class="fa-solid fa-users"></i></div><h3>No students enrolled</h3></div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-assignments').style.display = tab === 'assignments' ? '' : 'none';
+    document.getElementById('tab-students').style.display = tab === 'students' ? '' : 'none';
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

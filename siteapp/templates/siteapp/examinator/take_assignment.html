@@ -1,0 +1,218 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}{{ assignment.title }} — The Examinator{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+{% if assignment.is_coding %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="take-exam-wrapper">
+    <!-- Timer bar -->
+    {% if assignment.duration_minutes %}
+    <div class="exam-timer-bar" id="timer-bar">
+        <div class="timer-bar-inner">
+            <i class="fa-solid fa-stopwatch"></i>
+            <span id="timer-display">{{ assignment.duration_minutes }}:00</span>
+            <span class="timer-label">remaining</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="take-exam-container">
+        <div class="take-exam-header">
+            <a href="{% url 'siteapp:classroom_detail' assignment.classroom.slug %}" class="back-crumb">
+                <i class="fa-solid fa-arrow-left"></i> {{ assignment.classroom.name }}
+            </a>
+            <h1>{{ assignment.title }}</h1>
+            <div class="take-exam-meta">
+                <span><i class="fa-solid fa-trophy"></i> {{ assignment.total_marks }} marks</span>
+                <span><i class="fa-regular fa-clock"></i> Due {{ assignment.deadline|date:"M d, Y H:i" }}</span>
+                {% if assignment.duration_minutes %}
+                <span><i class="fa-solid fa-stopwatch"></i> {{ assignment.duration_minutes }} minute time limit</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="take-exam-body">
+            <!-- Assignment description -->
+            <div class="question-card">
+                <div class="question-label"><i class="fa-solid fa-circle-question"></i> Question / Task</div>
+                <div class="question-body">{{ assignment.description|linebreaks }}</div>
+            </div>
+
+            <!-- Rubric (if available) -->
+            {% if assignment.rubric %}
+            <div class="rubric-card">
+                <div class="rubric-label"><i class="fa-solid fa-list-check"></i> Marking Rubric</div>
+                <div class="rubric-body">{{ assignment.rubric|linebreaks }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Submission form -->
+            <form method="POST" enctype="multipart/form-data" id="submission-form">
+                {% csrf_token %}
+                <input type="hidden" name="time_taken_seconds" id="time_taken_input">
+
+                {% if assignment.is_pdf_upload %}
+                    <!-- PDF Upload -->
+                    <div class="answer-card">
+                        <div class="answer-label"><i class="fa-solid fa-file-pdf"></i> Upload Your Answer (PDF)</div>
+                        <div class="pdf-upload-area" id="pdf-drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p>Drag & drop your PDF here or click to browse</p>
+                            <input type="file" name="pdf_file" id="pdf_file" accept=".pdf" class="pdf-file-input" required>
+                            <div class="pdf-file-preview" id="pdf-preview" style="display:none;">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span id="pdf-file-name"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif assignment.is_coding %}
+                    <!-- Code Editor -->
+                    <div class="answer-card">
+                        <div class="answer-label">
+                            <i class="fa-solid fa-code"></i> Code Editor
+                            {% if assignment.programming_language %}
+                                <span class="lang-badge">{{ assignment.programming_language|upper }}</span>
+                            {% endif %}
+                        </div>
+                        <textarea id="code-editor" name="code_text" placeholder="Write your code here..."></textarea>
+                    </div>
+
+                {% else %}
+                    <!-- Text Answer -->
+                    <div class="answer-card">
+                        <div class="answer-label"><i class="fa-solid fa-pen-to-square"></i> Your Answer</div>
+                        <textarea name="text_answer" id="text-answer" rows="12"
+                                  class="text-answer-area"
+                                  placeholder="Type your answer here. Be thorough and clear."></textarea>
+                        <div class="word-count" id="word-count">0 words</div>
+                    </div>
+                {% endif %}
+
+                <div class="submit-footer">
+                    <div class="submit-footer-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Once submitted, your answer is graded automatically by AI. Review before submitting.
+                    </div>
+                    <button type="submit" class="btn-exam-submit" id="submit-btn">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if assignment.is_coding %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+{% endif %}
+
+<script>
+const startTime = new Date("{{ start_time }}");
+let secondsElapsed = 0;
+
+// Timer
+{% if assignment.duration_minutes %}
+const totalSeconds = {{ assignment.duration_minutes }} * 60;
+let remaining = totalSeconds;
+
+const timerDisplay = document.getElementById('timer-display');
+const timerBar = document.getElementById('timer-bar');
+
+function formatTime(s) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+}
+
+const timer = setInterval(() => {
+    remaining--;
+    secondsElapsed++;
+    timerDisplay.textContent = formatTime(remaining);
+    if (remaining <= 300) timerBar.classList.add('timer-warning');
+    if (remaining <= 60) timerBar.classList.add('timer-danger');
+    if (remaining <= 0) {
+        clearInterval(timer);
+        document.getElementById('time_taken_input').value = totalSeconds;
+        document.getElementById('submission-form').submit();
+    }
+}, 1000);
+{% endif %}
+
+// Word count for text answer
+const textArea = document.getElementById('text-answer');
+const wordCount = document.getElementById('word-count');
+if (textArea && wordCount) {
+    textArea.addEventListener('input', () => {
+        const words = textArea.value.trim().split(/\s+/).filter(w => w).length;
+        wordCount.textContent = words + ' words';
+    });
+}
+
+// PDF upload preview
+const pdfInput = document.getElementById('pdf_file');
+const pdfPreview = document.getElementById('pdf-preview');
+const pdfFileName = document.getElementById('pdf-file-name');
+const dropZone = document.getElementById('pdf-drop-zone');
+if (pdfInput) {
+    pdfInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            pdfFileName.textContent = file.name;
+            pdfPreview.style.display = 'flex';
+        }
+    });
+    if (dropZone) {
+        dropZone.addEventListener('click', () => pdfInput.click());
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragging');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                pdfInput.files = dt.files;
+                pdfFileName.textContent = files[0].name;
+                pdfPreview.style.display = 'flex';
+            }
+        });
+    }
+}
+
+// Code editor
+{% if assignment.is_coding %}
+const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+    mode: '{{ assignment.programming_language|default:"python" }}',
+    theme: 'dracula',
+    lineNumbers: true,
+    autofocus: true,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: true,
+});
+{% endif %}
+
+// Track time taken on submit
+document.getElementById('submission-form').addEventListener('submit', (e) => {
+    const elapsed = Math.floor((new Date() - startTime) / 1000);
+    document.getElementById('time_taken_input').value = elapsed;
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+    {% if assignment.is_coding %}
+    editor.save();
+    {% endif %}
+});
+</script>
+{% endblock %}

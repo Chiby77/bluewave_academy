@@ -1,81 +1,161 @@
 {% extends "siteapp/base.html" %}
 {% load static %}
 
-{% block title %}Login - BlueWave Academy{% endblock %}
+{% block title %}Student Login - Bluewave Academy{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<link rel="stylesheet" href="{% static 'css/login-redesign.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-box">
-        <div class="auth-header">
-            <h1>🎓 Welcome Back</h1>
-            <p>Sign in to your student account</p>
-        </div>
-
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    <span>{{ message }}</span>
-                    <button class="alert-close">&times;</button>
+<div class="login-page">
+    <!-- Left Panel - Brand -->
+    <div class="login-brand-panel">
+        <div class="brand-panel-bg"></div>
+        <div class="brand-panel-content">
+            <a href="{% url 'siteapp:home' %}" class="brand-logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </a>
+            <div class="brand-tagline">
+                <h2>Your Learning Journey Continues</h2>
+                <p>Access your exams, track progress, and download resources — all in one place.</p>
+            </div>
+            <div class="brand-features">
+                <div class="brand-feature">
+                    <div class="bf-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <div>
+                        <h4>Interactive Exams</h4>
+                        <p>Take timed exams with instant AI-powered feedback</p>
+                    </div>
                 </div>
-            {% endfor %}
-        {% endif %}
-
-        <form method="POST" class="auth-form">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label for="id_username">Email Address</label>
-                <input type="text" id="id_username" name="username" placeholder="your@email.com" required autofocus>
-                {% if form.username.errors %}
-                    <span class="field-error">{{ form.username.errors.0 }}</span>
-                {% endif %}
+                <div class="brand-feature">
+                    <div class="bf-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <h4>Progress Tracking</h4>
+                        <p>Monitor your performance and improvement over time</p>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="bf-icon"><i class="fa-solid fa-file-arrow-down"></i></div>
+                    <div>
+                        <h4>Premium Resources</h4>
+                        <p>Unlock exclusive study materials and past papers</p>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="bf-icon"><i class="fa-solid fa-robot"></i></div>
+                    <div>
+                        <h4>AI Grading</h4>
+                        <p>Get detailed, constructive feedback powered by AI</p>
+                    </div>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="id_password">Password</label>
-                <input type="password" id="id_password" name="password" placeholder="••••••••" required>
-                {% if form.password.errors %}
-                    <span class="field-error">{{ form.password.errors.0 }}</span>
-                {% endif %}
+            <div class="brand-footer-note">
+                <i class="fa-solid fa-shield-halved"></i> Your data is secure and never shared.
             </div>
-
-            <div class="form-group checkbox">
-                <input type="checkbox" id="id_remember" name="remember_me" checked>
-                <label for="id_remember">Keep me signed in</label>
-            </div>
-
-            <button type="submit" class="btn-primary btn-large">Sign In</button>
-        </form>
-
-        <div class="auth-footer">
-            <p>Don't have an account? <a href="{% url 'siteapp:register' %}">Create one now</a></p>
-            <p><a href="{% url 'siteapp:password_reset' %}">Forgot your password?</a></p>
         </div>
     </div>
 
-    <div class="auth-side">
-        <div class="side-content">
-            <h2>Keep Learning 📚</h2>
-            <p>Test your knowledge with our comprehensive exams and track your progress</p>
-            <ul class="features">
-                <li>✅ Take interactive exams</li>
-                <li>📊 Track your progress</li>
-                <li>🎯 Get personalized feedback</li>
-                <li>🏆 Compete on leaderboards</li>
-            </ul>
+    <!-- Right Panel - Form -->
+    <div class="login-form-panel">
+        <div class="login-form-wrap">
+            <a href="{% url 'siteapp:home' %}" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            </a>
+
+            <div class="login-form-header">
+                <div class="login-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to your student account</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="login-alert login-alert-{{ message.tags }}">
+                        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-triangle-exclamation{% endif %}"></i>
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="alert-dismiss"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" class="login-form" novalidate>
+                {% csrf_token %}
+
+                <div class="form-field">
+                    <label for="id_username">
+                        <i class="fa-solid fa-user"></i> Username or Email
+                    </label>
+                    <div class="field-wrap">
+                        <input type="text" id="id_username" name="username"
+                               placeholder="your@email.com or username"
+                               value="{{ form.username.value|default:'' }}"
+                               required autofocus autocomplete="username">
+                    </div>
+                    {% if form.username.errors %}
+                        <span class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ form.username.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    <div class="field-label-row">
+                        <label for="id_password">
+                            <i class="fa-solid fa-lock"></i> Password
+                        </label>
+                        <a href="{% url 'siteapp:password_reset' %}" class="forgot-link">Forgot password?</a>
+                    </div>
+                    <div class="field-wrap field-wrap-pw">
+                        <input type="password" id="id_password" name="password"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="toggle-pw" onclick="togglePw()">
+                            <i class="fa-solid fa-eye" id="pw-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <span class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ form.password.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-remember">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="id_remember" name="remember_me" checked>
+                        <span class="checkbox-box"></span>
+                        <span>Keep me signed in</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="login-submit-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+            </form>
+
+            <div class="login-divider"><span>New to Bluewave?</span></div>
+
+            <a href="{% url 'siteapp:register' %}" class="register-btn">
+                <i class="fa-solid fa-user-plus"></i> Create an Account
+            </a>
+
+            <p class="login-terms">
+                By signing in, you agree to our
+                <a href="{% url 'siteapp:terms_of_service' %}">Terms of Service</a> and
+                <a href="{% url 'siteapp:privacy_policy' %}">Privacy Policy</a>.
+            </p>
         </div>
     </div>
 </div>
 
 <script>
-document.querySelectorAll('.alert-close').forEach(btn => {
-    btn.addEventListener('click', () => {
-        btn.parentElement.style.display = 'none';
-    });
-});
+function togglePw() {
+    const input = document.getElementById('id_password');
+    const eye = document.getElementById('pw-eye');
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fa-solid fa-eye-slash';
+    } else {
+        input.type = 'password';
+        eye.className = 'fa-solid fa-eye';
+    }
+}
 </script>
 {% endblock %}

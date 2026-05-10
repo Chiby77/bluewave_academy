@@ -1,0 +1,32 @@
+<aside class="exam-sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+        <div>
+            <span class="sidebar-brand-name">The Examinator</span>
+            <span class="sidebar-brand-sub">Assessment Platform</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="{% url 'siteapp:examinator_home' %}" class="sidebar-link {% if request.resolver_match.url_name == 'examinator_home' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i> My Classrooms
+        </a>
+        <a href="{% url 'siteapp:browse_classrooms' %}" class="sidebar-link {% if request.resolver_match.url_name == 'browse_classrooms' %}active{% endif %}">
+            <i class="fa-solid fa-magnifying-glass"></i> Browse
+        </a>
+        <a href="{% url 'siteapp:dashboard' %}" class="sidebar-link">
+            <i class="fa-solid fa-chart-line"></i> My Dashboard
+        </a>
+        <a href="{% url 'siteapp:downloads' %}" class="sidebar-link">
+            <i class="fa-solid fa-download"></i> Resources
+        </a>
+    </nav>
+
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+        <div>
+            <span class="sidebar-user-name">{{ request.user.get_full_name }}</span>
+            <a href="{% url 'siteapp:logout' %}" class="sidebar-signout">Sign out</a>
+        </div>
+    </div>
+</aside>

@@ -10,6 +10,11 @@ from .models import (
     DownloadResource,
     BlogPost,
     Comment,
+    SpecialPaper,
+    Classroom,
+    Enrollment,
+    Assignment,
+    Submission,
 )
 
 
@@ -267,3 +272,107 @@ admin.site.register(Comment)
 class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     list_display = ("title", "created_at", "likes_count")
+
+
+# =============================================
+# SPECIAL PAPERS
+# =============================================
+
+@admin.register(SpecialPaper)
+class SpecialPaperAdmin(admin.ModelAdmin):
+    list_display = ["title", "category", "year", "paper_number", "is_public", "is_active", "download_count"]
+    list_filter = ["category", "is_public", "is_active", "year"]
+    search_fields = ["title", "description"]
+    readonly_fields = ["download_count", "created_at"]
+    list_editable = ["is_public", "is_active"]
+
+    fieldsets = (
+        ("Paper Details", {"fields": ("title", "description", "category", "year", "paper_number")}),
+        ("Storage", {"fields": ("supabase_path",)}),
+        ("Access Control", {"fields": ("is_public", "is_active")}),
+        ("Statistics", {"fields": ("download_count", "created_at", "uploaded_by"), "classes": ("collapse",)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.uploaded_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+# =============================================
+# THE EXAMINATOR
+# =============================================
+
+class EnrollmentInline(admin.TabularInline):
+    model = Enrollment
+    extra = 0
+    readonly_fields = ["enrolled_at"]
+    fields = ["student", "is_active", "enrolled_at"]
+
+
+class AssignmentInline(admin.TabularInline):
+    model = Assignment
+    extra = 0
+    fields = ["title", "assignment_type", "total_marks", "deadline", "is_active"]
+
+
+@admin.register(Classroom)
+class ClassroomAdmin(admin.ModelAdmin):
+    list_display = ["name", "instructor", "enrolled_count", "is_active", "created_at"]
+    list_filter = ["is_active", "created_at"]
+    search_fields = ["name", "instructor__username"]
+    readonly_fields = ["slug", "created_at", "updated_at"]
+    inlines = [AssignmentInline, EnrollmentInline]
+
+    fieldsets = (
+        ("Classroom Details", {"fields": ("name", "description", "instructor", "cover_color", "slug")}),
+        ("Settings", {"fields": ("is_active",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = ["student", "classroom", "enrolled_at", "is_active"]
+    list_filter = ["is_active", "classroom"]
+    search_fields = ["student__username", "student__email", "classroom__name"]
+    readonly_fields = ["enrolled_at"]
+
+
+class SubmissionInline(admin.TabularInline):
+    model = Submission
+    extra = 0
+    readonly_fields = ["student", "submitted_at", "status", "ai_score", "ai_percentage"]
+    fields = ["student", "status", "ai_score", "ai_percentage", "final_score"]
+    can_delete = False
+
+
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+    list_display = ["title", "classroom", "assignment_type", "total_marks", "deadline", "is_active"]
+    list_filter = ["assignment_type", "is_active", "classroom"]
+    search_fields = ["title", "classroom__name"]
+    readonly_fields = ["created_at", "updated_at"]
+    inlines = [SubmissionInline]
+
+    fieldsets = (
+        ("Assignment Details", {"fields": ("classroom", "title", "description", "assignment_type")}),
+        ("Grading", {"fields": ("rubric", "answer_key", "total_marks", "passing_marks")}),
+        ("Settings", {"fields": ("deadline", "duration_minutes", "is_active", "allow_resubmit", "show_results_immediately", "programming_language")}),
+        ("Metadata", {"fields": ("created_by", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+    list_display = ["student", "assignment", "status", "ai_score", "final_score", "submitted_at"]
+    list_filter = ["status", "assignment__classroom", "submitted_at"]
+    search_fields = ["student__username", "student__email", "assignment__title"]
+    readonly_fields = ["submitted_at", "graded_at"]
+
+    fieldsets = (
+        ("Submission", {"fields": ("student", "assignment", "text_answer", "code_text", "pdf_file", "time_taken_seconds")}),
+        ("AI Grading", {"fields": ("status", "ai_score", "ai_percentage", "ai_feedback", "ai_strengths", "ai_improvements", "ai_improvement_tips", "ai_reasoning")}),
+        ("Instructor Override", {"fields": ("final_score", "instructor_feedback", "graded_by", "graded_at")}),
+        ("Timestamps", {"fields": ("submitted_at", "report_sent"), "classes": ("collapse",)}),
+    )

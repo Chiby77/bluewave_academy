@@ -491,3 +491,220 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.name} on {self.post.title}"
+
+
+# =============================================
+# SPECIAL PAPERS (Supabase Bucket Integration)
+# =============================================
+
+class SpecialPaper(models.Model):
+    CATEGORY_CHOICES = [
+        ("zimsec_cs", "ZIMSEC Computer Science"),
+        ("zimsec_math", "ZIMSEC Mathematics"),
+        ("zimsec_phy", "ZIMSEC Physics"),
+        ("alevel_cs", "A-Level CS"),
+        ("olevel_cs", "O-Level CS"),
+        ("other", "Other"),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="zimsec_cs")
+    year = models.IntegerField(blank=True, null=True)
+    paper_number = models.CharField(max_length=20, blank=True, help_text="e.g. Paper 1, Paper 2, Solutions")
+    supabase_path = models.CharField(max_length=500, help_text="Path in Supabase storage bucket, e.g. papers/2023/cs-p1.pdf")
+    is_public = models.BooleanField(default=False, help_text="If False, login is required to download")
+    is_active = models.BooleanField(default=True)
+    download_count = models.IntegerField(default=0)
+    uploaded_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name="special_papers")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-year", "category", "paper_number"]
+        verbose_name = "Special Paper"
+        verbose_name_plural = "Special Papers"
+
+    def __str__(self):
+        return f"{self.title} ({self.year or 'N/A'})"
+
+
+# =============================================
+# THE EXAMINATOR — Digital Assessment Engine
+# =============================================
+
+class Classroom(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    instructor = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="taught_classrooms",
+        limit_choices_to={"is_staff": True}
+    )
+    slug = models.SlugField(unique=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    cover_color = models.CharField(max_length=7, default="#2563eb", help_text="Hex color for classroom card")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Classroom"
+        verbose_name_plural = "Classrooms"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while Classroom.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def enrolled_count(self):
+        return self.enrollments.filter(is_active=True).count()
+
+    def active_assignments(self):
+        return self.assignments.filter(is_active=True)
+
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="enrollments")
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="enrollments")
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["student", "classroom"]
+        ordering = ["-enrolled_at"]
+        verbose_name = "Enrollment"
+        verbose_name_plural = "Enrollments"
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} in {self.classroom.name}"
+
+
+class Assignment(models.Model):
+    TYPE_CHOICES = [
+        ("quiz", "Online Quiz (MCQ / Short Answer)"),
+        ("coding", "Coding Practical"),
+        ("pdf_upload", "Written / PDF Upload"),
+        ("timed_quiz", "Timed Quiz"),
+    ]
+
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="assignments")
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    assignment_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="quiz")
+
+    # Grading
+    rubric = models.TextField(blank=True, help_text="Grading rubric shown to the AI grader")
+    answer_key = models.TextField(blank=True, help_text="Model answer or expected output")
+    total_marks = models.IntegerField(default=100)
+    passing_marks = models.IntegerField(default=50)
+
+    # Timing
+    deadline = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=60, help_text="Time limit in minutes (0 = no limit)")
+
+    # Settings
+    is_active = models.BooleanField(default=True)
+    allow_resubmit = models.BooleanField(default=False)
+    show_results_immediately = models.BooleanField(default=True)
+    programming_language = models.CharField(
+        max_length=30, blank=True,
+        help_text="For coding assignments: python, java, javascript, etc."
+    )
+
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="created_assignments")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Assignment"
+        verbose_name_plural = "Assignments"
+
+    def __str__(self):
+        return f"{self.classroom.name} — {self.title}"
+
+    def is_past_deadline(self):
+        from django.utils import timezone
+        return timezone.now() > self.deadline
+
+    def is_coding(self):
+        return self.assignment_type == "coding"
+
+    def is_pdf_upload(self):
+        return self.assignment_type == "pdf_upload"
+
+
+class Submission(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("grading", "Grading in Progress"),
+        ("graded", "Graded"),
+        ("failed", "Grading Failed"),
+        ("manual_review", "Needs Manual Review"),
+    ]
+
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="submissions")
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
+
+    # Submission content
+    text_answer = models.TextField(blank=True, help_text="Text / short-answer / essay response")
+    code_text = models.TextField(blank=True, help_text="Code submission for coding practicals")
+    pdf_file = models.FileField(upload_to="submissions/pdfs/", blank=True, null=True, help_text="PDF for written/handwritten submissions")
+
+    # Timing
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    time_taken_seconds = models.IntegerField(null=True, blank=True)
+
+    # Grading results
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    ai_score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    ai_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    ai_feedback = models.TextField(blank=True)
+    ai_strengths = models.JSONField(default=list, blank=True)
+    ai_improvements = models.JSONField(default=list, blank=True)
+    ai_improvement_tips = models.JSONField(default=list, blank=True)
+    ai_reasoning = models.TextField(blank=True)
+
+    # Admin / instructor override
+    final_score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    instructor_feedback = models.TextField(blank=True)
+    graded_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="graded_submissions"
+    )
+    graded_at = models.DateTimeField(null=True, blank=True)
+
+    # Report
+    report_sent = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        unique_together = ["student", "assignment"]
+        verbose_name = "Submission"
+        verbose_name_plural = "Submissions"
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} — {self.assignment.title}"
+
+    def get_score(self):
+        return self.final_score if self.final_score is not None else self.ai_score
+
+    def get_percentage(self):
+        score = self.get_score()
+        if score is None:
+            return None
+        total = self.assignment.total_marks
+        return round((float(score) / total) * 100, 1) if total > 0 else 0
+
+    def is_passed(self):
+        score = self.get_score()
+        return float(score) >= self.assignment.passing_marks if score is not None else False

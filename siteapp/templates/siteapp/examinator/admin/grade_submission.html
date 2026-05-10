@@ -1,0 +1,74 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Grade Submission — {{ submission.student.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    <aside class="exam-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+            <div><span class="sidebar-brand-name">Examinator Admin</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
+            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+        </nav>
+    </aside>
+    <main class="exam-main">
+        <a href="{% url 'siteapp:admin_submissions' submission.assignment.id %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> All Submissions</a>
+        <h1 class="exam-page-title" style="margin-top:16px;">Grade: {{ submission.student.get_full_name }}</h1>
+        <p class="exam-page-sub">{{ submission.assignment.title }}</p>
+
+        <!-- AI Result -->
+        {% if submission.ai_score is not None %}
+        <div class="feedback-card" style="margin-top:20px;">
+            <div class="feedback-card-header"><i class="fa-solid fa-robot"></i> AI Grading Result</div>
+            <p><strong>AI Score:</strong> {{ submission.ai_score }} / {{ submission.assignment.total_marks }} ({{ submission.ai_percentage }}%)</p>
+            <p style="margin-top:8px;">{{ submission.ai_feedback }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Student answer -->
+        <div class="feedback-card" style="margin-top:16px;">
+            <div class="feedback-card-header"><i class="fa-solid fa-pen-to-square"></i> Student Answer</div>
+            {% if submission.text_answer %}
+                <pre class="student-answer-pre">{{ submission.text_answer }}</pre>
+            {% elif submission.code_text %}
+                <pre class="student-code-pre">{{ submission.code_text }}</pre>
+            {% elif submission.pdf_file %}
+                <p><a href="{{ submission.pdf_file.url }}" target="_blank" class="btn-exam-outline"><i class="fa-solid fa-file-pdf"></i> View PDF</a></p>
+            {% else %}
+                <p>No answer recorded.</p>
+            {% endif %}
+        </div>
+
+        <!-- Manual grading form -->
+        <div class="exam-form-card" style="margin-top:20px;">
+            <h3 style="margin-bottom:16px;"><i class="fa-solid fa-chalkboard-user"></i> Override / Set Final Grade</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label>Final Score (max {{ submission.assignment.total_marks }})</label>
+                        <input type="number" name="final_score" step="0.5" min="0" max="{{ submission.assignment.total_marks }}"
+                               value="{{ submission.final_score|default:submission.ai_score|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Instructor Feedback</label>
+                    <textarea name="instructor_feedback" rows="4" placeholder="Personal feedback to the student...">{{ submission.instructor_feedback }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <a href="{% url 'siteapp:admin_submissions' submission.assignment.id %}" class="btn-exam-outline">Cancel</a>
+                    <button type="submit" class="btn-exam-primary"><i class="fa-solid fa-check"></i> Save Grade & Notify Student</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}

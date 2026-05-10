@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 from . import admin_views
+from . import examinator_views
 from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 app_name = "siteapp"
@@ -82,6 +83,28 @@ urlpatterns = [
     ),
     # Announcements
     path("student/announcements/", views.announcements, name="announcements"),
+    # Special Papers (Supabase)
+    path(
+        "downloads/special/<int:paper_id>/",
+        examinator_views.special_paper_download,
+        name="special_paper_download",
+    ),
+    # ==================== THE EXAMINATOR ====================
+    # Student-facing
+    path("examinator/", examinator_views.examinator_home, name="examinator_home"),
+    path("examinator/browse/", examinator_views.browse_classrooms, name="browse_classrooms"),
+    path("examinator/classroom/<slug:slug>/", examinator_views.classroom_detail, name="classroom_detail"),
+    path("examinator/classroom/<slug:slug>/enroll/", examinator_views.enroll_classroom, name="enroll_classroom"),
+    path("examinator/assignment/<int:assignment_id>/take/", examinator_views.take_assignment, name="take_assignment"),
+    path("examinator/submission/<int:submission_id>/result/", examinator_views.submission_result, name="submission_result"),
+    # Admin Examinator
+    path("administration/examinator/classrooms/", examinator_views.admin_classrooms, name="admin_classrooms"),
+    path("administration/examinator/classrooms/create/", examinator_views.admin_create_classroom, name="admin_create_classroom"),
+    path("administration/examinator/classrooms/<slug:slug>/", examinator_views.admin_classroom_detail, name="admin_classroom_detail"),
+    path("administration/examinator/classrooms/<slug:slug>/assignment/create/", examinator_views.admin_create_assignment, name="admin_create_assignment"),
+    path("administration/examinator/assignment/<int:assignment_id>/submissions/", examinator_views.admin_submissions, name="admin_submissions"),
+    path("administration/examinator/submission/<int:submission_id>/grade/", examinator_views.admin_grade_submission, name="admin_grade_submission"),
+    path("administration/examinator/submission/<int:submission_id>/regrade/", examinator_views.admin_regrade_submission, name="admin_regrade_submission"),
     # ==================== ADMIN ROUTES ====================
     # Hidden Admin Login
     path("administration/login/", admin_views.admin_login, name="admin_login"),

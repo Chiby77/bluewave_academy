@@ -1,0 +1,123 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Your Result — {{ assignment.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    {% include "siteapp/examinator/_sidebar.html" %}
+    <main class="exam-main">
+        <a href="{% url 'siteapp:classroom_detail' assignment.classroom.slug %}" class="back-crumb">
+            <i class="fa-solid fa-arrow-left"></i> {{ assignment.classroom.name }}
+        </a>
+
+        <div class="result-header">
+            <h1 class="exam-page-title">{{ assignment.title }}</h1>
+            <p class="exam-page-sub">{{ assignment.classroom.name }}</p>
+        </div>
+
+        <!-- Score Card -->
+        <div class="result-score-card {% if submission.is_passed %}result-passed{% else %}result-failed{% endif %}">
+            <div class="result-score-circle">
+                <span class="score-big">{{ submission.get_percentage }}%</span>
+                <span class="score-fraction">{{ submission.get_score }}/{{ assignment.total_marks }}</span>
+            </div>
+            <div class="result-verdict">
+                {% if submission.is_passed %}
+                    <div class="verdict-badge verdict-pass">
+                        <i class="fa-solid fa-circle-check"></i> Passed
+                    </div>
+                {% else %}
+                    <div class="verdict-badge verdict-fail">
+                        <i class="fa-solid fa-circle-xmark"></i> Not Passed
+                    </div>
+                {% endif %}
+                <div class="result-details">
+                    <span><i class="fa-solid fa-trophy"></i> Passing: {{ assignment.passing_marks }}/{{ assignment.total_marks }}</span>
+                    {% if submission.time_taken_seconds %}
+                    <span><i class="fa-solid fa-stopwatch"></i> Time: {{ submission.time_taken_seconds|floatformat:0 }}s</span>
+                    {% endif %}
+                    <span><i class="fa-solid fa-calendar"></i> {{ submission.submitted_at|date:"M d, Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Feedback -->
+        {% if submission.ai_feedback %}
+        <div class="feedback-section">
+            <div class="feedback-card">
+                <div class="feedback-card-header">
+                    <i class="fa-solid fa-robot"></i> AI Grading Feedback
+                </div>
+                <p class="feedback-text">{{ submission.ai_feedback }}</p>
+            </div>
+
+            {% if submission.ai_strengths %}
+            <div class="feedback-card feedback-card-green">
+                <div class="feedback-card-header">
+                    <i class="fa-solid fa-thumbs-up"></i> Strengths
+                </div>
+                <ul class="feedback-list">
+                    {% for strength in submission.ai_strengths %}
+                    <li><i class="fa-solid fa-check"></i> {{ strength }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if submission.ai_improvements %}
+            <div class="feedback-card feedback-card-orange">
+                <div class="feedback-card-header">
+                    <i class="fa-solid fa-lightbulb"></i> Areas for Improvement
+                </div>
+                <ul class="feedback-list">
+                    {% for area in submission.ai_improvements %}
+                    <li><i class="fa-solid fa-arrow-right"></i> {{ area }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if submission.ai_improvement_tips %}
+            <div class="feedback-card feedback-card-blue">
+                <div class="feedback-card-header">
+                    <i class="fa-solid fa-graduation-cap"></i> Study Tips
+                </div>
+                <ul class="feedback-list">
+                    {% for tip in submission.ai_improvement_tips %}
+                    <li><i class="fa-solid fa-book-open"></i> {{ tip }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Instructor feedback -->
+        {% if submission.instructor_feedback %}
+        <div class="feedback-card feedback-card-purple" style="margin-top: 16px;">
+            <div class="feedback-card-header">
+                <i class="fa-solid fa-chalkboard-user"></i> Instructor Feedback
+            </div>
+            <p class="feedback-text">{{ submission.instructor_feedback }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="result-actions">
+            <a href="{% url 'siteapp:classroom_detail' assignment.classroom.slug %}" class="btn-exam-outline">
+                <i class="fa-solid fa-arrow-left"></i> Back to Classroom
+            </a>
+            {% if assignment.allow_resubmit and not assignment.is_past_deadline %}
+            <a href="{% url 'siteapp:take_assignment' assignment.id %}" class="btn-exam-primary">
+                <i class="fa-solid fa-rotate-right"></i> Resubmit
+            </a>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

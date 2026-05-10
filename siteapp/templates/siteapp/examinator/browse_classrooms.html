@@ -1,0 +1,70 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Browse Classrooms — The Examinator{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    {% include "siteapp/examinator/_sidebar.html" %}
+    <main class="exam-main">
+        <div class="exam-topbar">
+            <div>
+                <h1 class="exam-page-title">Browse Classrooms</h1>
+                <p class="exam-page-sub">Enroll in a classroom to access assignments</p>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="exam-alert exam-alert-{{ message.tags }}">
+                <i class="fa-solid fa-circle-info"></i> {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if classrooms %}
+            <div class="classroom-grid">
+                {% for classroom in classrooms %}
+                <div class="classroom-card" style="--card-color: {{ classroom.cover_color }};">
+                    <div class="classroom-card-header">
+                        <div class="classroom-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        {% if classroom.is_enrolled %}
+                            <span class="classroom-badge">Enrolled</span>
+                        {% else %}
+                            <span class="classroom-badge classroom-badge-open">Open</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ classroom.name }}</h3>
+                    <p>{{ classroom.description|truncatewords:15 }}</p>
+                    <div class="classroom-meta">
+                        <span><i class="fa-solid fa-user-tie"></i> {{ classroom.instructor.get_full_name }}</span>
+                        <span><i class="fa-solid fa-users"></i> {{ classroom.enrolled_count }} students</span>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        {% if classroom.is_enrolled %}
+                            <a href="{% url 'siteapp:classroom_detail' classroom.slug %}" class="btn-exam-primary" style="width:100%; justify-content:center;">
+                                <i class="fa-solid fa-arrow-right"></i> View Classroom
+                            </a>
+                        {% else %}
+                            <a href="{% url 'siteapp:enroll_classroom' classroom.slug %}" class="btn-exam-outline" style="width:100%; justify-content:center;">
+                                <i class="fa-solid fa-plus"></i> Enroll
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="exam-empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-school"></i></div>
+                <h3>No classrooms available</h3>
+                <p>Your instructor hasn't created any classrooms yet. Check back soon.</p>
+            </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

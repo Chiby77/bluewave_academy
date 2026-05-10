@@ -1,0 +1,53 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}The Examinator — My Classrooms{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    {% include "siteapp/examinator/_sidebar.html" %}
+    <main class="exam-main">
+        <div class="exam-topbar">
+            <div>
+                <h1 class="exam-page-title">My Classrooms</h1>
+                <p class="exam-page-sub">Your enrolled courses and active assignments</p>
+            </div>
+            <a href="{% url 'siteapp:browse_classrooms' %}" class="btn-exam-primary">
+                <i class="fa-solid fa-magnifying-glass"></i> Browse Classrooms
+            </a>
+        </div>
+
+        {% if enrollments %}
+            <div class="classroom-grid">
+                {% for enrollment in enrollments %}
+                <a href="{% url 'siteapp:classroom_detail' enrollment.classroom.slug %}" class="classroom-card" style="--card-color: {{ enrollment.classroom.cover_color }};">
+                    <div class="classroom-card-header">
+                        <div class="classroom-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        <span class="classroom-badge">Enrolled</span>
+                    </div>
+                    <h3>{{ enrollment.classroom.name }}</h3>
+                    <p>{{ enrollment.classroom.description|truncatewords:18 }}</p>
+                    <div class="classroom-meta">
+                        <span><i class="fa-solid fa-user-tie"></i> {{ enrollment.classroom.instructor.get_full_name }}</span>
+                        <span><i class="fa-solid fa-clipboard-list"></i> {{ enrollment.classroom.assignments.filter.is_active|default:0 }} assignments</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="exam-empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-door-open"></i></div>
+                <h3>No classrooms yet</h3>
+                <p>Browse available classrooms and enroll to get started with your assignments.</p>
+                <a href="{% url 'siteapp:browse_classrooms' %}" class="btn-exam-primary">
+                    <i class="fa-solid fa-magnifying-glass"></i> Browse Classrooms
+                </a>
+            </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

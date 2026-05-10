@@ -1,0 +1,75 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Submissions — {{ assignment.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    <aside class="exam-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+            <div><span class="sidebar-brand-name">Examinator Admin</span><span class="sidebar-brand-sub">Instructor Panel</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
+            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
+        </nav>
+    </aside>
+    <main class="exam-main">
+        <a href="{% url 'siteapp:admin_classroom_detail' assignment.classroom.slug %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> {{ assignment.classroom.name }}</a>
+        <h1 class="exam-page-title" style="margin-top:16px;">Submissions: {{ assignment.title }}</h1>
+
+        {% if messages %}{% for message in messages %}<div class="exam-alert exam-alert-{{ message.tags }}"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>{% endfor %}{% endif %}
+
+        {% if submissions %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Submitted</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td>{{ sub.student.get_full_name }}</td>
+                        <td>{{ sub.submitted_at|date:"M d, H:i" }}</td>
+                        <td>{{ sub.get_score|default:"—" }} / {{ assignment.total_marks }}</td>
+                        <td>{% if sub.get_percentage %}{{ sub.get_percentage }}%{% else %}—{% endif %}</td>
+                        <td>
+                            {% if sub.status == 'graded' %}
+                                <span class="status-chip status-graded"><i class="fa-solid fa-circle-check"></i> Graded</span>
+                            {% elif sub.status == 'grading' %}
+                                <span class="status-chip status-grading"><i class="fa-solid fa-spinner fa-spin"></i> Grading</span>
+                            {% elif sub.status == 'manual_review' %}
+                                <span class="status-chip status-warning"><i class="fa-solid fa-triangle-exclamation"></i> Review Needed</span>
+                            {% else %}
+                                <span class="status-chip status-pending"><i class="fa-solid fa-hourglass-half"></i> Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{% url 'siteapp:admin_grade_submission' sub.id %}" class="action-btn action-btn-blue" title="Grade"><i class="fa-solid fa-pen"></i></a>
+                                <a href="{% url 'siteapp:admin_regrade_submission' sub.id %}" class="action-btn" title="Re-grade with AI"><i class="fa-solid fa-robot"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="exam-empty-state"><div class="empty-icon"><i class="fa-solid fa-inbox"></i></div><h3>No submissions yet</h3></div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

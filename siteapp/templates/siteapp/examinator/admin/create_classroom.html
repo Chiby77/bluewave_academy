@@ -1,0 +1,54 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Create Classroom — Examinator Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    <aside class="exam-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+            <div><span class="sidebar-brand-name">Examinator Admin</span><span class="sidebar-brand-sub">Instructor Panel</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
+            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
+        </nav>
+    </aside>
+    <main class="exam-main">
+        <a href="{% url 'siteapp:admin_classrooms' %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> Classrooms</a>
+        <h1 class="exam-page-title" style="margin-top:16px;">Create New Classroom</h1>
+
+        {% if messages %}{% for message in messages %}<div class="exam-alert exam-alert-{{ message.tags }}"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>{% endfor %}{% endif %}
+
+        <div class="exam-form-card">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-field">
+                    <label><i class="fa-solid fa-chalkboard"></i> Classroom Name *</label>
+                    <input type="text" name="name" required placeholder="e.g. A-Level Computer Science 2026">
+                </div>
+                <div class="form-field">
+                    <label><i class="fa-solid fa-align-left"></i> Description</label>
+                    <textarea name="description" rows="3" placeholder="Brief description of this classroom..."></textarea>
+                </div>
+                <div class="form-field">
+                    <label><i class="fa-solid fa-palette"></i> Card Color</label>
+                    <div class="color-picker-row">
+                        <input type="color" name="cover_color" value="#2563eb" class="color-input">
+                        <span style="font-size:0.85rem; color:#64748b;">Choose a color for the classroom card</span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a href="{% url 'siteapp:admin_classrooms' %}" class="btn-exam-outline">Cancel</a>
+                    <button type="submit" class="btn-exam-primary"><i class="fa-solid fa-plus"></i> Create Classroom</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}

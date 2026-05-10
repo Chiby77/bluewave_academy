@@ -22,6 +22,7 @@ from .models import (
     DownloadResource,
     BlogPost,
     Comment,
+    SpecialPaper,
 )
 from .forms import (
     StudentRegistrationForm,
@@ -64,7 +65,7 @@ def privacy_policy(request):
 
 
 def downloads(request):
-    """Downloads page view"""
+    """Downloads page view with special papers from Supabase."""
     programming_notes = DownloadResource.objects.filter(
         category="programming_notes", is_active=True
     )
@@ -72,6 +73,7 @@ def downloads(request):
     paper_2 = DownloadResource.objects.filter(category="paper_2", is_active=True)
     cs_books = DownloadResource.objects.filter(category="cs_books", is_active=True)
     qa_resources = DownloadResource.objects.filter(category="qa", is_active=True)
+    special_papers = SpecialPaper.objects.filter(is_active=True)
 
     context = {
         "programming_notes": programming_notes,
@@ -79,6 +81,7 @@ def downloads(request):
         "paper_2": paper_2,
         "cs_books": cs_books,
         "qa_resources": qa_resources,
+        "special_papers": special_papers,
     }
     return render(request, "siteapp/downloads.html", context)
 

@@ -1,0 +1,101 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Create Assignment — {{ classroom.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    <aside class="exam-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
+            <div><span class="sidebar-brand-name">Examinator Admin</span><span class="sidebar-brand-sub">Instructor Panel</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
+            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
+        </nav>
+    </aside>
+    <main class="exam-main">
+        <a href="{% url 'siteapp:admin_classroom_detail' classroom.slug %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> {{ classroom.name }}</a>
+        <h1 class="exam-page-title" style="margin-top:16px;">Create Assignment</h1>
+
+        {% if messages %}{% for message in messages %}<div class="exam-alert exam-alert-{{ message.tags }}"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>{% endfor %}{% endif %}
+
+        <div class="exam-form-card">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-heading"></i> Title *</label>
+                        <input type="text" name="title" required placeholder="e.g. Python Algorithms Task 1">
+                    </div>
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-tag"></i> Type *</label>
+                        <select name="assignment_type">
+                            <option value="quiz">Quiz (Short Answer)</option>
+                            <option value="coding">Coding Practical</option>
+                            <option value="pdf_upload">Written / PDF Upload</option>
+                            <option value="timed_quiz">Timed Quiz</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label><i class="fa-solid fa-align-left"></i> Description / Question *</label>
+                    <textarea name="description" rows="5" required placeholder="Describe the task or write the question..."></textarea>
+                </div>
+                <div class="form-field">
+                    <label><i class="fa-solid fa-list-check"></i> Marking Rubric</label>
+                    <textarea name="rubric" rows="4" placeholder="Instructions for the AI grader on how to award marks..."></textarea>
+                </div>
+                <div class="form-field">
+                    <label><i class="fa-solid fa-key"></i> Answer Key / Expected Output</label>
+                    <textarea name="answer_key" rows="4" placeholder="Model answer or expected code output..."></textarea>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-trophy"></i> Total Marks</label>
+                        <input type="number" name="total_marks" value="100" min="1">
+                    </div>
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-badge-check"></i> Passing Marks</label>
+                        <input type="number" name="passing_marks" value="50" min="1">
+                    </div>
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-stopwatch"></i> Duration (minutes, 0=none)</label>
+                        <input type="number" name="duration_minutes" value="60" min="0">
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label><i class="fa-regular fa-calendar"></i> Deadline *</label>
+                        <input type="datetime-local" name="deadline" required>
+                    </div>
+                    <div class="form-field">
+                        <label><i class="fa-solid fa-code"></i> Programming Language (for coding)</label>
+                        <select name="programming_language">
+                            <option value="">N/A</option>
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                            <option value="clike">C / C++</option>
+                            <option value="vbscript">VB.NET</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-checkboxes">
+                    <label class="checkbox-label-exam"><input type="checkbox" name="show_results" checked> Show results immediately after grading</label>
+                    <label class="checkbox-label-exam"><input type="checkbox" name="allow_resubmit"> Allow resubmission</label>
+                </div>
+                <div class="form-actions">
+                    <a href="{% url 'siteapp:admin_classroom_detail' classroom.slug %}" class="btn-exam-outline">Cancel</a>
+                    <button type="submit" class="btn-exam-primary"><i class="fa-solid fa-plus"></i> Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}

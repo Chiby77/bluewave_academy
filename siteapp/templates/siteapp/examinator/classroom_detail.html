@@ -1,0 +1,101 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}{{ classroom.name }} — The Examinator{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="examinator-layout">
+    {% include "siteapp/examinator/_sidebar.html" %}
+    <main class="exam-main">
+        <div class="classroom-detail-header" style="border-left: 5px solid {{ classroom.cover_color }};">
+            <div>
+                <a href="{% url 'siteapp:examinator_home' %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> My Classrooms</a>
+                <h1 class="exam-page-title" style="margin-top:8px;">{{ classroom.name }}</h1>
+                <p class="exam-page-sub">{{ classroom.description }}</p>
+                <div class="classroom-detail-meta">
+                    <span><i class="fa-solid fa-user-tie"></i> {{ classroom.instructor.get_full_name }}</span>
+                    <span><i class="fa-solid fa-users"></i> {{ classroom.enrolled_count }} enrolled</span>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="exam-alert exam-alert-{{ message.tags }}">
+                <i class="fa-solid fa-circle-info"></i> {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2 class="section-subtitle"><i class="fa-solid fa-clipboard-list"></i> Assignments</h2>
+
+        {% if assignments %}
+            <div class="assignment-list">
+                {% for assignment in assignments %}
+                <div class="assignment-card {% if assignment.is_past_deadline %}assignment-card-expired{% endif %}">
+                    <div class="assignment-card-left">
+                        <div class="assignment-type-badge assignment-type-{{ assignment.assignment_type }}">
+                            {% if assignment.assignment_type == 'coding' %}
+                                <i class="fa-solid fa-code"></i> Coding
+                            {% elif assignment.assignment_type == 'pdf_upload' %}
+                                <i class="fa-solid fa-file-pdf"></i> PDF Upload
+                            {% elif assignment.assignment_type == 'timed_quiz' %}
+                                <i class="fa-solid fa-stopwatch"></i> Timed Quiz
+                            {% else %}
+                                <i class="fa-solid fa-circle-question"></i> Quiz
+                            {% endif %}
+                        </div>
+                        <h3 class="assignment-title">{{ assignment.title }}</h3>
+                        <p class="assignment-desc">{{ assignment.description|truncatewords:25 }}</p>
+                        <div class="assignment-meta">
+                            <span><i class="fa-solid fa-trophy"></i> {{ assignment.total_marks }} marks</span>
+                            <span><i class="fa-regular fa-clock"></i> Due {{ assignment.deadline|date:"M d, Y H:i" }}</span>
+                            {% if assignment.duration_minutes %}
+                            <span><i class="fa-solid fa-stopwatch"></i> {{ assignment.duration_minutes }} min</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="assignment-card-right">
+                        {% if assignment.my_submission %}
+                            {% if assignment.my_submission.status == 'graded' %}
+                                <div class="submission-score-badge">
+                                    <span class="score-val">{{ assignment.my_submission.get_percentage }}%</span>
+                                    <span class="score-label">{% if assignment.my_submission.is_passed %}Passed{% else %}Not Passed{% endif %}</span>
+                                </div>
+                                <a href="{% url 'siteapp:submission_result' assignment.my_submission.id %}" class="btn-exam-outline">
+                                    <i class="fa-solid fa-chart-bar"></i> View Result
+                                </a>
+                            {% elif assignment.my_submission.status == 'grading' %}
+                                <div class="status-chip status-grading">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Grading...
+                                </div>
+                            {% else %}
+                                <div class="status-chip status-pending">
+                                    <i class="fa-solid fa-hourglass-half"></i> Pending Review
+                                </div>
+                            {% endif %}
+                        {% elif assignment.is_past_deadline %}
+                            <div class="status-chip status-expired"><i class="fa-solid fa-lock"></i> Deadline Passed</div>
+                        {% else %}
+                            <a href="{% url 'siteapp:take_assignment' assignment.id %}" class="btn-exam-primary">
+                                <i class="fa-solid fa-pen-to-square"></i> Start
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="exam-empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-clipboard"></i></div>
+                <h3>No assignments yet</h3>
+                <p>Your instructor hasn't published any assignments for this classroom yet.</p>
+            </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
