@@ -1,0 +1,391 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Student Portal - BlueWave Academy{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student-portal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-portal">
+    <!-- HEADER WITH QUICK ACTIONS -->
+    <div class="portal-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Welcome, {{ user.first_name }}! 🎓</h1>
+                <p class="header-subtitle">{{ current_date|date:'l, F j, Y' }}</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-icon" title="Notifications">🔔</button>
+                <button class="btn-icon" title="Settings">⚙️</button>
+                <div class="user-dropdown">
+                    <button class="user-btn">{{ user.first_name|slice:":1" }}</button>
+                    <div class="dropdown-menu">
+                        <a href="{% url 'siteapp:profile' %}">👤 My Profile</a>
+                        <a href="{% url 'siteapp:edit_profile' %}">✏️ Edit Profile</a>
+                        <a href="{% url 'siteapp:password_reset' %}">🔐 Change Password</a>
+                        <hr>
+                        <a href="{% url 'siteapp:logout' %}">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="portal-nav">
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="nav-tab" data-tab="exams">📝 My Exams</button>
+            <button class="nav-tab" data-tab="progress">📈 Progress</button>
+            <button class="nav-tab" data-tab="announcements">📢 Announcements</button>
+            <button class="nav-tab" data-tab="resources">📚 Resources</button>
+        </nav>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="portal-content">
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Exams Available</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-info">
+                        <div class="stat-number">0%</div>
+                        <div class="stat-label">Avg Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Card -->
+            <div class="welcome-card">
+                <div class="welcome-icon">🎯</div>
+                <div class="welcome-content">
+                    <h2>Ready to Start Learning?</h2>
+                    <p>Choose an exam below to begin your assessment</p>
+                    <a href="#exams" class="btn-primary" onclick="switchTab('exams')">View Available Exams →</a>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <section class="section">
+                <h2 class="section-title">📋 Recent Activity</h2>
+                <div id="recent-activity" class="activity-list">
+                    <div class="empty-message">
+                        <p>No recent activity. Start your first exam!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Announcements Preview -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📢 Latest Announcements</h2>
+                    <a href="#announcements" class="link-more" onclick="switchTab('announcements')">View All →</a>
+                </div>
+                <div id="announcements-preview" class="announcements-grid">
+                    <div class="empty-message">
+                        <p>No announcements yet</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- EXAMS TAB -->
+        <div id="exams" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">📝 My Exams</h2>
+                
+                <!-- Filter Tabs -->
+                <div class="exam-filter">
+                    <button class="filter-btn active" data-filter="all">All Exams</button>
+                    <button class="filter-btn" data-filter="available">Available</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                </div>
+
+                <!-- Exams List -->
+                <div id="exams-list" class="exams-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading exams...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- PROGRESS TAB -->
+        <div id="progress" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">📈 Your Progress</h2>
+                
+                <div class="progress-grid">
+                    <!-- Performance Overview -->
+                    <div class="progress-card">
+                        <h3>Performance Overview</h3>
+                        <div id="performance-stats">
+                            <div class="stat-row">
+                                <span>Total Attempts</span>
+                                <strong>0</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Average Score</span>
+                                <strong>0%</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Pass Rate</span>
+                                <strong>0%</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Best Score</span>
+                                <strong>0%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Study Hours -->
+                    <div class="progress-card">
+                        <h3>Study Time</h3>
+                        <div id="study-time">
+                            <div class="stat-row">
+                                <span>Total Study Time</span>
+                                <strong>0h 0m</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>This Week</span>
+                                <strong>0h 0m</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>This Month</span>
+                                <strong>0h 0m</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Progress -->
+                <div class="progress-card" style="grid-column: 1 / -1;">
+                    <h3>Exam-wise Performance</h3>
+                    <div id="exam-performance" class="exam-performance-list">
+                        <div class="empty-message">
+                            <p>Complete exams to see your detailed performance</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ANNOUNCEMENTS TAB -->
+        <div id="announcements" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">📢 Announcements</h2>
+                <div id="all-announcements" class="announcements-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading announcements...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RESOURCES TAB -->
+        <div id="resources" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">📚 Learning Resources</h2>
+                <div class="resources-grid">
+                    <div class="resource-card">
+                        <div class="resource-icon">📖</div>
+                        <h3>Study Materials</h3>
+                        <p>Access all course materials and study guides</p>
+                        <a href="{% url 'siteapp:downloads' %}" class="btn-secondary">Browse Materials</a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">🎥</div>
+                        <h3>Tutorial Videos</h3>
+                        <p>Watch helpful tutorials and explanations</p>
+                        <a href="#" class="btn-secondary">Watch Videos</a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">📝</div>
+                        <h3>Question Bank</h3>
+                        <p>Practice with thousands of practice questions</p>
+                        <a href="#" class="btn-secondary">Practice Now</a>
+                    </div>
+                    <div class="resource-card">
+                        <div class="resource-icon">💬</div>
+                        <h3>Community Forum</h3>
+                        <p>Connect with other students and get help</p>
+                        <a href="#" class="btn-secondary">Join Forum</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- Modals & Overlays -->
+<div class="modal-overlay" id="modal-overlay"></div>
+
+<script>
+// TAB SWITCHING
+const navTabs = document.querySelectorAll('.nav-tab');
+const tabContents = document.querySelectorAll('.tab-content');
+
+navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        switchTab(tabName);
+    });
+});
+
+function switchTab(tabName) {
+    // Update active nav tab
+    navTabs.forEach(tab => tab.classList.remove('active'));
+    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+
+    // Update active content
+    tabContents.forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName)?.classList.add('active');
+
+    // Load data for specific tabs
+    if (tabName === 'exams') {
+        loadExams();
+    } else if (tabName === 'progress') {
+        loadProgress();
+    } else if (tabName === 'announcements') {
+        loadAnnouncements();
+    }
+}
+
+// LOAD EXAM DATA
+function loadExams() {
+    const examsList = document.getElementById('exams-list');
+    if (!examsList) return;
+
+    fetch('{% url "siteapp:exams" %}?t=' + Date.now(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+    })
+        .then(r => r.text())
+        .then(html => {
+            examsList.innerHTML = html || '<div class="empty-message"><p>No exams available</p></div>';
+        })
+        .catch(err => {
+            console.error('Error loading exams:', err);
+        });
+}
+
+// LOAD PROGRESS DATA
+function loadProgress() {
+    const examPerf = document.getElementById('exam-performance');
+    if (!examPerf) return;
+
+    fetch('{% url "siteapp:analytics" %}?t=' + Date.now(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+    })
+        .then(r => r.text())
+        .then(html => {
+            examPerf.innerHTML = html || '<div class="empty-message"><p>Complete exams to see performance</p></div>';
+        })
+        .catch(err => {
+            console.error('Error loading progress:', err);
+        });
+}
+
+// LOAD ANNOUNCEMENTS DATA
+function loadAnnouncements() {
+    const announcementsList = document.getElementById('all-announcements');
+    if (!announcementsList) return;
+
+    fetch('{% url "siteapp:announcements" %}?t=' + Date.now(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+    })
+        .then(r => r.text())
+        .then(html => {
+            announcementsList.innerHTML = html || '<div class="empty-message"><p>No announcements yet</p></div>';
+        })
+        .catch(err => {
+            console.error('Error loading announcements:', err);
+        });
+}
+
+// USER DROPDOWN
+const userBtn = document.querySelector('.user-btn');
+const dropdownMenu = document.querySelector('.dropdown-menu');
+
+userBtn?.addEventListener('click', () => {
+    dropdownMenu.classList.toggle('show');
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.user-dropdown')) {
+        dropdownMenu?.classList.remove('show');
+    }
+});
+
+// FILTER BUTTONS
+const filterBtns = document.querySelectorAll('.filter-btn');
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Filter logic would go here
+    });
+});
+
+// Load initial data on page load
+window.addEventListener('load', () => {
+    loadExams();
+    loadAnnouncements();
+    loadProgress();
+    
+    // ⚡ START REAL-TIME AUTO-REFRESH
+    // Auto-refresh announcements every 10 seconds
+    setInterval(loadAnnouncements, 10000);
+    
+    // Auto-refresh exams every 15 seconds
+    setInterval(loadExams, 15000);
+    
+    // Auto-refresh progress/stats every 20 seconds
+    setInterval(loadProgress, 20000);
+});
+</script>
+
+<style>
+html {
+    scroll-behavior: smooth;
+}
+</style>
+
+{% endblock %}

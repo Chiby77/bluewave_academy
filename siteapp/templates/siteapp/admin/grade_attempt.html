@@ -1,0 +1,194 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Grade Attempt - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Grading</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item active">
+                            <i class="icon">📝</i> View Attempts
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>Grade Exam Attempt</h2>
+                <p class="subtitle">{{ attempt.student.get_full_name }} - {{ attempt.exam.title }}</p>
+            </div>
+
+            <!-- Alerts -->
+            {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="close-alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Attempt Summary -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Student</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.student.get_full_name }}</div>
+                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">ID: {{ attempt.student.student_id }}</div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Exam</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.exam.title }}</div>
+                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">{{ attempt.exam.get_category_display }}</div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Duration</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.time_taken_minutes }} min</div>
+                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">{{ attempt.created_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Current Score</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.score|default:"Pending" }}</div>
+                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">Total: {{ attempt.exam.total_marks }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-Grade Button -->
+            {% if attempt.exam.enable_instant_grading %}
+            <div style="margin-bottom: 2rem;">
+                <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}" class="btn btn-success" onclick="return confirm('Auto-grade this attempt using Groq AI?');">🤖 Auto-Grade with Groq AI</a>
+                <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-outline">📄 Download PDF Report</a>
+            </div>
+            {% endif %}
+
+            <!-- Grading Form -->
+            <form method="post" class="card">
+                {% csrf_token %}
+
+                {% for answer in answers_to_grade %}
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--admin-border);">
+                    <!-- Question -->
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h4 style="margin: 0; color: var(--admin-navy); font-size: 1rem;">Question {{ answer.question.order }}</h4>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--admin-text-light); font-size: 0.85rem;">{{ answer.question.get_question_type_display }}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.9rem; color: var(--admin-text-light);">Marks</div>
+                                <div style="font-size: 1.2rem; font-weight: 600; color: var(--admin-navy);">{{ answer.question.marks }}</div>
+                            </div>
+                        </div>
+                        <p style="margin: 1rem 0; color: var(--admin-text); line-height: 1.6;">{{ answer.question.question_text }}</p>
+                    </div>
+
+                    <!-- Correct Answer -->
+                    <div style="margin-bottom: 1rem; padding: 1rem; background-color: #dcfce7; border-radius: 6px; border-left: 3px solid var(--admin-success);">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-bottom: 0.5rem;">✓ Expected Answer</div>
+                        <div style="color: #166534; font-size: 0.9rem;">{{ answer.question.correct_answer }}</div>
+                    </div>
+
+                    <!-- Student Answer -->
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #fee2e2; border-radius: 6px; border-left: 3px solid var(--admin-error);">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #991b1b; margin-bottom: 0.5rem;">✗ Student Answer</div>
+                        <div style="color: #991b1b; font-size: 0.9rem; white-space: pre-wrap; word-break: break-word;">{{ answer.answer_text }}</div>
+                    </div>
+
+                    <!-- Grading Input -->
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="score_{{ answer.id }}">Score (0-{{ answer.question.marks }})</label>
+                            <input type="number" name="score_{{ answer.id }}" id="score_{{ answer.id }}" min="0" max="{{ answer.question.marks }}" value="0" required>
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label for="feedback_{{ answer.id }}">Feedback</label>
+                            <input type="text" name="feedback_{{ answer.id }}" id="feedback_{{ answer.id }}" placeholder="Enter grading feedback...">
+                        </div>
+                    </div>
+
+                    <!-- Explanation -->
+                    {% if answer.question.explanation %}
+                    <div style="margin-top: 1rem; padding: 1rem; background-color: var(--admin-light); border-radius: 6px;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--admin-primary); margin-bottom: 0.5rem;">ℹ️ Explanation</div>
+                        <div style="color: var(--admin-text); font-size: 0.9rem;">{{ answer.question.explanation }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- Form Actions -->
+                <div style="padding: 1.5rem; display: flex; gap: 1rem; justify-content: space-between;">
+                    <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-outline">Back to Attempts</a>
+                    <button type="submit" class="btn btn-primary">Submit Grades</button>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<script>
+// Close alerts
+document.querySelectorAll('.close-alert').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentElement.remove();
+    });
+});
+
+// Validate score inputs
+document.querySelectorAll('[id^="score_"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const maxMarks = parseInt(this.getAttribute('max'));
+        if (parseInt(this.value) > maxMarks) {
+            alert(`Score cannot exceed ${maxMarks}`);
+            this.value = maxMarks;
+        }
+    });
+});
+</script>
+{% endblock %}

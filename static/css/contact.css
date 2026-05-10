@@ -1,0 +1,393 @@
+/* =========================================
+   1. Variables & Global Settings
+   ========================================= */
+:root {
+    /* Brand Colors */
+    --primary-blue: #2563eb;       /* Vibrant Royal Blue */
+    --primary-dark: #1e40af;       /* Deep Blue */
+    --accent-blue: #eff6ff;        /* Very Light Blue Background */
+    --text-dark: #1e293b;          /* Dark Slate */
+    --text-light: #64748b;         /* Muted Slate */
+    --white: #ffffff;
+    --success: #10b981;            /* Green for WhatsApp/Success */
+    --danger: #ef4444;             /* Red for Errors */
+   
+    /* UI Elements */
+    --border-radius: 12px;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    --transition: all 0.3s ease;
+}
+
+/* Base resets for this page */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--accent-blue);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+}
+
+a {
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+/* =========================================
+   2. Page Header
+   ========================================= */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+    color: var(--white);
+    text-align: center;
+    padding: 5rem 1rem 8rem; /* Extra bottom padding for overlap effect */
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); /* Modern angle cut */
+}
+
+.page-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.page-header p {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* =========================================
+   3. Contact Section (Layout)
+   ========================================= */
+.contact-section {
+    padding: 0 1.5rem 4rem;
+    margin-top: -5rem; /* Moves section up to overlap header */
+    position: relative;
+    z-index: 10;
+}
+
+.contact-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Info takes less space than form */
+    gap: 2rem;
+    align-items: start;
+}
+
+/* =========================================
+   4. Contact Info Column
+   ========================================= */
+.contact-info {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.contact-info h2 {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+}
+
+.contact-info > p {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+}
+
+/* Info Cards */
+.info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--accent-blue);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-icon {
+    background: var(--white);
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.info-content h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.1rem;
+    color: var(--text-dark);
+}
+
+.info-content p {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.info-content a {
+    color: var(--primary-blue);
+    font-weight: 500;
+}
+
+.info-content a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* WhatsApp Button styling */
+.whatsapp-btn {
+    display: inline-block;
+    margin-top: 0.5rem;
+    background-color: #25D366;
+    color: white !important;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-btn:hover {
+    background-color: #128c7e;
+    transform: scale(1.05);
+}
+
+/* =========================================
+   5. Contact Form Section
+   ========================================= */
+.contact-form-section {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.contact-form-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+}
+
+.contact-form-section > p {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+}
+
+/* Form Layout */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+/* Input Styling */
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    font-size: 1rem;
+    color: var(--text-dark);
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+/* Form Focus State */
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    background-color: var(--white);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.contact-form textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+/* Error Messages */
+.error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Submit Button */
+.btn-submit {
+    display: inline-block;
+    width: 100%;
+    background-color: var(--primary-blue);
+    color: var(--white);
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+.btn-submit:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* Django Alerts */
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.alert-error, .alert-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* =========================================
+   6. FAQ Section
+   ========================================= */
+.faq-section {
+    max-width: 1000px;
+    margin: 2rem auto 6rem;
+    padding: 0 1.5rem;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2rem;
+    color: var(--text-dark);
+    margin-bottom: 3rem;
+    position: relative;
+    display: inline-block;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Underline effect for title */
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: var(--primary-blue);
+    margin: 0.5rem auto 0;
+    border-radius: 2px;
+}
+
+.faq-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.faq-item {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    border: 1px solid #e2e8f0;
+    transition: var(--transition);
+}
+
+.faq-item:hover {
+    border-color: var(--primary-blue);
+    box-shadow: var(--shadow-md);
+}
+
+.faq-item h3 {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    margin-bottom: 0.75rem;
+}
+
+.faq-item p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* =========================================
+   7. Responsive Design
+   ========================================= */
+@media (max-width: 992px) {
+    .contact-container {
+        grid-template-columns: 1fr; /* Stack vertically on tablets */
+    }
+
+    .contact-info {
+        order: 2; /* Move info below form on mobile if preferred, or keep as 1 */
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding: 3rem 1rem 5rem;
+        clip-path: polygon(0 0, 100% 0, 100% 95%, 0 100%);
+    }
+
+    .page-header h1 {
+        font-size: 2.25rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr; /* Stack form fields */
+        gap: 0;
+    }
+   
+    .contact-section {
+        padding: 0 1rem 4rem;
+    }
+
+    .contact-info, .contact-form-section {
+        padding: 1.5rem;
+    }
+}

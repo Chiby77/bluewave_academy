@@ -1,0 +1,16 @@
+{% if announcements %}
+    {% for announcement in announcements %}
+        <div class="announcement-item">
+            <div class="announcement-header">
+                <h3>{{ announcement.title }}</h3>
+                <span class="announcement-date">{{ announcement.created_at|date:'M d, Y' }}</span>
+            </div>
+            <p class="announcement-content">{{ announcement.content|truncatechars:150 }}</p>
+            <a href="#" class="announcement-link">Read More →</a>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-message">
+        <p>No announcements at this time</p>
+    </div>
+{% endif %}

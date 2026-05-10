@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Bluewave Academy</title>
+    <link rel="stylesheet" href="{% static 'css/home1.css' %}">
+    <link rel="stylesheet" href="{% static 'css/about.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{% url 'siteapp:home' %}" >Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}" class="active"> About</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
+            </ul>
+            <div class="mobile-menu">☰</div>
+        </div>
+    </nav>
+    <div class="page-header">
+        <h1>Who We Are</h1>
+        <p>Building the future of technology, one student at a time.</p>
+    </div>
+
+    <section class="section-container story-section">
+        <div class="story-grid">
+            <div class="story-content">
+                <h4 class="sub-heading">OUR STORY</h4>
+                <h2>Empowering the Next Generation of Tech Leaders</h2>
+                <p>
+                    Bluewave Academy started with a simple idea: that high-quality computer science education should be accessible, practical, and aligned with industry standards.
+                </p>
+                <p>
+                    We saw a gap between theoretical learning and the real-world skills needed in the tech industry. Today, we are proud to offer a curriculum that blends academic rigor with hands-on coding experience, preparing our students to tackle global challenges from right here in Zimbabwe.
+                </p>
+               
+                <div class="mission-vision-tabs">
+                    <div class="mv-item">
+                        <div class="mv-icon">🎯</div>
+                        <div>
+                            <h3>Our Mission</h3>
+                            <p>To demystify technology and provide world-class coding education that empowers individuals to build sustainable careers.</p>
+                        </div>
+                    </div>
+                    <div class="mv-item">
+                        <div class="mv-icon">🚀</div>
+                        <div>
+                            <h3>Our Vision</h3>
+                            <p>To be the leading hub for technical innovation and digital skills development in the region.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="story-image">
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Students learning together">
+                <div class="experience-badge">
+                    <span class="years">5+</span>
+                    <span class="text">Years of<br>Excellence</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Students Trained</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Projects Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">20+</div>
+                <div class="stat-label">Expert Instructors</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Commitment</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container value-section">
+        <div class="section-header text-center">
+            <h4 class="sub-heading">WHY CHOOSE BLUEWAVE?</h4>
+            <h2>We Drive Digital Excellence</h2>
+        </div>
+       
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon">💻</div>
+                <h3>Practical Learning</h3>
+                <p>We don't just teach theory. Our courses are 80% practical, ensuring you build a portfolio while you learn.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">👨‍🏫</div>
+                <h3>Expert Mentorship</h3>
+                <p>Learn directly from industry professionals who have worked on real-world software projects.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">📜</div>
+                <h3>Certification</h3>
+                <p>Receive recognized certificates upon completion that validate your skills to employers.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">🤝</div>
+                <h3>Career Support</h3>
+                <p>From CV writing to interview prep, we help our top students transition into the workforce.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container team-section">
+        <div class="section-header text-center">
+            <h4 class="sub-heading">OUR EXPERTS</h4>
+            <h2>Meet The Instructors</h2>
+        </div>
+
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="team-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Instructor">
+                </div>
+                <div class="team-info">
+                    <h3>Tinashe M.</h3>
+                    <span class="role">Lead Developer & Instructor</span>
+                    <p>Specializes in Python, Django, and Backend Architecture.</p>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Instructor">
+                </div>
+                <div class="team-info">
+                    <h3>Sarah K.</h3>
+                    <span class="role">UI/UX Design Mentor</span>
+                    <p>Expert in creating user-centered designs and frontend interfaces.</p>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Instructor">
+                </div>
+                <div class="team-info">
+                    <h3>David Z.</h3>
+                    <span class="role">Data Science Lead</span>
+                    <p>Passionate about Data Analysis, Machine Learning, and AI.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Start Your Journey?</h2>
+            <p>Join hundreds of students who are changing their lives through code.</p>
+            <a href="{% url 'siteapp:contact' %}" class="cta-btn">Join Bluewave Academy</a>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                    <h3>Bluewave Academy</h3>
+                </div>
+                <p>Empowering the next generation of tech leaders through quality computer science education.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                    <li><a href="{% url 'siteapp:about' %}">About Us</a></li>
+                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:terms_of_service' %}">Terms of Service</a></li>
+                    <li><a href="{% url 'siteapp:privacy_policy' %}">Privacy Policy</a></li>
+                    <li><a href="{% url 'siteapp:contact' %}">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Student Portal</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:login' %}">Login</a></li>
+                    <li><a href="{% url 'siteapp:register' %}">Register</a></li>
+                    <li><a href="#">Exams</a></li>
+                    <li><a href="#">Resources</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Us</h4>
+                <ul>
+                    <li>📞 0718176525</li>
+                    <li>💬 <a href="https://wa.me/263718176525">WhatsApp</a></li>
+                    <li>📧 info@bluewaveacademy.com</li>
+                    <li>📍 Harare, Zimbabwe</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+                <a href="#">LinkedIn</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Student Submissions - Admin Portal{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+.submissions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+}
+
+.submission-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-item {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.submissions-table {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.submissions-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.submissions-table th {
+    background: #f8fafc;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.submissions-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.submissions-table tr:hover {
+    background: #f8fafc;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-submitted {
+    background: rgba(16,185,129,0.1);
+    color: #047857;
+}
+
+.status-graded {
+    background: rgba(37,99,235,0.1);
+    color: #1e40af;
+}
+
+.status-pending {
+    background: rgba(245,158,11,0.1);
+    color: #92400e;
+}
+
+.score-cell {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.action-link {
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.action-link:hover {
+    color: #1e40af;
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="submissions-header">
+        <div>
+            <h1>📋 Student Submissions</h1>
+            <p>Track all exam submissions and student responses</p>
+        </div>
+        <div style="text-align: right;">
+            <p style="margin-bottom: 10px;">{{ total_submissions }} Total Submissions</p>
+            <a href="{% url 'siteapp:admin_dashboard' %}" style="color: white; text-decoration: none; font-weight: 600;">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="submission-stats">
+        <div class="stat-item">
+            <div class="stat-number">{{ total_submissions }}</div>
+            <div class="stat-label">Total Submissions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ submitted_count }}</div>
+            <div class="stat-label">Submitted</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ pending_count }}</div>
+            <div class="stat-label">Pending Review</div>
+        </div>
+    </div>
+
+    <div class="filters">
+        <form method="GET" style="display: flex; gap: 15px; width: 100%;">
+            <div class="filter-group">
+                <label for="status">Status:</label>
+                <select name="status" id="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+                    <option value="graded" {% if status_filter == 'graded' %}selected{% endif %}>Graded</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="exam">Exam:</label>
+                <select name="exam" id="exam">
+                    <option value="">All Exams</option>
+                    {% for exam in exams %}
+                        <option value="{{ exam.id }}" {% if exam_filter == exam.id|stringformat:'s' %}selected{% endif %}>{{ exam.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" style="padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Filter</button>
+        </form>
+    </div>
+
+    {% if attempts %}
+        <div class="submissions-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Exam</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                        <tr>
+                            <td>
+                                <strong>{{ attempt.student.get_full_name }}</strong><br>
+                                <small style="color: #64748b;">{{ attempt.student.email }}</small>
+                            </td>
+                            <td>{{ attempt.exam.title }}</td>
+                            <td>
+                                <span class="status-badge status-{{ attempt.status }}">
+                                    {{ attempt.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="score-cell">
+                                {% if attempt.percentage %}
+                                    {{ attempt.percentage }}%
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>{{ attempt.created_at|date:'M d, Y' }}</td>
+                            <td>
+                                <a href="{% url 'siteapp:submission_detail' attempt.id %}" class="action-link">View Details →</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px; background: white; border-radius: 12px;">
+            <p style="color: #64748b;">No submissions found</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+</style>
+{% endblock %}

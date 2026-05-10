@@ -1,0 +1,269 @@
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import (
+    CustomUser,
+    Exam,
+    Question,
+    ExamAttempt,
+    Answer,
+    Announcement,
+    DownloadResource,
+    BlogPost,
+    Comment,
+)
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    """Admin interface for CustomUser"""
+
+    list_display = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "student_id",
+        "school",
+        "is_active_student",
+    ]
+    list_filter = ["is_active_student", "current_level", "enrollment_date"]
+    search_fields = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "student_id",
+        "phone",
+        "school",
+    ]
+
+    fieldsets = UserAdmin.fieldsets + (
+        (
+            "Student Information",
+            {
+                "fields": (
+                    "phone",
+                    "school",
+                    "student_id",
+                    "date_of_birth",
+                    "profile_picture",
+                )
+            },
+        ),
+        (
+            "Academic Information",
+            {"fields": ("enrollment_date", "current_level", "is_active_student")},
+        ),
+    )
+
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (
+            "Additional Info",
+            {"fields": ("email", "first_name", "last_name", "phone", "school")},
+        ),
+    )
+
+
+class QuestionInline(admin.TabularInline):
+    """Inline questions for Exam admin"""
+
+    model = Question
+    extra = 1
+    fields = ["question_text", "question_type", "marks", "order"]
+
+
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+    """Admin interface for Exam"""
+
+    list_display = [
+        "title",
+        "category",
+        "level",
+        "duration_minutes",
+        "total_marks",
+        "is_active",
+        "start_date",
+        "end_date",
+    ]
+    list_filter = ["category", "level", "is_active", "start_date"]
+    search_fields = ["title", "description"]
+    inlines = [QuestionInline]
+
+    fieldsets = (
+        (
+            "Basic Information",
+            {"fields": ("title", "description", "category", "level")},
+        ),
+        (
+            "Exam Settings",
+            {
+                "fields": (
+                    "duration_minutes",
+                    "total_marks",
+                    "passing_marks",
+                    "is_active",
+                )
+            },
+        ),
+        ("Schedule", {"fields": ("start_date", "end_date")}),
+        ("Metadata", {"fields": ("created_by",)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    """Admin interface for Question"""
+
+    list_display = ["exam", "question_type", "marks", "order"]
+    list_filter = ["question_type", "exam"]
+    search_fields = ["question_text", "exam__title"]
+
+    fieldsets = (
+        (
+            "Question Details",
+            {"fields": ("exam", "question_text", "question_type", "marks", "order")},
+        ),
+        (
+            "Options (for MCQ)",
+            {
+                "fields": ("option_a", "option_b", "option_c", "option_d"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("Answer", {"fields": ("correct_answer", "explanation")}),
+    )
+
+
+class AnswerInline(admin.TabularInline):
+    """Inline answers for ExamAttempt admin"""
+
+    model = Answer
+    extra = 0
+    readonly_fields = ["question", "answer_text", "is_correct", "marks_obtained"]
+    can_delete = False
+
+
+@admin.register(ExamAttempt)
+class ExamAttemptAdmin(admin.ModelAdmin):
+    """Admin interface for ExamAttempt"""
+
+    list_display = [
+        "student",
+        "exam",
+        "status",
+        "score",
+        "percentage",
+        "start_time",
+        "end_time",
+    ]
+    list_filter = ["status", "exam", "start_time"]
+    search_fields = ["student__username", "student__email", "exam__title"]
+    readonly_fields = [
+        "start_time",
+        "end_time",
+        "time_taken_minutes",
+        "score",
+        "percentage",
+    ]
+    inlines = [AnswerInline]
+
+    fieldsets = (
+        ("Attempt Information", {"fields": ("student", "exam", "status")}),
+        ("Timing", {"fields": ("start_time", "end_time", "time_taken_minutes")}),
+        ("Results", {"fields": ("score", "percentage", "ai_graded", "ai_feedback")}),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(Answer)
+class AnswerAdmin(admin.ModelAdmin):
+    """Admin interface for Answer"""
+
+    list_display = ["attempt", "question", "is_correct", "marks_obtained", "ai_graded"]
+    list_filter = ["is_correct", "ai_graded", "attempt__exam"]
+    search_fields = ["attempt__student__username", "question__question_text"]
+    readonly_fields = ["attempt", "question", "created_at"]
+
+    fieldsets = (
+        ("Answer Details", {"fields": ("attempt", "question", "answer_text")}),
+        (
+            "Grading",
+            {"fields": ("is_correct", "marks_obtained", "ai_graded", "ai_feedback")},
+        ),
+    )
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    """Admin interface for Announcement"""
+
+    list_display = ["title", "target_audience", "priority", "is_active", "created_at"]
+    list_filter = ["target_audience", "priority", "is_active", "created_at"]
+    search_fields = ["title", "content"]
+
+    fieldsets = (
+        ("Announcement Details", {"fields": ("title", "content")}),
+        ("Settings", {"fields": ("target_audience", "priority", "is_active")}),
+        ("Metadata", {"fields": ("created_by",), "classes": ("collapse",)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(DownloadResource)
+class DownloadResourceAdmin(admin.ModelAdmin):
+    """Admin interface for DownloadResource"""
+
+    list_display = ["title", "category", "is_active", "download_count", "created_at"]
+    list_filter = ["category", "is_active", "created_at"]
+    search_fields = ["title", "description"]
+    readonly_fields = ["download_count", "created_at", "updated_at"]
+
+    fieldsets = (
+        ("Resource Details", {"fields": ("title", "description", "category")}),
+        ("File", {"fields": ("file", "file_size")}),
+        ("Settings", {"fields": ("is_active",)}),
+        (
+            "Statistics",
+            {
+                "fields": ("download_count", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("Metadata", {"fields": ("uploaded_by",), "classes": ("collapse",)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.uploaded_by = request.user
+
+        if obj.file:
+            size_bytes = obj.file.size
+            if size_bytes < 1024:
+                obj.file_size = f"{size_bytes} B"
+            elif size_bytes < 1024 * 1024:
+                obj.file_size = f"{size_bytes / 1024:.2f} KB"
+            else:
+                obj.file_size = f"{size_bytes / (1024 * 1024):.2f} MB"
+
+        super().save_model(request, obj, form, change)
+
+
+admin.site.register(Comment)
+
+
+@admin.register(BlogPost)
+class BlogPostAdmin(admin.ModelAdmin):
+    prepopulated_fields = {"slug": ("title",)}
+    list_display = ("title", "created_at", "likes_count")

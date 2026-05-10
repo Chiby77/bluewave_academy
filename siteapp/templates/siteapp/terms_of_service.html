@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - Bluewave Academy</title>
+    <link rel="stylesheet" href="{% static 'css/home1.css' %}">
+    <style>
+        body {
+            padding-top: 80px;
+        }
+        .legal-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem 6rem;
+            background: var(--white);
+        }
+        .legal-page h2 {
+            font-size: 2rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-blue);
+        }
+        .legal-page h3 {
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+        .legal-page p {
+            color: var(--text-light);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+        .legal-page ul, .legal-page ol {
+            color: var(--text-light);
+            line-height: 1.8;
+            margin: 1rem 0 1rem 2rem;
+        }
+        .legal-page li {
+            margin-bottom: 0.5rem;
+        }
+        .last-updated {
+            color: var(--text-light);
+            font-style: italic;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: var(--white);
+            text-align: center;
+            padding: 4rem 1rem 6rem;
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+            margin-top: -20px;
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}">About</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
+            </ul>
+            <div class="mobile-menu">☰</div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>Terms of Service</h1>
+        <p>Please read these terms carefully before using our platform.</p>
+    </div>
+
+    <section class="legal-page">
+            <div class="last-updated">
+                Last updated: February 16, 2026
+            </div>
+
+            <h2>1. Acceptance of Terms</h2>
+            <p>By accessing and using the Bluewave Academy platform, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
+
+            <h2>2. Use License</h2>
+            <p>Permission is granted to temporarily download one copy of the materials (information or software) on Bluewave Academy's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:</p>
+            <ul>
+                <li>Modify or copy the materials</li>
+                <li>Use the materials for any commercial purpose or for any public display (commercial or non-commercial)</li>
+                <li>Attempt to decompile or reverse engineer any software contained on Bluewave Academy's website</li>
+                <li>Remove any copyright or other proprietary notations from the materials</li>
+                <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
+                <li>Attempt to gain unauthorized access to any portion of the website</li>
+                <li>Harass, abuse, or harm another user of the platform</li>
+            </ul>
+
+            <h2>3. Student Conduct</h2>
+            <p>Students agree to conduct themselves with respect and integrity while using Bluewave Academy's services. This includes:</p>
+            <ul>
+                <li>Completing exams and assessments honestly without unauthorized assistance</li>
+                <li>Not sharing exam answers or helping others cheat</li>
+                <li>Respecting the intellectual property of course materials</li>
+                <li>Maintaining confidentiality of your learning materials</li>
+            </ul>
+
+            <h2>4. Disclaimer of Warranties</h2>
+            <p>The materials on Bluewave Academy's website are provided "as is". Bluewave Academy makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
+
+            <h2>5. Limitations of Liability</h2>
+            <p>In no event shall Bluewave Academy or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use Bluewave Academy's website or materials.</p>
+
+            <h2>6. Accuracy of Materials</h2>
+            <p>The materials appearing on Bluewave Academy's website could include technical, typographical, or photographic errors. Bluewave Academy does not warrant that any of the materials on our website are accurate, complete, or current. Bluewave Academy may make changes to the materials contained on its website at any time without notice.</p>
+
+            <h2>7. Materials and Content</h2>
+            <p>Bluewave Academy has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by Bluewave Academy of the site. Use of any such linked website is at the user's own risk.</p>
+
+            <h2>8. Modifications</h2>
+            <p>Bluewave Academy may revise these terms of service for its website at any time without notice. By using this website, you are agreeing to be bound by the then current version of these terms of service.</p>
+
+            <h2>9. Governing Law</h2>
+            <p>These terms and conditions are governed by and construed in accordance with the laws of Zimbabwe, and you irrevocably submit to the exclusive jurisdiction of the courts located in Zimbabwe.</p>
+
+            <h2>10. Payment Terms</h2>
+            <p>All fees and charges are expressed in the currency stated at the point of purchase. Payment must be received in full before services are provided. Bluewave Academy reserves the right to suspend or cancel access for unpaid accounts.</p>
+
+            <h2>11. Refund Policy</h2>
+            <p>Refunds must be requested within 7 days of purchase if you are not satisfied with our services. After 7 days, no refunds will be issued. Course completion or partial use may disqualify refund eligibility.</p>
+
+            <h2>12. User Accounts</h2>
+            <p>You are responsible for maintaining the confidentiality of your account information and password. You agree to accept responsibility for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account.</p>
+
+            <h2>13. Intellectual Property</h2>
+            <p>All materials, content, and software on Bluewave Academy's website are the property of Bluewave Academy or its suppliers and are protected by international copyright laws. You may view and print materials for personal, non-commercial use only.</p>
+
+            <h2>14. Termination</h2>
+            <p>Bluewave Academy may terminate your access to the website and services at any time, without cause or notice, if you violate these terms of service or engage in conduct that is harmful to other users or the platform.</p>
+
+            <h2>15. Contact Information</h2>
+            <p>If you have any questions about these Terms of Service, please contact us:</p>
+            <ul>
+                <li>📧 Email: info@bluewaveacademy.com</li>
+                <li>📞 Phone: 0718176525</li>
+                <li>📍 Address: Harare, Zimbabwe</li>
+                <li>💬 WhatsApp: <a href="https://wa.me/263718176525">+263 718 176 525</a></li>
+            </ul>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                    <h3>Bluewave Academy</h3>
+                </div>
+                <p>Empowering the next generation of tech leaders through quality computer science education.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                    <li><a href="{% url 'siteapp:about' %}">About Us</a></li>
+                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:terms_of_service' %}">Terms of Service</a></li>
+                    <li><a href="{% url 'siteapp:privacy_policy' %}">Privacy Policy</a></li>
+                    <li><a href="{% url 'siteapp:contact' %}">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Us</h4>
+                <ul>
+                    <li>📞 0718176525</li>
+                    <li>💬 <a href="https://wa.me/263718176525">WhatsApp</a></li>
+                    <li>📧 info@bluewaveacademy.com</li>
+                    <li>📍 Harare, Zimbabwe</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+                <a href="#">LinkedIn</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>

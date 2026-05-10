@@ -1,0 +1,234 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}View Attempts - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Grading & Results</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item active">
+                            <i class="icon">📝</i> View Attempts
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>Exam Attempts</h2>
+                <p class="subtitle">Review and grade student exam submissions</p>
+            </div>
+
+            <!-- Alerts -->
+            {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="close-alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Filter Section -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="get" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="exam">Exam</label>
+                            <select name="exam" id="exam" style="padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; width: 100%;">
+                                <option value="">All Exams</option>
+                                {% for exam in exams %}
+                                <option value="{{ exam.id }}" {% if request.GET.exam == exam.id|stringformat:"s" %}selected{% endif %}>{{ exam.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="status">Status</label>
+                            <select name="status" id="status" style="padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; width: 100%;">
+                                <option value="">All Statuses</option>
+                                <option value="submitted" {% if request.GET.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                                <option value="graded" {% if request.GET.status == 'graded' %}selected{% endif %}>Graded</option>
+                                <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Filter</button>
+                        <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-outline" style="white-space: nowrap;">Reset</a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Attempts Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>All Attempts ({{ attempts.count }})</h3>
+                </div>
+                <div class="card-body">
+                    {% if attempts %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Exam</th>
+                                    <th>Status</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Duration</th>
+                                    <th>Date Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in attempts %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ attempt.student.get_full_name }}</strong>
+                                        <div style="font-size: 0.8rem; color: var(--admin-text-light);">{{ attempt.student.student_id }}</div>
+                                    </td>
+                                    <td>{{ attempt.exam.title }}</td>
+                                    <td>
+                                        {% if attempt.status == 'graded' %}
+                                            <span class="badge" style="background: #dcfce7; color: #166534;">✓ {{ attempt.get_status_display }}</span>
+                                        {% elif attempt.status == 'submitted' %}
+                                            <span class="badge" style="background: #dbeafe; color: #1e40af;">📝 {{ attempt.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge" style="background: #fef3c7; color: #92400e;">⏳ {{ attempt.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.score %}
+                                            <strong>{{ attempt.score|floatformat:2 }}</strong> / {{ attempt.exam.total_marks }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.percentage %}
+                                            <strong>{{ attempt.percentage|floatformat:2 }}%</strong>
+                                            {% if attempt.is_passed %}
+                                                <span style="color: var(--admin-success); font-size: 0.85rem; margin-left: 0.5rem;">✓ Pass</span>
+                                            {% else %}
+                                                <span style="color: var(--admin-error); font-size: 0.85rem; margin-left: 0.5rem;">✗ Fail</span>
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ attempt.time_taken_minutes|default:'-' }} min</td>
+                                    <td>{{ attempt.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                            {% if attempt.status == 'submitted' %}
+                                                <a href="{% url 'siteapp:grade_attempt' attempt.id %}" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">Grade</a>
+                                            {% endif %}
+                                            <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">View</a>
+                                            <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">📄 PDF</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <p>No attempts found</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>Statistics</h3>
+                </div>
+                <div class="card-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Total Attempts</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--admin-primary);">{{ attempts.count }}</div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Graded</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--admin-success);">{{ attempts|dictsort:"status"|length }}</div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Pending Grade</div>
+                        {% with pending=attempts|dictsort:"status" %}
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--admin-warning);">{{ pending|length }}</div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Close alerts
+document.querySelectorAll('.close-alert').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentElement.remove();
+    });
+});
+
+// Auto-refresh attempts every 60 seconds
+setInterval(function() {
+    // Optional: Refresh page or update via AJAX
+}, 60000);
+</script>
+{% endblock %}

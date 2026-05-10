@@ -1,0 +1,384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloads - Bluewave Academy</title>
+    <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/downloads-page.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}">About</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}" class="active">Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
+            </ul>
+            <div class="mobile-menu">☰</div>
+        </div>
+    </nav>
+
+    <!-- Page Header with animated background -->
+    <header class="page-header downloads-header">
+        <div class="header-content">
+            <div class="header-background">
+                <div class="gradient-orb gradient-orb-1"></div>
+                <div class="gradient-orb gradient-orb-2"></div>
+            </div>
+            <h1 class="animate-title">Knowledge Base</h1>
+            <p>Premium programming books, Zimsec papers, and Computer Science resources.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+       
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">🐍</div>
+                <h2>Python Programming Books</h2>
+                <p class="section-subtitle">Master Python with comprehensive guides and practical examples</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Automate the Boring Stuff</h3>
+                    <p>Master Python by building practical projects. Great for beginners.</p>
+                    <a href="INSERT_GOOGLE_DRIVE_LINK_HERE" target="_blank" class="btn btn-primary">Download from Drive</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Python Crash Course</h3>
+                    <p>A hands-on, project-based introduction to programming.</p>
+                    <a href="INSERT_MEDIAFIRE_LINK_HERE" target="_blank" class="btn btn-primary">Download Mediafire</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Python Advanced Concepts</h3>
+                    <p>Deep dive into decorators, generators, and metaclasses.</p>
+                    <a href="#" class="btn btn-primary">Download Now</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">💻</div>
+                <h2>Visual Basic (VB.NET)</h2>
+                <p class="section-subtitle">Windows Forms development and .NET frameworks</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Visual Basic 2015/2017</h3>
+                    <p>Comprehensive guide to mastering Windows Forms and .NET logic.</p>
+                    <a href="#" class="btn btn-primary">Download Now</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">ZIP</div>
+                    <h3>VB Project Source Codes</h3>
+                    <p>Example projects including Database systems and calculators.</p>
+                    <a href="#" class="btn btn-primary">Download Now</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>VB.NET Enterprise Patterns</h3>
+                    <p>Design patterns and best practices for enterprise applications.</p>
+                    <a href="#" class="btn btn-primary">Download Now</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">📝</div>
+                <h2>Zimsec CS Past Papers</h2>
+                <p class="section-subtitle">Comprehensive collection of examination questions and solutions</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card paper-card">
+                    <div class="paper-badge">Paper 1</div>
+                    <h3>Theory Examination</h3>
+                    <p>Collection of Zimsec Paper 1 (Multiple Choice & Structured) 2018-2025.</p>
+                    <a href="#" class="btn btn-secondary">Access Papers</a>
+                </div>
+                <div class="download-card paper-card">
+                    <div class="paper-badge">Paper 2</div>
+                    <h3>Practical & Programming</h3>
+                    <p>Past practical tasks and programming scenarios for A-Level/O-Level.</p>
+                    <a href="#" class="btn btn-secondary">Access Papers</a>
+                </div>
+                <div class="download-card paper-card">
+                    <div class="paper-badge">Solutions</div>
+                    <h3>Model Solutions</h3>
+                    <p>Complete worked solutions and answer schemes for all papers.</p>
+                    <a href="#" class="btn btn-secondary">Access Solutions</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">📚</div>
+                <h2>Computer Science Fundamentals</h2>
+                <p class="section-subtitle">Core concepts and theoretical foundations</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Operating Systems</h3>
+                    <p>Learn about Kernels, Process Management, and Memory.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Networking Essentials</h3>
+                    <p>A deep dive into OSI Model, TCP/IP, and Routing.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Database Systems</h3>
+                    <p>SQL, normalization, queries, and database design principles.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">🎓</div>
+                <h2>Study Notes & Guides</h2>
+                <p class="section-subtitle">Quick reference materials and revision notes</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Algorithm Handbook</h3>
+                    <p>Common algorithms with pseudo-code and complexity analysis.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Data Structures Guide</h3>
+                    <p>Arrays, Linked Lists, Trees, Graphs, and Hash Tables explained.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+                <div class="download-card">
+                    <div class="file-badge">PDF</div>
+                    <h3>Quick Revision Notes</h3>
+                    <p>Condensed summaries of all Computer Science topics for quick review.</p>
+                    <a href="#" class="btn btn-primary">Download</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <div class="section-heading">
+                <div class="icon">∑</div>
+                <h2>Pure Mathematics</h2>
+                <p class="section-subtitle">Zimsec Past Paper Question Papers - Paper 1 & 2</p>
+            </div>
+
+            <!-- Paper 1 Links -->
+            <div class="math-subsection">
+                <h3 class="math-subsection-title">📄 Paper 1 - Questions</h3>
+                <div class="math-links-grid">
+                    <div class="math-link-card">
+                        <div class="year-badge">2020</div>
+                        <h4>June 2020 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1YHmibOWEIiJCF11uqlxSVaT2c-R20Cmr/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2019</div>
+                        <h4>November 2019 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1Yhjkslec6WpYN6uIEATF0nSfDs7aTVaG/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2018</div>
+                        <h4>November 2018 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1_rCkRX_rFIQ1XpTG0Xjxt8vfKsIbXH9E/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2018</div>
+                        <h4>June 2018 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1_usEVhmas4M81ZVENMm35FZLAFR2AR8g/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2017</div>
+                        <h4>November 2017 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1aCbn9Gn8HaLdNt5wlAC1iJu61MsqeqbD/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2017</div>
+                        <h4>June 2017 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1aBn_1UVk_EFQDMD27SYS30jjxYiZsPMj/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2016</div>
+                        <h4>June 2016 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1aPAFV8MBumQXRTUIm2NIISRpVSIl1r5D/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2016</div>
+                        <h4>November 2016 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1aZFdwbT7KtpnkgE--5Aoy6goKNX5g83v/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2015</div>
+                        <h4>June 2015 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1ax09-aFHvSVQUOXYuldSUORAyjyvXmP/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2015</div>
+                        <h4>November 2015 Paper 1</h4>
+                        <a href="https://drive.google.com/file/d/1b0J-NAYHZLDSOFE4P6eYIKqtxb_8D-st/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paper 2 Links -->
+            <div class="math-subsection">
+                <h3 class="math-subsection-title">📄 Paper 2 - Questions</h3>
+                <div class="math-links-grid">
+                    <div class="math-link-card">
+                        <div class="year-badge">2020</div>
+                        <h4>June 2020 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1deV205p4XD9BPsqFQUJf7zZZnSUzY6KV/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2019</div>
+                        <h4>June 2019 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1m87aeU8ZLjJsGjZs4XB2rcvTnUm2KSZ6/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2019</div>
+                        <h4>November 2019 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1m1yvuTOzSgLwuTG3GOFSKKE25mauEBlz/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2018</div>
+                        <h4>June 2018 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1Yn1GS831NZT8TT3rrln98umfoOUnvlKI/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2018</div>
+                        <h4>November 2018 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1XulDRzagE6poBjXy00OpIDxPYtHRY_nc/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2017</div>
+                        <h4>June 2017 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1VuVX08BNL6ROaX4be-vasBQIchRrovOR/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2017</div>
+                        <h4>November 2017 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1UtIq3iIPHfLqmcCSmBG0O3IjAxquMU8h/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2016</div>
+                        <h4>June 2016 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1j0ZJaCqeehVFLRVVQHvrRehBv9bZ2tvr/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2016</div>
+                        <h4>November 2016 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1j9hSgq2mtkjtTSX7IyC0_alm_5fJVg0j/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2015</div>
+                        <h4>November 2015 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/1nQP5-PEop5d_s0qJyCU9sUamHZW5g6xP/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                    <div class="math-link-card">
+                        <div class="year-badge">2015</div>
+                        <h4>June 2015 Paper 2</h4>
+                        <a href="https://drive.google.com/file/d/10Li9TGVUhzcJ_FtriTkojd2F5bF8AmIr/view?usp=drivesdk" target="_blank" class="btn btn-tertiary">Open PDF</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                    <h3>Bluewave Academy</h3>
+                </div>
+                <p class="footer-description">Your premier source for quality Computer Science educational resources and materials.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                    <li><a href="{% url 'siteapp:about' %}">About</a></li>
+                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                    <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                    <li><a href="#">Tutorials</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:terms_of_service' %}">Terms of Service</a></li>
+                    <li><a href="{% url 'siteapp:privacy_policy' %}">Privacy Policy</a></li>
+                    <li><a href="{% url 'siteapp:contact' %}">Report Issue</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" title="Facebook">f</a>
+                <a href="#" title="Twitter">𝕏</a>
+                <a href="#" title="LinkedIn">in</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

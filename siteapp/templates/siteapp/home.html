@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluewave Academy - Computer Science Excellence</title>
+    <link rel="stylesheet" href="{% static 'css/home1.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{% url 'siteapp:home' %}" class="active">Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}">About</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
+            </ul>
+            <div class="mobile-menu">☰</div>
+        </div>
+    </nav>
+<!-- Hero Section with Sliding Images -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="image-slider">
+                <div class="slide" style="background-image: url('{% static 'images/slide1.jpg' %}');"></div>
+                <div class="slide" style="background-image: url('{% static 'images/slide2.jpg' %}');"></div>
+                <div class="slide" style="background-image: url('{% static 'images/slide3.jpg' %}');"></div>
+            </div>
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="animate-in">Excellence in Computer Science Education</h1>
+            <p class="animate-in delay-1">Master the digital world with expert-led seminars, online courses, and personalized tutoring</p>
+            <div class="cta-buttons animate-in delay-2">
+                <a href="{% url 'siteapp:register' %}" class="btn btn-primary">Get Started Today</a>
+                <a href="{% url 'siteapp:about' %}" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-item">
+                <h3>500+</h3>
+                <p>Students Trained</p>
+            </div>
+            <div class="stat-item">
+                <h3>50+</h3>
+                <p>Courses Offered</p>
+            </div>
+            <div class="stat-item">
+                <h3>95%</h3>
+                <p>Success Rate</p>
+            </div>
+            <div class="stat-item">
+                <h3>24/7</h3>
+                <p>Online Support</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">What We Offer</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💻</div>
+                <h3>Online Seminars</h3>
+                <p>Join live interactive sessions from anywhere. Learn from industry experts and collaborate with peers in real-time.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏫</div>
+                <h3>Physical Classes</h3>
+                <p>Hands-on training in our state-of-the-art facilities. Experience practical learning with the latest technology.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👨‍🏫</div>
+                <h3>Private Tutoring</h3>
+                <p>One-on-one personalized instruction tailored to your learning pace and goals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Digital Resources</h3>
+                <p>Access comprehensive study materials, programming notes, and past papers anytime.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Online Exams</h3>
+                <p>Test your knowledge with our digital examination platform. Get instant feedback.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎓</div>
+                <h3>Certification</h3>
+                <p>Earn recognized certificates upon course completion. Boost your resume.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Announcements Section -->
+    <section class="announcements">
+        <h2 class="section-title">Latest Announcements</h2>
+        <div class="announcements-container">
+            {% for announcement in announcements %}
+            <div class="announcement-card">
+                <div class="announcement-date">{{ announcement.created_at|date:"M d, Y" }}</div>
+                <h3>{{ announcement.title }}</h3>
+                <p>{{ announcement.content|truncatewords:30 }}</p>
+            </div>
+            {% empty %}
+            <p style="text-align: center; color: #64748b;">No announcements at the moment.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Blog Preview Section -->
+    <section class="blog-preview">
+        <h2 class="section-title">From Our Blog</h2>
+        <div class="blog-grid">
+            {% for post in latest_blogs %}
+            <div class="blog-card">
+                <div class="blog-image">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="{{ post.title }}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
+                    {% else %}
+                        🚀
+                    {% endif %}
+                </div>
+               
+                <div class="blog-content">
+                    <div class="blog-meta">
+                        {{ post.created_at|date:"F d, Y" }} • {{ post.category|default:"General" }}
+                    </div>
+                    <h3>{{ post.title }}</h3>
+                    <p>{{ post.summary|truncatewords:15 }}</p>
+                   
+                    <a href="{% url 'siteapp:blog_detail' post.slug %}" class="read-more">Read More →</a>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center">New insights coming soon. Stay tuned!</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- CTA Section with Sliding Images -->
+    <section class="cta-section">
+        <div class="cta-background">
+            <div class="image-slider">
+                <div class="slide" style="background-image: url('{% static 'images/slide3.jpg' %}');"></div>
+                <div class="slide" style="background-image: url('{% static 'images/slide2.jpg' %}');"></div>
+                <div class="slide" style="background-image: url('{% static 'images/slide1.jpg' %}');"></div>
+            </div>
+            <div class="cta-overlay"></div>
+        </div>
+        <div class="cta-content">
+            <h2>Ready to Start Your Learning Journey?</h2>
+            <p>Join hundreds of students who have transformed their careers with Bluewave Academy</p>
+            <div class="cta-buttons">
+                <a href="{% url 'siteapp:register' %}" class="btn btn-primary">Register Now</a>
+                <a href="{% url 'siteapp:contact' %}" class="btn btn-outline">Contact Us</a>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                    <h3>Bluewave Academy</h3>
+                </div>
+                <p>Empowering the next generation of tech leaders through quality computer science education.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                    <li><a href="{% url 'siteapp:about' %}">About Us</a></li>
+                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Student Portal</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:login' %}">Login</a></li>
+                    <li><a href="{% url 'siteapp:register' %}">Register</a></li>
+                    <li><a href="#">Exams</a></li>
+                    <li><a href="#">Resources</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Us</h4>
+                <ul>
+                    <li>📞 0718176525</li>
+                    <li>💬 <a href="https://wa.me/263718176525">WhatsApp</a></li>
+                    <li>📧 info@bluewaveacademy.com</li>
+                    <li>📍 Harare, Zimbabwe</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+                <a href="#">LinkedIn</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>

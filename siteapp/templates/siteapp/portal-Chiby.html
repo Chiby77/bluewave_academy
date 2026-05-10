@@ -1,0 +1,258 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Bluewave Academy</title>
+    <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/portal-page.css' %}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'siteapp:home' %}" class="navbar-brand">
+                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy" class="logo">
+                    <span>Bluewave Academy</span>
+                </a>
+            </div>
+            <div class="nav-right">
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">{{ student.get_full_name }}</span>
+                        <span class="user-level">{{ student.get_current_level_display }}</span>
+                    </div>
+                    <img src="{% if student.profile_picture %}{{ student.profile_picture.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" alt="Profile" class="user-avatar">
+                    <div class="dropdown-menu">
+                        <a href="{% url 'siteapp:profile' %}">Edit Profile</a>
+                        <a href="{% url 'siteapp:logout' %}">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Portal Main Content -->
+    <main class="portal-main">
+        <!-- Welcome Section -->
+        <div class="portal-welcome">
+            <div class="welcome-header">
+                <h1>Welcome back, {{ student.first_name }}! 👋</h1>
+                <p class="welcome-subtitle">Student ID: {{ student.student_id }} | Level: {{ student.get_current_level_display }}</p>
+            </div>
+            <div class="quick-actions">
+                <a href="{% url 'siteapp:exam_list' %}" class="action-btn primary">
+                    <span class="action-icon">📝</span>
+                    <span>Take Exam</span>
+                </a>
+                <a href="{% url 'siteapp:downloads' %}" class="action-btn secondary">
+                    <span class="action-icon">📥</span>
+                    <span>Downloads</span>
+                </a>
+                <a href="{% url 'siteapp:blog_list' %}" class="action-btn secondary">
+                    <span class="action-icon">📚</span>
+                    <span>Blog</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <section class="portal-stats">
+            <h2 class="section-title">Your Performance</h2>
+            <div class="stats-container">
+                <div class="stat-box active-exams">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-text">
+                        <span class="stat-number">{{ available_exams }}</span>
+                        <span class="stat-label">Available Exams</span>
+                    </div>
+                </div>
+                <div class="stat-box completed-exams">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-text">
+                        <span class="stat-number">{{ completed_exams }}</span>
+                        <span class="stat-label">Completed Exams</span>
+                    </div>
+                </div>
+                <div class="stat-box graded-exams">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-text">
+                        <span class="stat-number">{{ graded_exams }}</span>
+                        <span class="stat-label">Graded Results</span>
+                    </div>
+                </div>
+                <div class="stat-box average-score">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-text">
+                        <span class="stat-number">{{ average_score }}%</span>
+                        <span class="stat-label">Average Score</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="portal-grid">
+            <!-- Exams Section -->
+            <section class="portal-section exams-section">
+                <div class="section-header">
+                    <h2>📝 Available Exams</h2>
+                    <a href="{% url 'siteapp:exam_list' %}" class="view-all-link">View All</a>
+                </div>
+                <div class="content-box">
+                    {% if available_exam_list %}
+                        <div class="exams-list">
+                            {% for exam in available_exam_list %}
+                            <div class="exam-card">
+                                <div class="exam-header">
+                                    <h3>{{ exam.title }}</h3>
+                                    <span class="exam-category">{{ exam.get_category_display }}</span>
+                                </div>
+                                <p class="exam-description">{{ exam.description|truncatewords:15 }}</p>
+                                <div class="exam-meta">
+                                    <span class="meta-item">
+                                        <span class="meta-icon">⏱️</span>
+                                        <span>{{ exam.duration_minutes }} mins</span>
+                                    </span>
+                                    <span class="meta-item">
+                                        <span class="meta-icon">📌</span>
+                                        <span>{{ exam.total_marks }} marks</span>
+                                    </span>
+                                    <span class="meta-item difficulty-{{ exam.level }}">
+                                        <span class="meta-icon">⭐</span>
+                                        <span>{{ exam.get_level_display }}</span>
+                                    </span>
+                                </div>
+                                <a href="{% url 'siteapp:exam_detail' exam.id %}" class="btn-exam-detail">Start Exam →</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <span class="empty-icon">📋</span>
+                            <h3>No Available Exams</h3>
+                            <p>Check back later for new exams or browse our blog for learning materials.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Recent Results Section -->
+            <section class="portal-section results-section">
+                <div class="section-header">
+                    <h2>📊 Recent Results</h2>
+                </div>
+                <div class="content-box">
+                    {% if recent_attempts %}
+                        <div class="results-list">
+                            {% for attempt in recent_attempts %}
+                            <div class="result-item">
+                                <div class="result-header">
+                                    <h4>{{ attempt.exam.title }}</h4>
+                                    <span class="result-status status-{{ attempt.status }}">{{ attempt.get_status_display }}</span>
+                                </div>
+                                <div class="result-score">
+                                    {% if attempt.score %}
+                                        <div class="score-display">
+                                            <span class="score-value">{{ attempt.percentage|floatformat:1 }}%</span>
+                                            {% if attempt.is_passed %}
+                                                <span class="badge-passed">✓ Passed</span>
+                                            {% else %}
+                                                <span class="badge-failed">✗ Failed</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="score-pending">Awaiting Results</span>
+                                    {% endif %}
+                                </div>
+                                <div class="result-date">
+                                    {{ attempt.created_at|date:"M d, Y" }}
+                                </div>
+                                <a href="{% url 'siteapp:exam_results' attempt.id %}" class="result-link">View Details →</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <span class="empty-icon">📊</span>
+                            <h3>No Results Yet</h3>
+                            <p>Your exam results will appear here once you complete and submit an exam.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        <!-- Announcements Section -->
+        {% if announcements %}
+        <section class="portal-section announcements-section">
+            <div class="section-header">
+                <h2>📢 Latest Announcements</h2>
+            </div>
+            <div class="announcements-container">
+                {% for announcement in announcements %}
+                <div class="announcement-card priority-{{ announcement.priority }}">
+                    <div class="announcement-header">
+                        <h3>{{ announcement.title }}</h3>
+                        {% if announcement.priority == 2 %}
+                            <span class="priority-badge urgent">Urgent</span>
+                        {% elif announcement.priority == 1 %}
+                            <span class="priority-badge important">Important</span>
+                        {% endif %}
+                    </div>
+                    <p class="announcement-content">{{ announcement.content|truncatewords:30 }}</p>
+                    <span class="announcement-date">{{ announcement.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About Bluewave Academy</h4>
+                <p>Digitalizing Dreams Through Technology and Innovation</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+                    <li><a href="{% url 'siteapp:about' %}">About</a></li>
+                    <li><a href="{% url 'siteapp:blog_list' %}">Blog</a></li>
+                    <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Email: academybluewave@gmail.com</p>
+                <p>Phone: +263-718-176-525</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // User menu dropdown toggle
+        const userMenu = document.querySelector('.user-menu');
+        if (userMenu) {
+            userMenu.addEventListener('click', function(e) {
+                if (e.target.closest('.user-info, .user-avatar')) {
+                    this.classList.toggle('active');
+                }
+            });
+            document.addEventListener('click', function(e) {
+                if (!userMenu.contains(e.target)) {
+                    userMenu.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

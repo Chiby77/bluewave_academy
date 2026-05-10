@@ -1,0 +1,532 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Edit Exam - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+<style>
+.main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.card h3 {
+    color: #1e40af;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #1f2937;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-add-question {
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.btn-add-question:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.questions-list {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.question-item {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #1e40af;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.question-item:last-child {
+    margin-bottom: 0;
+}
+
+.question-info {
+    flex: 1;
+}
+
+.question-order {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.question-text {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.question-meta {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.question-type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.badge-mcq {
+    background: #dbeafe;
+    color: #0c4a6e;
+}
+
+.badge-truefalse {
+    background: #fce7f3;
+    color: #831843;
+}
+
+.question-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-edit {
+    background: #3b82f6;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-edit:hover {
+    background: #2563eb;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.header-back {
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-back a {
+    color: #1e40af;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #16a34a;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #dc2626;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+@media (max-width: 1024px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Exam Management</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
+                            <i class="icon">📋</i> All Exams
+                        </a></li>
+                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
+                            <i class="icon">➕</i> Create New Exam
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="header-back">
+                <a href="{% url 'siteapp:exam_list_admin' %}">← Back to All Exams</a>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="main-grid">
+                <!-- Left Column: Exam Details Form -->
+                <div>
+                    <div class="card">
+                        <h3>📝 Edit Exam Details</h3>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+
+                            <div class="form-group">
+                                <label for="title">Exam Title *</label>
+                                <input type="text" name="title" id="title" value="{{ exam.title }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea name="description" id="description">{{ exam.description }}</textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="category">Category *</label>
+                                    <select name="category" id="category" required>
+                                        {% for value, label in categories %}
+                                            <option value="{{ value }}" {% if exam.category == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="level">Level *</label>
+                                    <select name="level" id="level" required>
+                                        {% for value, label in levels %}
+                                            <option value="{{ value }}" {% if exam.level == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row-3">
+                                <div class="form-group">
+                                    <label for="duration_minutes">Duration (minutes) *</label>
+                                    <input type="number" name="duration_minutes" id="duration_minutes" value="{{ exam.duration_minutes }}" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="total_marks">Total Marks *</label>
+                                    <input type="number" name="total_marks" id="total_marks" value="{{ exam.total_marks }}" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="passing_marks">Passing Marks *</label>
+                                    <input type="number" name="passing_marks" id="passing_marks" value="{{ exam.passing_marks }}" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="start_date">Start Date *</label>
+                                    <input type="datetime-local" name="start_date" id="start_date" value="{{ exam.start_date|date:'Y-m-dTH:i' }}" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="end_date">End Date *</label>
+                                    <input type="datetime-local" name="end_date" id="end_date" value="{{ exam.end_date|date:'Y-m-dTH:i' }}" required>
+                                </div>
+                            </div>
+
+                            <h4 style="color: #374151; margin-top: 2rem; margin-bottom: 1rem;">Options</h4>
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="is_active" id="is_active" {% if exam.is_active %}checked{% endif %}>
+                                <label for="is_active" style="margin: 0;">Active</label>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="enable_instant_grading" id="enable_instant_grading" {% if exam.enable_instant_grading %}checked{% endif %}>
+                                <label for="enable_instant_grading" style="margin: 0;">Enable Instant Grading</label>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="show_answers_after_submit" id="show_answers_after_submit" {% if exam.show_answers_after_submit %}checked{% endif %}>
+                                <label for="show_answers_after_submit" style="margin: 0;">Show Answers After Submit</label>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="shuffle_questions" id="shuffle_questions" {% if exam.shuffle_questions %}checked{% endif %}>
+                                <label for="shuffle_questions" style="margin: 0;">Shuffle Questions</label>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="shuffle_options" id="shuffle_options" {% if exam.shuffle_options %}checked{% endif %}>
+                                <label for="shuffle_options" style="margin: 0;">Shuffle Options</label>
+                            </div>
+
+                            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                                <button type="submit" class="btn-primary">💾 Save Changes</button>
+                                <a href="{% url 'siteapp:exam_list_admin' %}" class="btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column: Quick Info -->
+                <div>
+                    <div class="card">
+                        <h3>ℹ️ Exam Info</h3>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Questions</div>
+                            <div style="font-size: 2rem; font-weight: 700; color: #1e40af;">{{ questions|length }}</div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Total Marks</div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #1f2937;">{{ exam.total_marks }}</div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Pass Marks</div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #1f2937;">{{ exam.passing_marks }}</div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">Duration</div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #1f2937;">{{ exam.duration_minutes }} min</div>
+                        </div>
+
+                        <div style="padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                            <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem;">Status</div>
+                            {% if exam.is_active %}
+                                <span style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Active</span>
+                            {% else %}
+                                <span style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions Section -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0;">❓ Exam Questions ({{ questions|length }})</h3>
+                    <a href="{% url 'siteapp:add_question' exam.id %}" class="btn-add-question">+ Add New Question</a>
+                </div>
+
+                {% if questions %}
+                    <div class="questions-list">
+                        {% for question in questions %}
+                            <div class="question-item">
+                                <div class="question-info">
+                                    <div class="question-order">Question #{{ question.order }}</div>
+                                    <div class="question-text">{{ question.question_text|truncatewords:20 }}</div>
+                                    <div class="question-meta">
+                                        <span class="question-type-badge {% if question.question_type == 'mcq' %}badge-mcq{% elif question.question_type == 'true_false' %}badge-truefalse{% endif %}">
+                                            {{ question.get_question_type_display }}
+                                        </span>
+                                        <span>{{ question.marks }} mark{{ question.marks|pluralize }}</span>
+                                    </div>
+                                </div>
+                                <div class="question-actions">
+                                    <a href="{% url 'siteapp:edit_question' exam.id question.id %}" class="btn-edit">✏️ Edit</a>
+                                    <form method="post" action="{% url 'siteapp:delete_question' exam.id question.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this question?');">🗑️ Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-message">
+                        <p>📭 No questions added yet</p>
+                        <p style="font-size: 0.9rem; margin-top: 1rem;">
+                            <a href="{% url 'siteapp:add_question' exam.id %}" style="color: #1e40af; text-decoration: none; font-weight: 600;">Add the first question →</a>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+{% endblock %}

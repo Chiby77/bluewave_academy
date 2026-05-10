@@ -1,0 +1,270 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Bluewave Academy{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item active">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Exam Management</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
+                            <i class="icon">📋</i> All Exams
+                        </a></li>
+                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
+                            <i class="icon">➕</i> Create New Exam
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Grading & Results</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item">
+                            <i class="icon">📝</i> View Attempts
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>Admin Dashboard</h2>
+                <p class="subtitle">Real-time exam management and analytics</p>
+            </div>
+
+            <!-- Alerts -->
+            {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="close-alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Quick Stats Section -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <span>📚</span>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="stat-exams">{{ total_exams }}</div>
+                        <div class="stat-label">Total Exams</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <span>👥</span>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="stat-students">{{ total_students }}</div>
+                        <div class="stat-label">Active Students</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <span>🎯</span>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="stat-attempts">{{ total_attempts }}</div>
+                        <div class="stat-label">Total Attempts</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <span>✅</span>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="stat-pass-rate">{{ pass_rate }}%</div>
+                        <div class="stat-label">Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Held Exams Alert -->
+            {% if held_exams > 0 %}
+            <div class="alert alert-warning" style="margin: 20px 0;">
+                <strong>⚠️ {{ held_exams }} exam(s) are currently held</strong>
+                <a href="{% url 'siteapp:exam_list_admin' %}?status=held" style="margin-left: 10px; text-decoration: underline;">View held exams</a>
+            </div>
+            {% endif %}
+
+            <!-- Charts and Analytics -->
+            <div class="dashboard-grid">
+                <!-- Category Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Exams by Category</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="category-list">
+                            {% for stat in category_stats %}
+                            <div class="category-item">
+                                <div class="category-name">{{ stat.category }}</div>
+                                <div class="category-bar">
+                                    {% widthratio stat.count total_exams 100 as width_percent %}
+                                    <div class="bar-fill" style="width: {% widthratio stat.count total_exams 100 %}%;">
+                                        {{ stat.count }}
+                                    </div>
+                                </div>
+                                {% if stat.avg_score %}
+                                <div class="category-score">Avg: {{ stat.avg_score|floatformat:2 }}%</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Attempts -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Exam Attempts</h3>
+                        <a href="{% url 'siteapp:view_attempts' %}" class="btn-small">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="attempts-list" id="recent-attempts">
+                            {% for attempt in recent_attempts %}
+                            <div class="attempt-item">
+                                <div class="attempt-left">
+                                    <div class="attempt-student">{{ attempt.student.get_full_name }}</div>
+                                    <div class="attempt-exam">{{ attempt.exam.title }}</div>
+                                </div>
+                                <div class="attempt-right">
+                                    <span class="badge status-{{ attempt.status }}">{{ attempt.get_status_display }}</span>
+                                    {% if attempt.score %}
+                                    <div class="attempt-score">{{ attempt.score|floatformat:2 }} / {{ attempt.exam.total_marks }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="empty-state">No attempts yet</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card" style="margin-top: 30px;">
+                <div class="card-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="actions-grid">
+                        <a href="{% url 'siteapp:create_exam' %}" class="action-button">
+                            <span class="action-icon">➕</span>
+                            <span class="action-text">Create New Exam</span>
+                        </a>
+                        <a href="{% url 'siteapp:exam_list_admin' %}" class="action-button">
+                            <span class="action-icon">📋</span>
+                            <span class="action-text">Manage Exams</span>
+                        </a>
+                        <a href="{% url 'siteapp:view_attempts' %}" class="action-button">
+                            <span class="action-icon">📝</span>
+                            <span class="action-text">Grade Attempts</span>
+                        </a>
+                        <a href="/admin/siteapp/exam/" class="action-button">
+                            <span class="action-icon">⚙️</span>
+                            <span class="action-text">Django Admin</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Auto-refresh stats every 30 seconds
+setInterval(function() {
+    fetch('{% url "siteapp:api_dashboard_stats" %}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('stat-exams').textContent = data.total_exams;
+            document.getElementById('stat-students').textContent = data.total_students;
+            document.getElementById('stat-attempts').textContent = data.total_attempts;
+            document.getElementById('stat-pass-rate').textContent = data.pass_rate;
+        });
+
+    // Refresh recent attempts
+    fetch('{% url "siteapp:api_recent_attempts" %}')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('recent-attempts');
+            container.innerHTML = data.attempts.map(attempt => `
+                <div class="attempt-item">
+                    <div class="attempt-left">
+                        <div class="attempt-student">${attempt.student}</div>
+                        <div class="attempt-exam">${attempt.exam}</div>
+                    </div>
+                    <div class="attempt-right">
+                        <span class="badge status-${attempt.status}">${attempt.status}</span>
+                        <div class="attempt-score">${attempt.score.toFixed(2)} / 100</div>
+                    </div>
+                </div>
+            `).join('');
+        });
+}, 30000);
+
+// Close alerts
+document.querySelectorAll('.close-alert').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentElement.remove();
+    });
+});
+</script>
+{% endblock %}

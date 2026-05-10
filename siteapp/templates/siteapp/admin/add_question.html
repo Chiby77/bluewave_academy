@@ -1,0 +1,433 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Add Question - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+<style>
+    .question-form {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .question-form h2 {
+        color: #1e40af;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+    }
+
+    .form-section h3 {
+        color: #374151;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #1e40af;
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-row-full {
+        grid-column: 1 / -1;
+    }
+
+    .options-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 6px;
+    }
+
+    .option-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .option-input input {
+        flex: 1;
+    }
+
+    .option-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .option-label input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .true-false-options {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .true-false-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .true-false-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .true-false-option label {
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .type-specific {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f0f9ff;
+        border-left: 4px solid #1e40af;
+        border-radius: 6px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-primary {
+        flex: 0 0 auto;
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+
+    .btn-secondary {
+        flex: 0 0 auto;
+        background: #e5e7eb;
+        color: #1f2937;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-secondary:hover {
+        background: #d1d5db;
+    }
+
+    .header-back {
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header-back a {
+        color: #1e40af;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .header-back a:hover {
+        text-decoration: underline;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 2rem;
+    }
+
+    .alert-success {
+        background: #dcfce7;
+        color: #166534;
+        border-left: 4px solid #16a34a;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid #dc2626;
+    }
+
+    .exam-info {
+        background: #f0f9ff;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #0084ff;
+    }
+
+    .exam-info strong {
+        color: #1e40af;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Exam Management</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
+                            <i class="icon">📋</i> All Exams
+                        </a></li>
+                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
+                            <i class="icon">➕</i> Create New Exam
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="header-back">
+                <a href="{% url 'siteapp:edit_exam' exam.id %}">← Back to Exam</a>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="exam-info">
+                <strong>Exam:</strong> {{ exam.title }}<br>
+                <small>Total Questions: {{ exam.questions.count }}</small>
+            </div>
+
+            <div class="question-form">
+                <h2>➕ Add New Question</h2>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- Basic Info -->
+                    <div class="form-section">
+                        <h3>Question Details</h3>
+
+                        <div class="form-group">
+                            <label for="question_type">Question Type *</label>
+                            <select name="question_type" id="question_type" required onchange="updateQuestionType()">
+                                <option value="">-- Select Type --</option>
+                                <option value="mcq">Multiple Choice (MCQ)</option>
+                                <option value="true_false">True / False</option>
+                                <option value="short_answer">Short Answer</option>
+                                <option value="essay">Essay</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question_text">Question *</label>
+                            <textarea name="question_text" id="question_text" required placeholder="Enter the question text..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="marks">Marks (Points) *</label>
+                                <input type="number" name="marks" id="marks" value="1" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MCQ Options -->
+                    <div class="form-section" id="mcq-section" style="display: none;">
+                        <h3>MCQ Options</h3>
+
+                        <div class="options-container">
+                            <div>
+                                <div class="option-label">
+                                    <input type="radio" name="correct_answer" value="A" id="correct_a">
+                                    <label for="correct_a">Option A (Correct)</label>
+                                </div>
+                                <input type="text" name="option_a" placeholder="Enter option A">
+                            </div>
+
+                            <div>
+                                <div class="option-label">
+                                    <input type="radio" name="correct_answer" value="B" id="correct_b">
+                                    <label for="correct_b">Option B (Correct)</label>
+                                </div>
+                                <input type="text" name="option_b" placeholder="Enter option B">
+                            </div>
+
+                            <div>
+                                <div class="option-label">
+                                    <input type="radio" name="correct_answer" value="C" id="correct_c">
+                                    <label for="correct_c">Option C (Correct)</label>
+                                </div>
+                                <input type="text" name="option_c" placeholder="Enter option C">
+                            </div>
+
+                            <div>
+                                <div class="option-label">
+                                    <input type="radio" name="correct_answer" value="D" id="correct_d">
+                                    <label for="correct_d">Option D (Correct)</label>
+                                </div>
+                                <input type="text" name="option_d" placeholder="Enter option D">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- True/False Options -->
+                    <div class="form-section" id="truefalse-section" style="display: none;">
+                        <h3>Correct Answer</h3>
+
+                        <div class="true-false-options">
+                            <div class="true-false-option">
+                                <input type="radio" name="correct_answer" value="true" id="ans_true">
+                                <label for="ans_true">True</label>
+                            </div>
+                            <div class="true-false-option">
+                                <input type="radio" name="correct_answer" value="false" id="ans_false">
+                                <label for="ans_false">False</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explanation -->
+                    <div class="form-section">
+                        <h3>Explanation (Optional)</h3>
+
+                        <div class="form-group">
+                            <label for="explanation">Explanation</label>
+                            <textarea name="explanation" id="explanation" placeholder="Provide explanation for the answer..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">✓ Add Question</button>
+                        <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function updateQuestionType() {
+    const type = document.getElementById('question_type').value;
+    document.getElementById('mcq-section').style.display = type === 'mcq' ? 'block' : 'none';
+    document.getElementById('truefalse-section').style.display = type === 'true_false' ? 'block' : 'none';
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,278 @@
+/* =========================================
+   DOWNLOADS PAGE STYLES
+   ========================================= */
+
+/* Header Customization */
+.downloads-header {
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.header-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.8) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+.gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.2;
+}
+
+.gradient-orb-1 {
+    width: 300px;
+    height: 300px;
+    background: var(--primary-blue);
+    top: -50px;
+    right: -50px;
+    animation: float 8s ease-in-out infinite;
+}
+
+.gradient-orb-2 {
+    width: 250px;
+    height: 250px;
+    background: var(--accent-cyan);
+    bottom: -50px;
+    left: -50px;
+    animation: float 10s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(30px); }
+}
+
+.header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.header-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content p {
+    font-size: 1.2rem;
+    opacity: 0.95;
+    margin-top: 15px;
+}
+
+.animate-title {
+    animation: slideDown 0.8s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   DOWNLOAD SECTIONS
+   ========================================= */
+.download-section {
+    padding: 60px 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+}
+
+.download-section:last-child {
+    border-bottom: none;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+.section-heading .icon {
+    font-size: 2.5rem;
+}
+
+.section-heading h2 {
+    font-size: 1.75rem;
+    color: var(--navy-blue);
+    font-weight: 700;
+    margin: 0;
+}
+
+.section-subtitle {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin-top: 8px;
+}
+
+/* =========================================
+   DOWNLOAD GRID & CARDS
+   ========================================= */
+.download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.download-card {
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+}
+
+.download-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-blue);
+}
+
+.file-badge,
+.paper-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+    margin-bottom: 15px;
+}
+
+.paper-badge {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--primary-blue));
+}
+
+.download-card h3 {
+    font-size: 1.2rem;
+    color: var(--navy-blue);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.download-card p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    flex-grow: 1;
+    line-height: 1.6;
+}
+
+.download-card .btn {
+    align-self: flex-start;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+
+.download-card .btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+    color: var(--white);
+    border: none;
+}
+
+.download-card .btn-primary:hover {
+    background: var(--dark-blue);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+}
+
+.download-card .btn-secondary {
+    background: transparent;
+    color: var(--primary-blue);
+    border: 2px solid var(--primary-blue);
+}
+
+.download-card .btn-secondary:hover {
+    background: var(--light-blue);
+}
+
+/* Special styling for paper cards */
+.paper-card {
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.8), rgba(6, 182, 212, 0.05));
+    border: 2px solid rgba(6, 182, 212, 0.2);
+}
+
+.paper-card:hover {
+    border-color: var(--accent-cyan);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 1), rgba(6, 182, 212, 0.1));
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+   ========================================= */
+@media (max-width: 768px) {
+    .header-content h1 {
+        font-size: 2rem;
+    }
+
+    .header-content p {
+        font-size: 1rem;
+    }
+
+    .section-heading {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .section-heading .icon {
+        font-size: 2rem;
+    }
+
+    .section-heading h2 {
+        font-size: 1.5rem;
+    }
+
+    .download-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .download-section {
+        padding: 40px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 20px;
+    }
+
+    .header-content h1 {
+        font-size: 1.75rem;
+    }
+
+    .section-heading {
+        margin-bottom: 25px;
+    }
+
+    .download-card {
+        padding: 20px;
+    }
+
+    .download-card h3 {
+        font-size: 1.1rem;
+    }
+
+    .download-card p {
+        font-size: 0.9rem;
+    }
+}

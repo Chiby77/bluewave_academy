@@ -1,0 +1,27 @@
+{% if attempts %}
+    {% for attempt in attempts %}
+        <div class="performance-row">
+            <div class="performance-exam">
+                <h4>{{ attempt.exam.title }}</h4>
+                <span class="performance-date">{{ attempt.created_at|date:'M d, Y' }}</span>
+            </div>
+            <div class="performance-score">
+                <span class="score-value">{{ attempt.percentage }}%</span>
+                {% if attempt.percentage >= 80 %}
+                    <span class="score-badge excellent">Excellent</span>
+                {% elif attempt.percentage >= 60 %}
+                    <span class="score-badge good">Good</span>
+                {% elif attempt.percentage >= 40 %}
+                    <span class="score-badge fair">Fair</span>
+                {% else %}
+                    <span class="score-badge poor">Needs Improvement</span>
+                {% endif %}
+            </div>
+            <a href="{% url 'siteapp:exam_results' attempt.id %}" class="view-link">View Details →</a>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-message">
+        <p>Complete exams to see your detailed performance analytics</p>
+    </div>
+{% endif %}

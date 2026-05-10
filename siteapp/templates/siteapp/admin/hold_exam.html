@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hold Exam: {{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h2>Hold Exam: {{ exam.title }}</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="reason">Reason for holding the exam:</label>
+                    <textarea class="form-control" id="reason" name="reason" rows="3">Exam held by administrator.</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="resume_at">Resume at (optional):</label>
+                    <input type="datetime-local" class="form-control" id="resume_at" name="resume_at">
+                </div>
+                <button type="submit" class="btn btn-danger">Hold Exam</button>
+                <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

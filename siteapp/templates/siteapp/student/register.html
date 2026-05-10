@@ -1,0 +1,109 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Register - BlueWave Academy{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="auth-header">
+            <h1>🚀 Get Started</h1>
+            <p>Create your student account</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button class="alert-close">&times;</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_first_name">First Name</label>
+                <input type="text" id="id_first_name" name="first_name" placeholder="John" required>
+                {% if form.first_name.errors %}
+                    <span class="field-error">{{ form.first_name.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_last_name">Last Name</label>
+                <input type="text" id="id_last_name" name="last_name" placeholder="Doe" required>
+                {% if form.last_name.errors %}
+                    <span class="field-error">{{ form.last_name.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_email">Email Address</label>
+                <input type="email" id="id_email" name="email" placeholder="john@example.com" required>
+                {% if form.email.errors %}
+                    <span class="field-error">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password1">Password</label>
+                <input type="password" id="id_password1" name="password1" placeholder="••••••••" required>
+                {% if form.password1.errors %}
+                    <span class="field-error">{{ form.password1.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password2">Confirm Password</label>
+                <input type="password" id="id_password2" name="password2" placeholder="••••••••" required>
+                {% if form.password2.errors %}
+                    <span class="field-error">{{ form.password2.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_school">School/Institution (Optional)</label>
+                <input type="text" id="id_school" name="school" placeholder="Your school name">
+            </div>
+
+            <div class="form-group checkbox">
+                <input type="checkbox" id="id_terms" name="agree_terms" required>
+                <label for="id_terms">I agree to the <a href="{% url 'siteapp:terms_of_service' %}" target="_blank">Terms of Service</a> and <a href="{% url 'siteapp:privacy_policy' %}" target="_blank">Privacy Policy</a></label>
+            </div>
+
+            <button type="submit" class="btn-primary btn-large">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{% url 'siteapp:login' %}">Sign in here</a></p>
+        </div>
+    </div>
+
+    <div class="auth-side">
+        <div class="side-content">
+            <h2>Join Thousands 👥</h2>
+            <p>Start your learning journey with BlueWave Academy today</p>
+            <ul class="features">
+                <li>✅ Free registration</li>
+                <li>📚 Unlimited exam access</li>
+                <li>🎯 Smart study recommendations</li>
+                <li>📱 Mobile-friendly platform</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.alert-close').forEach(btn => {
+    btn.addEventListener('click', () => {
+        btn.parentElement.style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+<div class="profile-card">
+    <div class="profile-header">
+        <div class="profile-avatar">{{ user.first_name|first }}</div>
+        <div class="profile-info">
+            <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+            <p class="profile-email">{{ user.email }}</p>
+        </div>
+    </div>
+
+    <div class="profile-details">
+        <div class="detail-row">
+            <span class="label">Username</span>
+            <span class="value">{{ user.username }}</span>
+        </div>
+        {% if user.customuser.school %}
+            <div class="detail-row">
+                <span class="label">School</span>
+                <span class="value">{{ user.customuser.school }}</span>
+            </div>
+        {% endif %}
+        {% if user.customuser.student_id %}
+            <div class="detail-row">
+                <span class="label">Student ID</span>
+                <span class="value">{{ user.customuser.student_id }}</span>
+            </div>
+        {% endif %}
+        {% if user.customuser.phone %}
+            <div class="detail-row">
+                <span class="label">Phone</span>
+                <span class="value">{{ user.customuser.phone }}</span>
+            </div>
+        {% endif %}
+        <div class="detail-row">
+            <span class="label">Member Since</span>
+            <span class="value">{{ user.date_joined|date:'M d, Y' }}</span>
+        </div>
+    </div>
+
+    <div class="profile-actions">
+        <a href="{% url 'siteapp:edit_profile' %}" class="btn-primary">✏️ Edit Profile</a>
+        <a href="{% url 'siteapp:password_reset' %}" class="btn-secondary">🔐 Change Password</a>
+    </div>
+</div>

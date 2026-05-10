@@ -1,0 +1,30 @@
+{% if exams %}
+    {% for exam in exams %}
+        <div class="exam-card">
+            <div class="exam-header">
+                <h3>{{ exam.title }}</h3>
+                <span class="exam-status available">Available</span>
+            </div>
+            <p class="exam-description">{{ exam.description|truncatechars:100 }}</p>
+            <div class="exam-details">
+                <span class="detail-item">
+                    <span class="detail-icon">⏱️</span>
+                    <span>{{ exam.duration }}m</span>
+                </span>
+                <span class="detail-item">
+                    <span class="detail-icon">❓</span>
+                    <span>{{ exam.questions.count }} Questions</span>
+                </span>
+                <span class="detail-item">
+                    <span class="detail-icon">📅</span>
+                    <span>{{ exam.start_date|date:'M d' }}</span>
+                </span>
+            </div>
+            <a href="{% url 'siteapp:take_exam' exam.id %}" class="btn-primary">Start Exam</a>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-message">
+        <p>No exams available at this time. Check back soon!</p>
+    </div>
+{% endif %}

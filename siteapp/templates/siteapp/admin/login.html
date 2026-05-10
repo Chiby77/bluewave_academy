@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Bluewave Academy</title>
+    <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <style>
+        /* Subtle admin-specific styling */
+        .admin-login-container {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 64, 175, 0.1));
+        }
+        
+        .admin-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #ef4444;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .auth-form-wrapper.admin {
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            background: rgba(255, 255, 255, 0.98);
+        }
+    </style>
+</head>
+<body>
+    <!-- Minimal Navigation -->
+    <nav class="navbar" style="position: relative; z-index: 100;">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+                <span>Bluewave Academy</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="auth-hero admin-login-container">
+        <div class="auth-background">
+            <div class="gradient-orb gradient-orb-1" style="opacity: 0.15;"></div>
+            <div class="gradient-orb gradient-orb-2" style="opacity: 0.15;"></div>
+        </div>
+
+        <div class="auth-container">
+            <div class="auth-form-wrapper admin">
+                <div class="auth-header">
+                    <div class="admin-badge">🔐 Admin Portal</div>
+                    <h1 style="font-size: 1.8rem;">Administration</h1>
+                    <p>Secure access for administrators only</p>
+                </div>
+
+                <!-- Django Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" style="margin-bottom: 20px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" id="adminLoginForm" class="auth-form">
+                    {% csrf_token %}
+                   
+                    <div class="form-group">
+                        <label for="id_username">Email Address</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <small class="error-text">{{ form.username.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <small class="error-text">{{ form.password.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #ef4444, #dc2626);">Access Administration</button>
+
+                    <div class="auth-footer" style="text-align: center; margin-top: 30px;">
+                        <a href="{% url 'siteapp:home' %}" style="color: #64748b; text-decoration: none;">← Back to Home</a>
+                    </div>
+                </form>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 0.85rem; color: #94a3b8;">
+                    <p>🔒 This is a secure area. Access is restricted to authorized administrators.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" style="margin-top: 40px;">
+        <div class="footer-bottom">
+            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Manage Exams - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation (Same as dashboard) -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Exam Management</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item active">
+                            <i class="icon">📋</i> All Exams
+                        </a></li>
+                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
+                            <i class="icon">➕</i> Create New Exam
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Grading & Results</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item">
+                            <i class="icon">📝</i> View Attempts
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>Manage Exams</h2>
+                <p class="subtitle">View, edit, delete, and manage all exams</p>
+            </div>
+
+            <!-- Alerts -->
+            {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="close-alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Filter Section -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="get" class="filter-form" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="category">Category</label>
+                            <select name="category" id="category" style="padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; width: 100%;">
+                                <option value="">All Categories</option>
+                                {% for value, label in categories %}
+                                <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="level">Level</label>
+                            <select name="level" id="level" style="padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; width: 100%;">
+                                <option value="">All Levels</option>
+                                {% for value, label in levels %}
+                                <option value="{{ value }}" {% if request.GET.level == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="status">Status</label>
+                            <select name="status" id="status" style="padding: 0.75rem; border: 1px solid var(--admin-border); border-radius: 6px; width: 100%;">
+                                <option value="">All Statuses</option>
+                                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                <option value="held" {% if request.GET.status == 'held' %}selected{% endif %}>Held</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Filter</button>
+                        <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-outline" style="white-space: nowrap;">Reset</a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Exams Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>All Exams ({{ exams.count }})</h3>
+                    <a href="{% url 'siteapp:create_exam' %}" class="btn btn-primary">+ Create Exam</a>
+                </div>
+                <div class="card-body">
+                    {% if exams %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Exam Title</th>
+                                    <th>Category</th>
+                                    <th>Level</th>
+                                    <th>Questions</th>
+                                    <th>Attempts</th>
+                                    <th>Pass Rate</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exam in exams %}
+                                <tr>
+                                    <td><strong>{{ exam.title }}</strong></td>
+                                    <td>{{ exam.get_category_display }}</td>
+                                    <td>
+                                        {% if exam.level == 'beginner' %}
+                                            <span class="badge" style="background: #dcfce7; color: #166534;">{{ exam.get_level_display }}</span>
+                                        {% elif exam.level == 'intermediate' %}
+                                            <span class="badge" style="background: #fef3c7; color: #92400e;">{{ exam.get_level_display }}</span>
+                                        {% else %}
+                                            <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ exam.get_level_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ exam.question_count }}</strong></td>
+                                    <td>{{ exam.attempt_count }}</td>
+                                    <td>
+                                        {% if exam.attempt_count > 0 %}
+                                            {% widthratio passed_count exam.attempt_count 100 as pass_rate %}
+                                            {% if pass_rate >= 70 %}
+                                                <span class="badge" style="background: #dcfce7; color: #166534;">{{ pass_rate }}%</span>
+                                            {% elif pass_rate >= 50 %}
+                                                <span class="badge" style="background: #fef3c7; color: #92400e;">{{ pass_rate }}%</span>
+                                            {% else %}
+                                                <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ pass_rate }}%</span>
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if exam.is_held %}
+                                            <span class="badge" style="background: #fee2e2; color: #991b1b;">🔒 Held</span>
+                                        {% elif exam.is_active %}
+                                            <span class="badge" style="background: #dcfce7; color: #166534;">✓ Active</span>
+                                        {% else %}
+                                            <span class="badge" style="background: #f3f4f6; color: #6b7280;">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">Edit</a>
+                                            <a href="{% url 'siteapp:preview_exam' exam.id %}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">Preview</a>
+                                            {% if not exam.is_held %}
+                                                <form method="post" action="{% url 'siteapp:hold_exam' exam.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="reason" value="Held by admin">
+                                                    <button type="submit" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">Hold</button>
+                                                </form>
+                                            {% else %}
+                                                <a href="{% url 'siteapp:resume_exam' exam.id %}" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">Resume</a>
+                                            {% endif %}
+                                            {% if exam.attempt_count == 0 %}
+                                                <form method="post" action="{% url 'siteapp:delete_exam' exam.id %}" onsubmit="return confirm('Are you sure you want to delete this exam?');" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger" style="font-size: 0.8rem; padding: 0.5rem 0.75rem;">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <p>No exams found. <a href="{% url 'siteapp:create_exam' %}">Create one now</a></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Close alerts
+document.querySelectorAll('.close-alert').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentElement.remove();
+    });
+});
+</script>
+{% endblock %}

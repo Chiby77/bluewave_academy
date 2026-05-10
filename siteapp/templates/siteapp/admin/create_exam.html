@@ -1,0 +1,241 @@
+{% extends "siteapp/base.html" %}
+{% load static %}
+
+{% block title %}Create Exam - Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="admin-badge">ADMIN</span>
+                <h1>Bluewave Academy Admin</h1>
+            </div>
+            <div class="navbar-right">
+                <div class="admin-menu">
+                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
+                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <h3 class="menu-title">Dashboard</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
+                            <i class="icon">📊</i> Overview
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">Exam Management</h3>
+                    <ul class="menu-items">
+                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
+                            <i class="icon">📋</i> All Exams
+                        </a></li>
+                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item active">
+                            <i class="icon">➕</i> Create New Exam
+                        </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-section">
+                    <h3 class="menu-title">System</h3>
+                    <ul class="menu-items">
+                        <li><a href="/admin/" class="menu-item">
+                            <i class="icon">⚙️</i> Django Admin
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>Create New Exam</h2>
+                <p class="subtitle">Add a new exam to the system</p>
+            </div>
+
+            <!-- Alerts -->
+            {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="close-alert">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" class="exam-form">
+                        {% csrf_token %}
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <!-- Left Column -->
+                            <div>
+                                <h3 style="margin-bottom: 1.5rem; color: var(--admin-navy);">Basic Information</h3>
+
+                                <div class="form-group">
+                                    <label for="title">Exam Title *</label>
+                                    <input type="text" name="title" id="title" required placeholder="e.g., Python Programming Midterm">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="category">Category *</label>
+                                    <select name="category" id="category" required>
+                                        <option value="">Select category</option>
+                                        {% for value, label in categories %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="level">Difficulty Level *</label>
+                                    <select name="level" id="level" required>
+                                        <option value="">Select level</option>
+                                        {% for value, label in levels %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="duration_minutes">Duration (minutes) *</label>
+                                    <input type="number" name="duration_minutes" id="duration_minutes" required value="60" min="1">
+                                </div>
+
+                                <h3 style="margin: 2rem 0 1.5rem 0; color: var(--admin-navy);">Exam Timing</h3>
+
+                                <div class="form-group">
+                                    <label for="start_date">Start Date & Time *</label>
+                                    <input type="datetime-local" name="start_date" id="start_date" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="end_date">End Date & Time *</label>
+                                    <input type="datetime-local" name="end_date" id="end_date" required>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div>
+                                <h3 style="margin-bottom: 1.5rem; color: var(--admin-navy);">Marks & Settings</h3>
+
+                                <div class="form-group">
+                                    <label for="total_marks">Total Marks *</label>
+                                    <input type="number" name="total_marks" id="total_marks" required value="100" min="1">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="passing_marks">Passing Marks *</label>
+                                    <input type="number" name="passing_marks" id="passing_marks" required value="50" min="0">
+                                </div>
+
+                                <h3 style="margin: 2rem 0 1.5rem 0; color: var(--admin-navy);">Features</h3>
+
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" name="is_active" id="is_active" checked>
+                                    <label for="is_active" style="margin: 0;">Make Active (students can take)</label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" name="enable_instant_grading" id="enable_instant_grading" checked>
+                                    <label for="enable_instant_grading" style="margin: 0;">Enable Instant Grading with Groq AI</label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" name="show_answers_after_submit" id="show_answers_after_submit" checked>
+                                    <label for="show_answers_after_submit" style="margin: 0;">Show Answers After Submission</label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" name="shuffle_questions" id="shuffle_questions">
+                                    <label for="shuffle_questions" style="margin: 0;">Randomize Question Order</label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" name="shuffle_options" id="shuffle_options">
+                                    <label for="shuffle_options" style="margin: 0;">Randomize MCQ Options</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label for="description">Exam Description</label>
+                            <textarea name="description" id="description" placeholder="Enter exam description, instructions, and additional notes..."></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--admin-border);">
+                            <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-outline">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Exam</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card" style="margin-top: 2rem; background: var(--admin-light);">
+                <div class="card-body">
+                    <h3 style="color: var(--admin-navy); margin-bottom: 1rem;">ℹ️ Creating Exams</h3>
+                    <ul style="color: var(--admin-text); line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                        <li><strong>Start & End Dates:</strong> Determine when students can access and take the exam</li>
+                        <li><strong>Marks Configuration:</strong> Set total and passing marks to evaluate student performance</li>
+                        <li><strong>Instant Grading:</strong> Enable Groq AI to automatically grade essay and code answers</li>
+                        <li><strong>Question Shuffling:</strong> Randomize questions/options to prevent cheating</li>
+                        <li><strong>Next Step:</strong> After creating the exam, add questions in the question management section</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Auto-set end date to 2 hours after start date
+document.getElementById('start_date').addEventListener('change', function() {
+    if (this.value) {
+        const startDate = new Date(this.value);
+        const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+        document.getElementById('end_date').value = endDate.toISOString().slice(0, 16);
+    }
+});
+
+// Validate passing marks
+document.getElementById('passing_marks').addEventListener('change', function() {
+    const totalMarks = parseInt(document.getElementById('total_marks').value);
+    const passingMarks = parseInt(this.value);
+    if (passingMarks > totalMarks) {
+        alert('Passing marks cannot be greater than total marks');
+        this.value = totalMarks;
+    }
+});
+
+// Close alerts
+document.querySelectorAll('.close-alert').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.parentElement.remove();
+    });
+});
+</script>
+{% endblock %}

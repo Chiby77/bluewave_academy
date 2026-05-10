@@ -1,0 +1,314 @@
+/* =========================================
+   1. CORE VARIABLES & SETUP
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Poppins:wght@300;400;600;700&display=swap');
+
+:root {
+    --primary-blue: #2563eb;
+    --accent-blue: #0ea5e9;
+    --dark-bg: #020617;
+    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-white: #ffffff;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-white);
+   
+    /* Centering Logic */
+    display: flex;
+    justify-content: center; /* Horizontal center */
+    align-items: center;     /* Vertical center */
+   
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+/* =========================================
+   2. ANIMATED CYBER BACKGROUND
+   ========================================= */
+.background-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+}
+
+.grid-pattern {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(37, 99, 235, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    perspective: 1000px;
+    transform: rotateX(45deg);
+    top: -50%;
+}
+
+.glow-orb {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: var(--primary-blue);
+    filter: blur(120px);
+    border-radius: 50%;
+    opacity: 0.2;
+}
+
+.glow-orb:nth-child(2) { top: -100px; left: -100px; }
+.glow-orb:nth-child(3) { bottom: -100px; right: -100px; background: var(--accent-blue); }
+
+.particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* =========================================
+   3. REGISTRATION CONTAINER
+   ========================================= */
+.register-container {
+    width: 100%;
+    max-width: 600px; /* Wider than login to accommodate form rows */
+    padding: 40px;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter:blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    margin: auto;
+    position: relative;
+}
+
+.logo-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo-section img { height: 45px; margin-bottom: 10px; }
+.logo-section h1 { font-size: 1.8rem; letter-spacing: -0.5px; }
+.logo-section p { color: var(--text-muted); font-size: 0.9rem; }
+.logo h3{
+    color:#ffffff;
+    margin: 0;
+    font-weight: 600px;
+}
+.logo{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+/* =========================================
+   4. FORM LAYOUT & ELEMENTS
+   ========================================= */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group { margin-bottom: 20px; }
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+}
+
+.required { color: var(--danger); }
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    opacity: 0.7;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: white;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.input-wrapper input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+/* =========================================
+   5. PASSWORD STRENGTH & MATCH
+   ========================================= */
+.password-strength {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    width: 0;
+    transition: all 0.4s ease;
+}
+
+.strength-weak { width: 33%; background: var(--danger); }
+.strength-medium { width: 66%; background: var(--warning); }
+.strength-strong { width: 100%; background: var(--success); }
+
+.password-match {
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+.password-match.match { color: var(--success); }
+.password-match.no-match { color: var(--danger); }
+
+/* =========================================
+   6. CHECKBOX & BUTTONS
+   ========================================= */
+.terms-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 25px;
+    color: var(--text-muted);
+}
+
+.terms-checkbox input { margin-top: 4px; }
+.terms-checkbox a { color: var(--accent-blue); text-decoration: none; }
+
+.btn-register {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-register:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+}
+
+.divider {
+    text-align: center;
+    margin: 25px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    position: relative;
+}
+
+.divider::before, .divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--glass-border);
+}
+
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
+.login-link {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.login-link a { color: var(--accent-blue); font-weight: 600; text-decoration: none; }
+.back-home { text-align: center; }
+.back-home a { color: var(--text-muted); font-size: 0.8rem; text-decoration: none; }
+
+/* =========================================
+   7. FOOTER & ALERTS
+   ========================================= */
+.footer {
+    text-align: center;
+    width: 100%;
+    margin-top: 40px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.footer a { color: var(--text-muted); text-decoration: none; margin: 0 5px; }
+
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    text-align: center;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid var(--danger);
+    color: #fca5a5;
+}
+
+/* =========================================
+   8. MOBILE RESPONSIVENESS
+   ========================================= */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr; /* Stack names on mobile */
+    }
+   
+    .register-container {
+        padding: 30px 20px;
+    }
+
+    .logo-section h1 { font-size: 1.5rem; }
+}
