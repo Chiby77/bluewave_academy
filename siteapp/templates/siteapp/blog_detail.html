@@ -4,213 +4,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ post.title }} - Bluewave Academy</title>
-    <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/blog-page.css' %}">
+    <title>{{ post.title }} &mdash; Bluewave Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/blog-redesign.css' %}">
 </head>
-<body class="blog-detail-page">
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
-                <span>Bluewave Academy</span>
+<body>
+
+<!-- =================== NAVBAR =================== -->
+<nav class="blog-nav" id="blogNav">
+    <a href="{% url 'siteapp:home' %}" class="nav-brand">
+        <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+        <span>Bluewave Academy</span>
+    </a>
+    <ul class="nav-links-blog" id="navLinks">
+        <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+        <li><a href="{% url 'siteapp:about' %}">About</a></li>
+        <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+        <li><a href="{% url 'siteapp:blog' %}" class="active">Blog</a></li>
+        <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+        <li><a href="{% url 'siteapp:login' %}" class="nav-btn-portal">Student Portal</a></li>
+    </ul>
+    <button class="nav-menu-toggle" id="menuToggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</nav>
+
+<!-- =================== DETAIL HERO =================== -->
+<div class="detail-hero">
+    <div class="detail-hero-inner">
+        <a href="{% url 'siteapp:blog' %}" class="back-crumb">
+            <i class="fa-solid fa-arrow-left"></i> Back to Blog
+        </a>
+        <div class="detail-meta-top">
+            <span class="detail-cat">{{ post.category|default:"General" }}</span>
+            <span class="detail-read-time">
+                <i class="fa-regular fa-clock"></i>
+                {{ post.content|wordcount|add:"0" }} word{% if post.content|wordcount != 1 %}s{% endif %} &bull; ~{{ post.content|wordcount|add:"0"|divisibleby:200 }} min read
+            </span>
+        </div>
+        <h1 class="detail-title">{{ post.title }}</h1>
+        <div class="detail-author-row">
+            <div class="author-avatar-detail">BA</div>
+            <div>
+                <div class="author-name-detail">Bluewave Academy</div>
+                <div class="author-pub-date">
+                    <i class="fa-regular fa-calendar"></i>
+                    Published {{ post.created_at|date:"M d, Y" }}
+                </div>
             </div>
-            <ul class="nav-links">
-                <li><a href="{% url 'siteapp:home' %}">Home</a></li>
-                <li><a href="{% url 'siteapp:about' %}">About</a></li>
-                <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
-                <li><a href="{% url 'siteapp:blog' %}" class="active">Blog</a></li>
-                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
-                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
+        </div>
+    </div>
+</div>
+
+<!-- =================== ARTICLE BODY =================== -->
+<div class="detail-body">
+
+    {% if post.image %}
+    <div class="detail-featured-img">
+        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+    </div>
+    {% endif %}
+
+    <div class="article-content">
+        {{ post.content|linebreaks }}
+    </div>
+
+    <!-- Interaction bar -->
+    <div class="interaction-section">
+        <button class="like-btn-detail" id="likeBtn" data-slug="{{ post.slug }}">
+            <i class="fa-regular fa-heart" id="likeIcon"></i>
+            <span id="likeCount">{{ post.likes_count }}</span>
+            <span>Likes</span>
+        </button>
+        <div class="share-row">
+            <span class="share-label"><i class="fa-solid fa-share-nodes"></i> Share:</span>
+            <a href="https://api.whatsapp.com/send?text={{ post.title }} - {{ request.build_absolute_uri }}"
+               target="_blank" rel="noopener" class="share-link share-wa">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}"
+               target="_blank" rel="noopener" class="share-link share-li">
+                <i class="fa-brands fa-linkedin-in"></i> LinkedIn
+            </a>
+            <a href="mailto:?subject={{ post.title }}&body=Check this out: {{ request.build_absolute_uri }}"
+               class="share-link share-em">
+                <i class="fa-solid fa-envelope"></i> Email
+            </a>
+        </div>
+    </div>
+
+    <!-- Comments section -->
+    <div class="comments-section">
+        <h3 class="comments-heading">
+            <i class="fa-solid fa-comments"></i> Discussion
+        </h3>
+        <p class="comments-count">{{ post.comments.count }} Comment{{ post.comments.count|pluralize }}</p>
+
+        <!-- Comment form -->
+        <div class="comment-form-area">
+            <h4><i class="fa-solid fa-pen-to-square"></i> Leave a Comment</h4>
+            <form action="{% url 'siteapp:blog_detail' post.slug %}" method="POST">
+                {% csrf_token %}
+                <input type="text" name="name" class="comment-input" placeholder="Your Name" required maxlength="100">
+                <textarea name="body" class="comment-textarea" placeholder="Share your thoughts on this article..." required maxlength="1000"></textarea>
+                <button type="submit" class="btn-comment">
+                    <i class="fa-solid fa-paper-plane"></i> Post Comment
+                </button>
+            </form>
+        </div>
+
+        <!-- Comments list -->
+        <div class="comments-list">
+            {% for comment in post.comments.all %}
+            <div class="comment-item">
+                <div class="comment-item-header">
+                    <span class="comment-author">
+                        <div class="comment-avatar">{{ comment.name|slice:":1"|upper }}</div>
+                        {{ comment.name }}
+                    </span>
+                    <span class="comment-time">
+                        <i class="fa-regular fa-clock"></i>
+                        {{ comment.date_added|timesince }} ago
+                    </span>
+                </div>
+                <p class="comment-body">{{ comment.body }}</p>
+            </div>
+            {% empty %}
+            <div class="no-comments">
+                <i class="fa-regular fa-comment-dots"></i>
+                <p>Be the first to start the discussion!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Back to blog -->
+    <div class="back-section">
+        <a href="{% url 'siteapp:blog' %}" class="btn-back-blog">
+            <i class="fa-solid fa-arrow-left"></i> Back to All Articles
+        </a>
+    </div>
+</div>
+
+<!-- =================== FOOTER =================== -->
+<footer class="blog-footer">
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+            <h3>Bluewave Academy</h3>
+            <p>Empowering the next generation of tech leaders through quality computer science education.</p>
+            <div class="footer-social">
+                <a href="#" class="social-icon" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="#" class="social-icon" aria-label="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+                <a href="https://www.linkedin.com/in/tinodaishe-chibi/" target="_blank" rel="noopener" class="social-icon" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                <a href="https://wa.me/263718176525" class="social-icon" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Navigate</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:home' %}"><i class="fa-solid fa-house"></i> Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}"><i class="fa-solid fa-circle-info"></i> About</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}"><i class="fa-solid fa-newspaper"></i> Blog</a></li>
             </ul>
-            <div class="mobile-menu">☰</div>
         </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="blog-detail-container">
-        <article class="reading-card">
-            <!-- Article Header -->
-            <header class="article-header">
-                <nav class="breadcrumb">
-                    <a href="{% url 'siteapp:blog' %}">← Back to Blog</a>
-                </nav>
-                
-                <div class="article-meta-top">
-                    <span class="category-tag">{{ post.category|default:"General" }}</span>
-                    <span class="read-time">{{ post.content|wordcount|add:"-250" }} min read</span>
-                </div>
-
-                <h1 class="article-title">{{ post.title }}</h1>
-
-                <div class="article-info">
-                    <div class="author-info">
-                        <div class="author-avatar">BA</div>
-                        <div class="author-details">
-                            <span class="author-name">Bluewave Academy</span>
-                            <span class="publish-date">Published {{ post.created_at|date:"M d, Y" }}</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Featured Image -->
-            {% if post.image %}
-            <div class="featured-image-wrapper">
-                <img src="{{ post.image.url }}" alt="{{ post.title }}" class="featured-image">
-            </div>
-            {% endif %}
-
-            <!-- Article Content -->
-            <div class="article-content">
-                {{ post.content|linebreaks }}
-            </div>
-
-            <!-- Interaction Bar -->
-            <section class="interaction-bar">
-                <div class="interaction-left">
-                    <button class="like-btn-detail" id="likeBtn" data-slug="{{ post.slug }}" title="Like this article">
-                        <span class="icon">💙</span>
-                        <span id="likeCount">{{ post.likes_count }}</span>
-                        <span class="label">Likes</span>
-                    </button>
-                </div>
-
-                <div class="interaction-right">
-                    <span class="share-label">Share this article:</span>
-                    <a href="https://api.whatsapp.com/send?text=Check out: {{ post.title }} - {{ request.build_absolute_uri }}" target="_blank" class="share-btn share-whatsapp" title="Share on WhatsApp">
-                        WhatsApp
-                    </a>
-                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" class="share-btn share-linkedin" title="Share on LinkedIn">
-                        LinkedIn
-                    </a>
-                    <a href="mailto:?subject={{ post.title }}&body=Check this out: {{ request.build_absolute_uri }}" class="share-btn share-email" title="Share via Email">
-                        Email
-                    </a>
-                </div>
-            </section>
-
-            <!-- Comments Section -->
-            <section class="comments-container">
-                <h3 class="comments-title">Discussion</h3>
-                <p class="comments-count">{{ post.comments.count }} Comment{{ post.comments.count|pluralize }}</p>
-
-                <!-- Comment Form -->
-                <div class="comment-form-wrapper">
-                    <h4>Leave a Comment</h4>
-                    <form action="{% url 'siteapp:blog_detail' post.slug %}" method="POST" class="comment-form">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <input type="text" name="name" placeholder="Your Name" required maxlength="100">
-                        </div>
-                        <div class="form-group">
-                            <textarea name="body" placeholder="Share your thoughts on this article..." required maxlength="1000"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Post Comment</button>
-                    </form>
-                </div>
-
-                <!-- Comments List -->
-                <div class="comments-list">
-                    {% for comment in post.comments.all %}
-                    <div class="comment-card">
-                        <div class="comment-header">
-                            <strong class="comment-name">{{ comment.name }}</strong>
-                            <small class="comment-time">{{ comment.date_added|timesince }} ago</small>
-                        </div>
-                        <p class="comment-body">{{ comment.body }}</p>
-                    </div>
-                    {% empty %}
-                    <div class="no-comments">
-                        <p>📝 Be the first to comment on this article!</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <!-- Related Articles -->
-            <section class="related-articles">
-                <h3>More Articles</h3>
-                <a href="{% url 'siteapp:blog' %}" class="btn btn-secondary" style="display: inline-block;">← Back to All Articles</a>
-            </section>
-        </article>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <div class="footer-logo">
-                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
-                    <h3>Bluewave Academy</h3>
-                </div>
-                <p class="footer-description">Empowering the next generation of tech leaders through quality computer science education and practical insights.</p>
-            </div>
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
-                    <li><a href="{% url 'siteapp:about' %}">About Us</a></li>
-                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
-                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Student Portal</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:login' %}">Login</a></li>
-                    <li><a href="{% url 'siteapp:register' %}">Register</a></li>
-                    <li><a href="#">Exams</a></li>
-                    <li><a href="#">Resources</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Connect</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:contact' %}">Contact Us</a></li>
-                    <li><a href="tel:0718176525">📞 0718176525</a></li>
-                    <li><a href="https://wa.me/263718176525">💬 WhatsApp</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                </ul>
-            </div>
+        <div class="footer-col">
+            <h4>Student Portal</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a></li>
+                <li><a href="{% url 'siteapp:register' %}"><i class="fa-solid fa-user-plus"></i> Register</a></li>
+                <li><a href="{% url 'siteapp:examinator_home' %}"><i class="fa-solid fa-pen-ruler"></i> Examinator</a></li>
+            </ul>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
-            <div class="social-links">
-                <a href="#" title="Facebook">f</a>
-                <a href="#" title="Twitter">𝕏</a>
-                <a href="#" title="LinkedIn">in</a>
-            </div>
+        <div class="footer-col">
+            <h4>Contact</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:contact' %}"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
+                <li><a href="tel:0718176525"><i class="fa-solid fa-phone"></i> 0718176525</a></li>
+                <li><a href="https://wa.me/263718176525"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></li>
+                <li><a href="{% url 'siteapp:privacy_policy' %}"><i class="fa-solid fa-shield-halved"></i> Privacy</a></li>
+            </ul>
         </div>
-    </footer>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
+    </div>
+</footer>
 
-    <script>
-        // Mobile menu toggle
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
+<!-- Zuri AI Widget -->
+{% include 'siteapp/zuri_widget.html' %}
 
-        if (mobileMenu) {
-            mobileMenu.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
-        }
+<script>
+    // Navbar scroll
+    const nav = document.getElementById('blogNav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 20));
 
-        // Like button functionality
-        document.getElementById('likeBtn').addEventListener('click', function() {
-            const btn = this;
-            const likeCount = document.getElementById('likeCount');
+    // Mobile menu
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('open');
+    });
 
+    // Like button
+    const likeBtn = document.getElementById('likeBtn');
+    if (likeBtn) {
+        likeBtn.addEventListener('click', function () {
+            const count = document.getElementById('likeCount');
+            const icon = document.getElementById('likeIcon');
             if (this.classList.contains('liked')) {
                 this.classList.remove('liked');
-                const currentCount = parseInt(likeCount.textContent);
-                likeCount.textContent = Math.max(0, currentCount - 1);
+                icon.className = 'fa-regular fa-heart';
+                count.textContent = Math.max(0, parseInt(count.textContent) - 1);
             } else {
                 this.classList.add('liked');
-                const currentCount = parseInt(likeCount.textContent);
-                likeCount.textContent = currentCount + 1;
+                icon.className = 'fa-solid fa-heart';
+                count.textContent = parseInt(count.textContent) + 1;
             }
         });
-    </script>
+    }
+</script>
 </body>
 </html>

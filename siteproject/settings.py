@@ -152,6 +152,16 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# =========================================
+# CACHE (for Zuri AI rate limiting)
+# =========================================
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "bluewave-zuri-cache",
+    }
+}
+
 LOGIN_URL = "siteapp:login"
 LOGIN_REDIRECT_URL = "siteapp:dashboard"
 LOGOUT_REDIRECT_URL = "siteapp:home"

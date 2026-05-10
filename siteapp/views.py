@@ -140,6 +140,57 @@ def contact(request):
 # ============= AUTHENTICATION VIEWS =============
 
 
+def _send_welcome_email(user, request):
+    """Send Tinodaishe's personal welcome email to a new student."""
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+
+        portal_url = request.build_absolute_uri("/student/dashboard/")
+        home_url = request.build_absolute_uri("/")
+        unsubscribe_url = request.build_absolute_uri("/")
+
+        context = {
+            "first_name": user.first_name or user.username,
+            "portal_url": portal_url,
+            "home_url": home_url,
+            "unsubscribe_url": unsubscribe_url,
+        }
+
+        html_body = render_to_string("siteapp/email/welcome.html", context)
+
+        plain_body = f"""Dear {context['first_name']},
+
+Welcome to Bluewave Academy! We're thrilled to have you join us.
+
+I want to share something personal with you. When I started in computer science, it was hard. 
+There were nights I questioned whether I was smart enough. But here's what I learned:
+
+Computer science is not about being born a genius. It's about showing up — every single day.
+Work hard, pray through the hard moments, practice consistently, and let your passion lead the way.
+
+That journey led me to study Software Engineering at HIT and build Bluewave Technologies and 
+Bluewave Academy — proof that persistence pays. If I can do it, so can you.
+
+Access your Student Portal: {portal_url}
+
+Tinodaishe M Chibi
+Founder, Bluewave Academy & Bluewave Technologies
+Software Engineering Student, HIT
+"""
+
+        msg = EmailMultiAlternatives(
+            subject="Welcome to Bluewave Academy — Your Journey Starts Now",
+            body=plain_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=True)
+    except Exception as e:
+        print(f"[Welcome email] Failed to send to {user.email}: {e}")
+
+
 def register(request):
     """Student registration view"""
     if request.user.is_authenticated:
@@ -153,6 +204,9 @@ def register(request):
             messages.success(
                 request, f"Welcome to Bluewave Academy, {user.first_name}!"
             )
+            # Send Tinodaishe's personal welcome email
+            if user.email:
+                _send_welcome_email(user, request)
             return redirect("siteapp:dashboard")
         else:
             for field, errors in form.errors.items():

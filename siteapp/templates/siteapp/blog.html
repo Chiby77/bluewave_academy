@@ -4,222 +4,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog - Bluewave Academy</title>
-    <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/blog-page.css' %}">
+    <title>Blog &mdash; Bluewave Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/blog-redesign.css' %}">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
-                <span>Bluewave Academy</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="{% url 'siteapp:home' %}">Home</a></li>
-                <li><a href="{% url 'siteapp:about' %}">About</a></li>
-                <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
-                <li><a href="{% url 'siteapp:blog' %}" class="active">Blog</a></li>
-                <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
-                <li><a href="{% url 'siteapp:login' %}" class="btn-nav">Student Portal</a></li>
-            </ul>
-            <div class="mobile-menu">☰</div>
-        </div>
-    </nav>
 
-    <!-- Featured Carousel Section -->
-    <section class="carousel-section">
-        <div class="carousel-container">
-            <div class="carousel-track" id="carouselTrack">
-                {% if carousel_posts %}
-                    {% for post in carousel_posts %}
-                    <div class="carousel-slide" {% if post.image %}style="background-image: linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.8)), url('{{ post.image.url }}');"{% else %}style="background: linear-gradient(135deg, #1e40af, #0f172a);"{% endif %}>
-                        <div class="slide-content">
-                            <span class="featured-badge">Featured Post</span>
-                            <h1>{{ post.title }}</h1>
-                            <p>{{ post.content|truncatewords:20 }}</p>
-                            <a href="{% url 'siteapp:blog_detail' post.slug %}" class="btn btn-primary">Read Full Article</a>
+<!-- =================== NAVBAR =================== -->
+<nav class="blog-nav" id="blogNav">
+    <a href="{% url 'siteapp:home' %}" class="nav-brand">
+        <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+        <span>Bluewave Academy</span>
+    </a>
+    <ul class="nav-links-blog" id="navLinks">
+        <li><a href="{% url 'siteapp:home' %}">Home</a></li>
+        <li><a href="{% url 'siteapp:about' %}">About</a></li>
+        <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
+        <li><a href="{% url 'siteapp:blog' %}" class="active">Blog</a></li>
+        <li><a href="{% url 'siteapp:contact' %}">Contact</a></li>
+        <li><a href="{% url 'siteapp:login' %}" class="nav-btn-portal">Student Portal</a></li>
+    </ul>
+    <button class="nav-menu-toggle" id="menuToggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</nav>
+
+<!-- =================== HERO CAROUSEL =================== -->
+<section class="blog-hero">
+    <div class="carousel-outer" id="carouselOuter">
+        <div class="carousel-track" id="carouselTrack">
+            {% if carousel_posts %}
+                {% for post in carousel_posts %}
+                <div class="carousel-slide"
+                     {% if post.image %}style="background-image: linear-gradient(135deg, rgba(15,23,42,0.75) 0%, rgba(30,64,175,0.65) 100%), url('{{ post.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+                    <div class="slide-inner">
+                        <div class="featured-pill">
+                            <i class="fa-solid fa-star"></i> Featured Article
                         </div>
+                        <h1>{{ post.title }}</h1>
+                        <p>{{ post.content|truncatewords:25 }}</p>
+                        <a href="{% url 'siteapp:blog_detail' post.slug %}" class="btn-hero">
+                            Read Full Article <i class="fa-solid fa-arrow-right"></i>
+                        </a>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="carousel-slide" style="background: linear-gradient(135deg, #1e40af, #0f172a); display: flex; align-items: center; justify-content: center;">
-                        <div class="slide-content" style="text-align: center;">
-                            <h1>No Blog Posts Yet</h1>
-                            <p>Check back soon for exciting articles, tutorials, and insights from our team.</p>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-            <div class="carousel-nav">
-                <button class="carousel-btn prev">‹</button>
-                <button class="carousel-btn next">›</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Main Blog Content -->
-    <main class="main-content">
-        <div class="blog-container">
-            <!-- Search Bar -->
-            <div class="search-bar-container">
-                <form action="{% url 'siteapp:blog' %}" method="GET" class="search-form">
-                    <input type="text" name="q" placeholder="Search articles, tutorials, and insights..." value="{{ request.GET.q }}">
-                    <button type="submit" class="btn btn-primary">🔍 Search</button>
-                </form>
-            </div>
-
-            <!-- Blog Grid -->
-            <div class="blog-grid">
-                {% for post in posts %}
-                <article class="blog-card">
-                    <div class="card-image-wrapper">
-                        {% if post.image %}
-                            <img src="{{ post.image.url }}" alt="{{ post.title }}" class="card-image">
-                        {% else %}
-                            <div class="card-image-placeholder">📚</div>
-                        {% endif %}
-                        <div class="card-overlay">
-                            <div class="share-buttons">
-                                <a href="https://api.whatsapp.com/send?text={{ post.title }} - {{ request.build_absolute_uri }}{{ post.get_absolute_url }}" target="_blank" class="share-btn whatsapp" title="Share on WhatsApp">
-                                    <span>Share</span>
-                                </a>
-                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}{{ post.get_absolute_url }}" target="_blank" class="share-btn linkedin" title="Share on LinkedIn">
-                                    <span>Share</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="card-meta">
-                            <span class="post-date">📅 {{ post.created_at|date:"M d, Y" }}</span>
-                            <span class="post-category">{{ post.category|default:"General" }}</span>
-                        </div>
-
-                        <h2 class="card-title">{{ post.title }}</h2>
-                        <p class="card-summary">{{ post.content|truncatewords:20 }}</p>
-
-                        <div class="card-footer">
-                            <button class="like-btn" data-slug="{{ post.slug }}" title="Like this post">
-                                💙 <span class="like-count">{{ post.likes_count }}</span>
-                            </button>
-                            <a href="{% url 'siteapp:blog_detail' post.slug %}" class="read-more-link">Read More →</a>
-                        </div>
-                    </div>
-                </article>
-                {% empty %}
-                <div class="no-posts-message">
-                    <p>📖 No blog posts found matching your search.</p>
-                    <a href="{% url 'siteapp:blog' %}" class="btn btn-secondary">Clear Filters</a>
                 </div>
                 {% endfor %}
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <div class="footer-logo">
-                    <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
-                    <h3>Bluewave Academy</h3>
+            {% else %}
+                <div class="carousel-slide">
+                    <div class="slide-inner">
+                        <div class="featured-pill">
+                            <i class="fa-solid fa-pen-nib"></i> Bluewave Blog
+                        </div>
+                        <h1>Insights, Tutorials &amp; CS Stories</h1>
+                        <p>Deep-dives into computer science, programming tips, student success stories, and the Bluewave journey. Check back soon &mdash; articles are coming!</p>
+                    </div>
                 </div>
-                <p class="footer-description">Empowering the next generation of tech leaders through quality computer science education and practical insights.</p>
+            {% endif %}
+        </div>
+
+        {% if carousel_posts and carousel_posts|length > 1 %}
+        <button class="carousel-arrow prev" id="carouselPrev" aria-label="Previous slide">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button class="carousel-arrow next" id="carouselNext" aria-label="Next slide">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div class="carousel-controls">
+            {% for post in carousel_posts %}
+            <button class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- =================== MAIN CONTENT =================== -->
+<main class="blog-main">
+
+    <!-- Search -->
+    <div class="blog-search-wrap">
+        <form action="{% url 'siteapp:blog' %}" method="GET" class="blog-search-form">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="q" placeholder="Search articles, tutorials, and insights..." value="{{ request.GET.q|default:'' }}" aria-label="Search blog posts">
+            <button type="submit" class="btn-search">
+                <i class="fa-solid fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Section heading -->
+    <div class="section-label">
+        <h2 class="section-heading">
+            <i class="fa-solid fa-newspaper"></i>
+            {% if request.GET.q %}
+                Results for &ldquo;{{ request.GET.q }}&rdquo;
+            {% else %}
+                Latest Articles
+            {% endif %}
+        </h2>
+        {% if request.GET.q %}
+        <a href="{% url 'siteapp:blog' %}" class="view-all-link">
+            <i class="fa-solid fa-xmark"></i> Clear search
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Blog grid -->
+    <div class="blog-grid">
+        {% for post in posts %}
+        <article class="blog-card">
+            <!-- Image -->
+            <div class="card-img-wrap">
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+                {% else %}
+                    <div class="card-img-placeholder">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                {% endif %}
+                <div class="card-share-overlay">
+                    <a href="https://api.whatsapp.com/send?text={{ post.title }} - {{ request.build_absolute_uri }}{{ post.get_absolute_url }}" target="_blank" rel="noopener" class="share-pill">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}{{ post.get_absolute_url }}" target="_blank" rel="noopener" class="share-pill">
+                        <i class="fa-brands fa-linkedin-in"></i> LinkedIn
+                    </a>
+                </div>
             </div>
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:home' %}">Home</a></li>
-                    <li><a href="{% url 'siteapp:about' %}">About Us</a></li>
-                    <li><a href="{% url 'siteapp:downloads' %}">Downloads</a></li>
-                    <li><a href="{% url 'siteapp:blog' %}">Blog</a></li>
-                </ul>
+
+            <!-- Body -->
+            <div class="card-body">
+                <div class="card-meta">
+                    <span class="card-date">
+                        <i class="fa-regular fa-calendar"></i>
+                        {{ post.created_at|date:"M d, Y" }}
+                    </span>
+                    <span class="card-cat">{{ post.category|default:"General" }}</span>
+                </div>
+                <a href="{% url 'siteapp:blog_detail' post.slug %}">
+                    <h2 class="card-title">{{ post.title }}</h2>
+                </a>
+                <p class="card-excerpt">{{ post.content|truncatewords:22 }}</p>
+                <div class="card-footer-row">
+                    <button class="like-btn-blog" data-slug="{{ post.slug }}" aria-label="Like post">
+                        <i class="fa-regular fa-heart"></i>
+                        <span class="like-count">{{ post.likes_count }}</span>
+                    </button>
+                    <a href="{% url 'siteapp:blog_detail' post.slug %}" class="read-more-btn">
+                        Read More <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
             </div>
-            <div class="footer-section">
-                <h4>Student Portal</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:login' %}">Login</a></li>
-                    <li><a href="{% url 'siteapp:register' %}">Register</a></li>
-                    <li><a href="#">Exams</a></li>
-                    <li><a href="#">Resources</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Legal</h4>
-                <ul>
-                    <li><a href="{% url 'siteapp:terms_of_service' %}">Terms of Service</a></li>
-                    <li><a href="{% url 'siteapp:privacy_policy' %}">Privacy Policy</a></li>
-                    <li><a href="{% url 'siteapp:contact' %}">Report Issue</a></li>
-                </ul>
+        </article>
+
+        {% empty %}
+        <div class="blog-empty">
+            <i class="fa-solid fa-file-circle-xmark"></i>
+            <h3>No articles found</h3>
+            <p>{% if request.GET.q %}No posts match your search. Try different keywords.{% else %}We're working on great content — check back soon!{% endif %}</p>
+            {% if request.GET.q %}
+            <a href="{% url 'siteapp:blog' %}" class="btn-clear">
+                <i class="fa-solid fa-arrow-left"></i> View All Articles
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</main>
+
+<!-- =================== FOOTER =================== -->
+<footer class="blog-footer">
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <img src="{% static 'images/logo.svg' %}" alt="Bluewave Academy">
+            <h3>Bluewave Academy</h3>
+            <p>Empowering the next generation of tech leaders through quality computer science education and practical insights.</p>
+            <div class="footer-social">
+                <a href="#" class="social-icon" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="#" class="social-icon" aria-label="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+                <a href="https://www.linkedin.com/in/tinodaishe-chibi/" target="_blank" rel="noopener" class="social-icon" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                <a href="https://wa.me/263718176525" class="social-icon" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Bluewave Academy. All rights reserved.</p>
-            <div class="social-links">
-                <a href="#" title="Facebook">f</a>
-                <a href="#" title="Twitter">𝕏</a>
-                <a href="#" title="LinkedIn">in</a>
-            </div>
+        <div class="footer-col">
+            <h4>Navigate</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:home' %}"><i class="fa-solid fa-house"></i> Home</a></li>
+                <li><a href="{% url 'siteapp:about' %}"><i class="fa-solid fa-circle-info"></i> About Us</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a></li>
+                <li><a href="{% url 'siteapp:blog' %}"><i class="fa-solid fa-newspaper"></i> Blog</a></li>
+                <li><a href="{% url 'siteapp:contact' %}"><i class="fa-solid fa-envelope"></i> Contact</a></li>
+            </ul>
         </div>
-    </footer>
+        <div class="footer-col">
+            <h4>Student Portal</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a></li>
+                <li><a href="{% url 'siteapp:register' %}"><i class="fa-solid fa-user-plus"></i> Register</a></li>
+                <li><a href="{% url 'siteapp:examinator_home' %}"><i class="fa-solid fa-pen-ruler"></i> The Examinator</a></li>
+                <li><a href="{% url 'siteapp:downloads' %}"><i class="fa-solid fa-folder-open"></i> Resources</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <ul>
+                <li><a href="{% url 'siteapp:terms_of_service' %}"><i class="fa-solid fa-file-contract"></i> Terms of Service</a></li>
+                <li><a href="{% url 'siteapp:privacy_policy' %}"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a></li>
+                <li><a href="{% url 'siteapp:contact' %}"><i class="fa-solid fa-flag"></i> Report Issue</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 Bluewave Academy. All rights reserved. Built by Bluewave Technologies.</p>
+    </div>
+</footer>
 
-    <script>
-        // Mobile menu toggle
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
+<!-- Zuri AI Widget -->
+{% include 'siteapp/zuri_widget.html' %}
 
-        if (mobileMenu) {
-            mobileMenu.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
-        }
+<script>
+    // Navbar scroll effect
+    const nav = document.getElementById('blogNav');
+    window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 20);
+    });
 
-        // Carousel Navigation
-        const carouselTrack = document.getElementById('carouselTrack');
-        const prevBtn = document.querySelector('.carousel-btn.prev');
-        const nextBtn = document.querySelector('.carousel-btn.next');
-        let currentIndex = 0;
-        const totalSlides = document.querySelectorAll('.carousel-slide').length;
+    // Mobile menu
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('open');
+    });
 
-        function updateCarousel() {
-            carouselTrack.style.transform = `translateX(-${currentIndex * 100}%)`;
-        }
+    // Carousel
+    const track = document.getElementById('carouselTrack');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+    let current = 0;
+    const total = document.querySelectorAll('.carousel-slide').length;
 
-        if (prevBtn && nextBtn) {
-            prevBtn.addEventListener('click', () => {
-                currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-                updateCarousel();
-            });
+    function goToSlide(n) {
+        current = (n + total) % total;
+        if (track) track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    }
 
-            nextBtn.addEventListener('click', () => {
-                currentIndex = (currentIndex + 1) % totalSlides;
-                updateCarousel();
-            });
+    if (prevBtn) prevBtn.addEventListener('click', () => goToSlide(current - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => goToSlide(current + 1));
+    dots.forEach(d => d.addEventListener('click', () => goToSlide(+d.dataset.index)));
+    if (total > 1) setInterval(() => goToSlide(current + 1), 5500);
 
-            // Auto-rotate carousel every 5 seconds
-            setInterval(() => {
-                currentIndex = (currentIndex + 1) % totalSlides;
-                updateCarousel();
-            }, 5000);
-        }
-
-        // Like button functionality
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (this.classList.contains('liked')) {
-                    this.classList.remove('liked');
-                    const count = parseInt(this.querySelector('.like-count').textContent);
-                    this.querySelector('.like-count').textContent = count - 1;
-                } else {
-                    this.classList.add('liked');
-                    const count = parseInt(this.querySelector('.like-count').textContent);
-                    this.querySelector('.like-count').textContent = count + 1;
-                }
-            });
+    // Like buttons
+    document.querySelectorAll('.like-btn-blog').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const slug = this.dataset.slug;
+            const icon = this.querySelector('i');
+            const count = this.querySelector('.like-count');
+            if (this.classList.contains('liked')) {
+                this.classList.remove('liked');
+                icon.className = 'fa-regular fa-heart';
+                count.textContent = Math.max(0, parseInt(count.textContent) - 1);
+            } else {
+                this.classList.add('liked');
+                icon.className = 'fa-solid fa-heart';
+                count.textContent = parseInt(count.textContent) + 1;
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>

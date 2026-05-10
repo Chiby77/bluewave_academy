@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Bluewave Academy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #334155; }
+        .wrapper { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #0f172a 0%, #1e40af 60%, #2563eb 100%); padding: 40px 40px 32px; text-align: center; }
+        .header img { height: 52px; margin-bottom: 16px; }
+        .header h1 { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.3; }
+        .header p { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-top: 8px; }
+        .welcome-badge { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; padding: 5px 16px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.25); }
+        .body { padding: 36px 40px; }
+        .greeting { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin-bottom: 20px; }
+        .body p { font-size: 0.93rem; line-height: 1.8; color: #475569; margin-bottom: 16px; }
+        .letter-section { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 0 12px 12px 0; padding: 24px 24px; margin: 24px 0; }
+        .letter-section p { color: #1e40af; font-size: 0.93rem; line-height: 1.85; margin-bottom: 12px; }
+        .letter-section p:last-child { margin-bottom: 0; }
+        .sig { margin-top: 24px; }
+        .sig-name { font-size: 1rem; font-weight: 700; color: #0f172a; }
+        .sig-title { font-size: 0.83rem; color: #64748b; margin-top: 3px; }
+        .features { display: table; width: 100%; margin: 28px 0; border-spacing: 0; }
+        .feature-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .feature-item { flex: 1; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+        .feature-icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+        .feature-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .feature-desc { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+        .cta-section { text-align: center; margin: 28px 0; }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff !important; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.3px; }
+        .divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
+        .footer { background: #0f172a; padding: 24px 40px; text-align: center; }
+        .footer p { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.7; }
+        .footer a { color: rgba(255,255,255,0.65); text-decoration: none; }
+        .footer a:hover { color: #fff; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <span class="welcome-badge">Welcome to the Family</span>
+        <h1>You&rsquo;re officially part of Bluewave Academy</h1>
+        <p>Your journey in computer science starts here.</p>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+        <p class="greeting">Dear {{ first_name }},</p>
+
+        <p>
+            Welcome! We&rsquo;re genuinely thrilled to have you join Bluewave Academy. You&rsquo;ve just taken
+            one of the most important steps you&rsquo;ll ever take &mdash; investing in your future through
+            technology and computer science. That takes courage, and we see you for it.
+        </p>
+
+        <!-- Personal letter from Tinodaishe -->
+        <div class="letter-section">
+            <p>
+                I want to share something personal with you. When I started my journey in computer science,
+                it was hard. There were nights I questioned whether I was smart enough, whether I belonged
+                in this space. Debugging code at 2AM, not understanding why a program crashed, feeling like
+                everyone else &ldquo;got it&rdquo; and I didn&rsquo;t &mdash; I know that feeling deeply.
+            </p>
+            <p>
+                But here&rsquo;s what I learned: <strong>Computer science is not about being born a genius.
+                It&rsquo;s about showing up</strong>. Every single day. Writing one more line of code. Reading
+                one more chapter. Praying when the answers don&rsquo;t come. Pushing through when passion
+                meets resistance.
+            </p>
+            <p>
+                That journey led me to study Software Engineering at the Harare Institute of Technology (HIT)
+                and to build Bluewave Technologies and Bluewave Academy &mdash; proof that persistence pays.
+                If I can do it, so can you.
+            </p>
+            <p>
+                My advice to you: <strong>work hard, pray through the hard moments, practice consistently,
+                and let your passion lead the way</strong>. The results will follow. I promise.
+            </p>
+            <div class="sig">
+                <div class="sig-name">Tinodaishe M Chibi</div>
+                <div class="sig-title">Founder, Bluewave Academy &amp; Bluewave Technologies<br>Software Engineering Student, HIT</div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <p style="font-size:0.88rem; color:#64748b; margin-bottom:16px;">Here&rsquo;s what you now have access to:</p>
+        <div class="feature-row">
+            <div class="feature-item">
+                <span class="feature-icon">&#x1F4BB;</span>
+                <div class="feature-title">The Examinator</div>
+                <div class="feature-desc">AI-powered timed exams with instant detailed feedback</div>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">&#x1F4DA;</span>
+                <div class="feature-title">Study Resources</div>
+                <div class="feature-desc">ZIMSEC papers, programming books, and study notes</div>
+            </div>
+        </div>
+        <div class="feature-row">
+            <div class="feature-item">
+                <span class="feature-icon">&#x1F916;</span>
+                <div class="feature-title">Zuri AI Assistant</div>
+                <div class="feature-desc">Your personal AI tutor, available 24/7 on our website</div>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">&#x1F4CA;</span>
+                <div class="feature-title">Progress Tracking</div>
+                <div class="feature-desc">Monitor your growth and performance over time</div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <a href="{{ portal_url }}" class="cta-btn">Go to Your Student Portal &rarr;</a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p style="font-size:0.85rem; color:#94a3b8; text-align:center;">
+            Questions? Chat with <strong>Zuri</strong> on our website or reach us at
+            <a href="mailto:info@bluewaveacademy.com" style="color:#2563eb;">info@bluewaveacademy.com</a>
+        </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p>
+            &copy; 2026 Bluewave Academy. All rights reserved.<br>
+            <a href="{{ home_url }}">Visit our website</a> &nbsp;&bull;&nbsp;
+            <a href="{{ unsubscribe_url }}">Unsubscribe</a>
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

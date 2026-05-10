@@ -1,0 +1,76 @@
+{% load static %}
+<!-- =============================================
+     ZURI AI Assistant Widget
+     Included on: home, about, downloads, blog, contact
+============================================= -->
+<link rel="stylesheet" href="{% static 'css/zuri.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- CSRF token for AJAX -->
+{% csrf_token %}
+
+<!-- Floating trigger button -->
+<button id="zuri-trigger" aria-label="Chat with Zuri AI">
+    <i class="fa-solid fa-robot" id="zuri-trigger-icon"></i>
+    <span id="zuri-notif"></span>
+</button>
+<div id="zuri-tooltip">Ask Zuri anything&nbsp;&rarr;</div>
+
+<!-- Chat panel -->
+<div id="zuri-panel" role="dialog" aria-label="Zuri AI Chat">
+
+    <!-- Header -->
+    <div id="zuri-header">
+        <div id="zuri-avatar">
+            <i class="fa-solid fa-robot"></i>
+            <span class="zuri-online-dot"></span>
+        </div>
+        <div id="zuri-header-info">
+            <span id="zuri-header-name">Zuri</span>
+            <span id="zuri-header-status">Bluewave AI &mdash; powered by Gemini</span>
+        </div>
+        <button id="zuri-close-btn" aria-label="Close chat">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="zuri-messages" aria-live="polite"></div>
+
+    <!-- Image preview -->
+    <div id="zuri-img-preview-wrap">
+        <img id="zuri-img-preview" src="" alt="Attached image">
+        <span id="zuri-img-name"></span>
+        <button id="zuri-img-remove" title="Remove image">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Footer / input -->
+    <div id="zuri-footer">
+        <div id="zuri-rate-bar">
+            <span class="zuri-rate-label">20 msgs / hour</span>
+        </div>
+        <div id="zuri-input-row">
+            <button id="zuri-img-btn" class="zuri-action-btn" title="Attach image" aria-label="Attach image">
+                <i class="fa-solid fa-image"></i>
+            </button>
+            <textarea
+                id="zuri-input"
+                rows="1"
+                placeholder="Ask Zuri anything..."
+                aria-label="Your message to Zuri"
+                maxlength="3000"
+            ></textarea>
+            <button id="zuri-send-btn" class="zuri-action-btn" title="Send message" aria-label="Send">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+        <div id="zuri-credits">
+            Powered by <a href="https://bluewaveacademy.com" target="_blank">Bluewave Academy</a> &amp; Google Gemini
+        </div>
+    </div>
+</div>
+
+<input type="file" id="zuri-file-input" accept="image/*" style="display:none;" aria-hidden="true">
+<script src="{% static 'js/zuri.js' %}"></script>

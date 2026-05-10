@@ -3,11 +3,14 @@ from django.contrib.auth import views as auth_views
 from . import views
 from . import admin_views
 from . import examinator_views
+from . import zuri_views
 from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 app_name = "siteapp"
 
 urlpatterns = [
+    # Zuri AI assistant
+    path("zuri/chat/", zuri_views.zuri_chat, name="zuri_chat"),
     # Public pages
     path("", views.home, name="home"),
     path("about/", views.about, name="about"),
