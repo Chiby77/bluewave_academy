@@ -1,194 +1,165 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Grade Attempt - Admin Dashboard{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
-{% endblock %}
+{% block title %}Grade Attempt — Admin{% endblock %}
+{% block nav_attempts %}active{% endblock %}
+{% block page_title %}Grade Attempt{% endblock %}
+{% block page_subtitle %}{{ attempt.student.get_full_name }} — {{ attempt.exam.title }}{% endblock %}
 
 {% block content %}
-<div class="admin-wrapper">
-    <!-- Admin Navbar -->
-    <nav class="admin-navbar">
-        <div class="navbar-container">
-            <div class="navbar-brand">
-                <span class="admin-badge">ADMIN</span>
-                <h1>Bluewave Academy Admin</h1>
-            </div>
-            <div class="navbar-right">
-                <div class="admin-menu">
-                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="admin-container">
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-menu">
-                <div class="menu-section">
-                    <h3 class="menu-title">Dashboard</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
-                            <i class="icon">📊</i> Overview
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">Grading</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item active">
-                            <i class="icon">📝</i> View Attempts
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h2>Grade Exam Attempt</h2>
-                <p class="subtitle">{{ attempt.student.get_full_name }} - {{ attempt.exam.title }}</p>
-            </div>
-
-            <!-- Alerts -->
-            {% if messages %}
-            <div class="alerts-container">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                    <button class="close-alert">&times;</button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Attempt Summary -->
-            <div class="card" style="margin-bottom: 2rem;">
-                <div class="card-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                    <div>
-                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Student</div>
-                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.student.get_full_name }}</div>
-                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">ID: {{ attempt.student.student_id }}</div>
-                    </div>
-
-                    <div>
-                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Exam</div>
-                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.exam.title }}</div>
-                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">{{ attempt.exam.get_category_display }}</div>
-                    </div>
-
-                    <div>
-                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Duration</div>
-                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.time_taken_minutes }} min</div>
-                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">{{ attempt.created_at|date:"Y-m-d H:i" }}</div>
-                    </div>
-
-                    <div>
-                        <div style="color: var(--admin-text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Current Score</div>
-                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--admin-navy);">{{ attempt.score|default:"Pending" }}</div>
-                        <div style="color: var(--admin-text-light); font-size: 0.9rem;">Total: {{ attempt.exam.total_marks }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Auto-Grade Button -->
-            {% if attempt.exam.enable_instant_grading %}
-            <div style="margin-bottom: 2rem;">
-                <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}" class="btn btn-success" onclick="return confirm('Auto-grade this attempt using Groq AI?');">🤖 Auto-Grade with Groq AI</a>
-                <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-outline">📄 Download PDF Report</a>
-            </div>
-            {% endif %}
-
-            <!-- Grading Form -->
-            <form method="post" class="card">
-                {% csrf_token %}
-
-                {% for answer in answers_to_grade %}
-                <div style="padding: 1.5rem; border-bottom: 1px solid var(--admin-border);">
-                    <!-- Question -->
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <h4 style="margin: 0; color: var(--admin-navy); font-size: 1rem;">Question {{ answer.question.order }}</h4>
-                                <p style="margin: 0.5rem 0 0 0; color: var(--admin-text-light); font-size: 0.85rem;">{{ answer.question.get_question_type_display }}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 0.9rem; color: var(--admin-text-light);">Marks</div>
-                                <div style="font-size: 1.2rem; font-weight: 600; color: var(--admin-navy);">{{ answer.question.marks }}</div>
-                            </div>
-                        </div>
-                        <p style="margin: 1rem 0; color: var(--admin-text); line-height: 1.6;">{{ answer.question.question_text }}</p>
-                    </div>
-
-                    <!-- Correct Answer -->
-                    <div style="margin-bottom: 1rem; padding: 1rem; background-color: #dcfce7; border-radius: 6px; border-left: 3px solid var(--admin-success);">
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-bottom: 0.5rem;">✓ Expected Answer</div>
-                        <div style="color: #166534; font-size: 0.9rem;">{{ answer.question.correct_answer }}</div>
-                    </div>
-
-                    <!-- Student Answer -->
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #fee2e2; border-radius: 6px; border-left: 3px solid var(--admin-error);">
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #991b1b; margin-bottom: 0.5rem;">✗ Student Answer</div>
-                        <div style="color: #991b1b; font-size: 0.9rem; white-space: pre-wrap; word-break: break-word;">{{ answer.answer_text }}</div>
-                    </div>
-
-                    <!-- Grading Input -->
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
-                        <div class="form-group" style="margin: 0;">
-                            <label for="score_{{ answer.id }}">Score (0-{{ answer.question.marks }})</label>
-                            <input type="number" name="score_{{ answer.id }}" id="score_{{ answer.id }}" min="0" max="{{ answer.question.marks }}" value="0" required>
-                        </div>
-
-                        <div class="form-group" style="margin: 0;">
-                            <label for="feedback_{{ answer.id }}">Feedback</label>
-                            <input type="text" name="feedback_{{ answer.id }}" id="feedback_{{ answer.id }}" placeholder="Enter grading feedback...">
-                        </div>
-                    </div>
-
-                    <!-- Explanation -->
-                    {% if answer.question.explanation %}
-                    <div style="margin-top: 1rem; padding: 1rem; background-color: var(--admin-light); border-radius: 6px;">
-                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--admin-primary); margin-bottom: 0.5rem;">ℹ️ Explanation</div>
-                        <div style="color: var(--admin-text); font-size: 0.9rem;">{{ answer.question.explanation }}</div>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-
-                <!-- Form Actions -->
-                <div style="padding: 1.5rem; display: flex; gap: 1rem; justify-content: space-between;">
-                    <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-outline">Back to Attempts</a>
-                    <button type="submit" class="btn btn-primary">Submit Grades</button>
-                </div>
-            </form>
-        </main>
-    </div>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Manual Grading</h2>
+    <p>Review student answers and assign marks</p>
+  </div>
+  <div class="page-header-actions">
+    {% if attempt.exam.enable_instant_grading %}
+    <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}"
+       class="btn btn-accent"
+       onclick="return confirm('Use Gemini AI to auto-grade this attempt?');">
+      <i class="fa-solid fa-robot"></i> Auto-Grade with Gemini AI
+    </a>
+    {% endif %}
+    <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-gray">
+      <i class="fa-solid fa-file-pdf"></i> Download Report
+    </a>
+    <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
 </div>
 
-<script>
-// Close alerts
-document.querySelectorAll('.close-alert').forEach(btn => {
-    btn.addEventListener('click', function() {
-        this.parentElement.remove();
-    });
-});
+<!-- Attempt Summary -->
+<div class="stats-row" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-user-graduate"></i></div>
+    <div>
+      <div class="stat-value" style="font-size:16px;">{{ attempt.student.get_full_name }}</div>
+      <div class="stat-label">{{ attempt.student.student_id }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-solid fa-file-alt"></i></div>
+    <div>
+      <div class="stat-value" style="font-size:16px;">{{ attempt.exam.title|truncatechars:24 }}</div>
+      <div class="stat-label">{{ attempt.exam.get_category_display }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-star"></i></div>
+    <div>
+      <div class="stat-value">{{ attempt.score|default:"—" }}</div>
+      <div class="stat-label">Current Score / {{ attempt.exam.total_marks }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon cyan"><i class="fa-regular fa-clock"></i></div>
+    <div>
+      <div class="stat-value">{{ attempt.time_taken_minutes|default:"—" }}</div>
+      <div class="stat-label">Minutes Taken</div>
+    </div>
+  </div>
+</div>
 
-// Validate score inputs
-document.querySelectorAll('[id^="score_"]').forEach(input => {
-    input.addEventListener('change', function() {
-        const maxMarks = parseInt(this.getAttribute('max'));
-        if (parseInt(this.value) > maxMarks) {
-            alert(`Score cannot exceed ${maxMarks}`);
-            this.value = maxMarks;
-        }
-    });
+{% if not answers_to_grade %}
+<div class="card">
+  <div class="empty-state">
+    <i class="fa-solid fa-circle-check" style="color:var(--success);"></i>
+    <h3>No subjective answers to grade</h3>
+    <p>All questions in this exam are auto-graded (MCQ or True/False). The score has been calculated automatically.</p>
+    <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-primary" style="margin-top:16px;">Back to Attempts</a>
+  </div>
+</div>
+{% else %}
+
+<form method="post">
+  {% csrf_token %}
+  {% for answer in answers_to_grade %}
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div>
+        <h3>Question {{ forloop.counter }} — {{ answer.question.get_question_type_display }}</h3>
+        <div class="card-subtitle">Max marks: {{ answer.question.marks }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--gray-400);">Current score</div>
+        <div style="font-size:20px;font-weight:800;color:var(--dark);">{{ answer.marks_obtained|floatformat:0 }}</div>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- Question -->
+      <div style="background:var(--gray-100);padding:14px;border-radius:var(--radius-sm);margin-bottom:16px;font-size:14px;font-weight:500;color:var(--dark);line-height:1.6;">
+        {{ answer.question.question_text }}
+      </div>
+
+      <!-- Expected Answer -->
+      <div class="answer-block correct" style="margin-bottom:12px;">
+        <div class="answer-label green"><i class="fa-solid fa-check"></i> Expected / Model Answer</div>
+        <div style="font-size:13px;white-space:pre-wrap;">{{ answer.question.correct_answer }}</div>
+      </div>
+
+      <!-- Student Answer -->
+      <div class="answer-block student" style="margin-bottom:12px;">
+        <div class="answer-label gray"><i class="fa-solid fa-user"></i> Student's Answer</div>
+        <div style="font-size:13px;white-space:pre-wrap;word-break:break-word;">{{ answer.answer_text|default:"(No answer provided)" }}</div>
+      </div>
+
+      <!-- Previous AI Feedback -->
+      {% if answer.ai_feedback %}
+      <div class="answer-feedback" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:var(--accent);">
+          <i class="fa-solid fa-robot"></i> Previous Gemini AI Feedback
+        </div>
+        {{ answer.ai_feedback }}
+      </div>
+      {% endif %}
+
+      <!-- Grading Inputs -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Score (0 – {{ answer.question.marks }}) <span class="required">*</span></label>
+          <input type="number" name="score_{{ answer.id }}" class="form-control score-input"
+                 min="0" max="{{ answer.question.marks }}" value="{{ answer.marks_obtained|floatformat:0 }}" required
+                 data-max="{{ answer.question.marks }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Feedback to Student</label>
+          <input type="text" name="feedback_{{ answer.id }}" class="form-control"
+                 placeholder="Optional grading feedback..." value="{{ answer.ai_feedback }}">
+        </div>
+      </div>
+
+      {% if answer.question.explanation %}
+      <div style="background:var(--primary-light);border-left:3px solid var(--primary);padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;color:var(--primary-dark);">
+        <div style="font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-lightbulb"></i> Marking Guide</div>
+        {{ answer.question.explanation }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:8px;">
+    <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Cancel
+    </a>
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-floppy-disk"></i> Save Grades &amp; Mark as Graded
+    </button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.score-input').forEach(input => {
+  input.addEventListener('input', function() {
+    const max = parseInt(this.dataset.max);
+    if (parseInt(this.value) > max) this.value = max;
+    if (parseInt(this.value) < 0) this.value = 0;
+  });
 });
 </script>
 {% endblock %}

@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Student Portal — Bluewave Academy{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="portal-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="portal-sidebar" id="portalSidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fa-solid fa-wave-square"></i></div>
+      <div class="brand-text">
+        <strong>Bluewave Academy</strong>
+        <span>STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">{{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}</div>
+      <div class="sidebar-user-info">
+        <strong>{{ request.user.get_full_name }}</strong>
+        <span>{{ request.user.student_id }}</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Main</div>
+      <a href="{% url 'siteapp:dashboard' %}" class="sidebar-link {% block nav_dashboard %}{% endblock %}">
+        <i class="fa-solid fa-house"></i> Dashboard
+      </a>
+      <a href="{% url 'siteapp:exam_list' %}" class="sidebar-link {% block nav_exams %}{% endblock %}">
+        <i class="fa-solid fa-file-pen"></i> My Exams
+      </a>
+      <a href="{% url 'siteapp:student_results' %}" class="sidebar-link {% block nav_results %}{% endblock %}">
+        <i class="fa-solid fa-chart-bar"></i> My Results
+      </a>
+      <a href="{% url 'siteapp:student_announcements' %}" class="sidebar-link {% block nav_announcements %}{% endblock %}">
+        <i class="fa-solid fa-bullhorn"></i> Announcements
+      </a>
+
+      <div class="sidebar-section-label">Resources</div>
+      <a href="{% url 'siteapp:downloads' %}" class="sidebar-link">
+        <i class="fa-solid fa-download"></i> Downloads
+      </a>
+      <a href="{% url 'siteapp:blog' %}" class="sidebar-link">
+        <i class="fa-solid fa-newspaper"></i> Blog
+      </a>
+
+      <div class="sidebar-section-label">Account</div>
+      <a href="{% url 'siteapp:edit_profile' %}" class="sidebar-link {% block nav_profile %}{% endblock %}">
+        <i class="fa-solid fa-user-pen"></i> Edit Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{% url 'siteapp:logout' %}" class="sidebar-link">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ── MAIN ── -->
+  <div class="portal-main">
+    <!-- Topbar -->
+    <header class="portal-topbar">
+      <button class="topbar-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title">
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        <p>{% block page_subtitle %}{{ current_date|date:"l, F j, Y" }}{% endblock %}</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-user" id="userMenuTrigger">
+          <div class="topbar-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
+          <span class="topbar-user-name d-none-xs">{{ request.user.first_name }}</span>
+          <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--gray-400);"></i>
+          <div class="topbar-dropdown" id="userDropdown">
+            <a href="{% url 'siteapp:edit_profile' %}"><i class="fa-solid fa-user-pen"></i> Edit Profile</a>
+            <a href="{% url 'siteapp:password_reset' %}"><i class="fa-solid fa-key"></i> Change Password</a>
+            <hr>
+            <a href="{% url 'siteapp:logout' %}" class="danger"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="portal-content">
+      {% if messages %}
+      <div class="alerts-wrap">
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">
+          <i class="fa-solid {% if msg.tags == 'success' %}fa-circle-check{% elif msg.tags == 'error' or msg.tags == 'danger' %}fa-circle-xmark{% elif msg.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+          <span>{{ msg }}</span>
+          <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script>
+const sidebar  = document.getElementById('portalSidebar');
+const overlay  = document.getElementById('sidebarOverlay');
+const hamburger = document.getElementById('hamburgerBtn');
+const userTrigger = document.getElementById('userMenuTrigger');
+const userDropdown = document.getElementById('userDropdown');
+
+hamburger.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('visible');
+});
+userTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  userDropdown.classList.toggle('open');
+});
+document.addEventListener('click', () => userDropdown.classList.remove('open'));
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

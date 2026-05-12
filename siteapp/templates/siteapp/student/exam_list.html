@@ -1,0 +1,124 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}My Exams — Bluewave Academy{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}My Exams{% endblock %}
+{% block page_subtitle %}All exams assigned to you{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Exam Centre</h2>
+    <p>Browse, filter and take your assigned exams</p>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="padding:14px 20px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:180px;">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-control">
+          <option value="">All Categories</option>
+          {% for v,l in categories %}
+          <option value="{{ v }}" {% if request.GET.category == v %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-control">
+          <option value="">All</option>
+          <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>Available</option>
+          <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+        <a href="{% url 'siteapp:exam_list' %}" class="btn btn-gray">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if exams %}
+<div class="exams-grid">
+  {% for item in exams %}
+  <div class="exam-card">
+    <div class="exam-card-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <span class="badge" style="background:rgba(255,255,255,.2);color:white;font-size:10px;">{{ item.exam.get_category_display }}</span>
+        {% if item.attempt %}
+          {% if item.attempt.status == 'graded' %}
+            <span class="badge" style="background:{% if item.attempt.is_passed %}var(--success){% else %}var(--danger){% endif %};color:white;">
+              {% if item.attempt.is_passed %}Passed{% else %}Failed{% endif %}
+            </span>
+          {% elif item.attempt.status == 'submitted' %}
+            <span class="badge" style="background:var(--warning);color:white;">Grading</span>
+          {% else %}
+            <span class="badge" style="background:rgba(255,255,255,.2);color:white;">In Progress</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      <h3>{{ item.exam.title }}</h3>
+      <div class="exam-card-meta">
+        <span><i class="fa-regular fa-clock"></i> {{ item.exam.duration_minutes }} min</span>
+        <span><i class="fa-solid fa-star-half-stroke"></i> {{ item.exam.get_level_display }}</span>
+        <span><i class="fa-solid fa-bullseye"></i> Pass: {{ item.exam.passing_marks }}/{{ item.exam.total_marks }}</span>
+      </div>
+    </div>
+    <div class="exam-card-body">
+      <p>{{ item.exam.description|truncatechars:100 }}</p>
+      <div class="exam-card-stats">
+        <div class="exam-stat">
+          <strong>{{ item.exam.questions.count }}</strong>
+          <span>Questions</span>
+        </div>
+        <div class="exam-stat">
+          <strong>{{ item.exam.total_marks }}</strong>
+          <span>Marks</span>
+        </div>
+        {% if item.attempt and item.attempt.status == 'graded' %}
+        <div class="exam-stat">
+          <strong style="color:{% if item.attempt.is_passed %}var(--success){% else %}var(--danger){% endif %};">
+            {{ item.attempt.percentage|floatformat:0 }}%
+          </strong>
+          <span>Your Score</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="exam-card-footer">
+      <div style="font-size:11px;color:var(--gray-400);">
+        <i class="fa-regular fa-calendar"></i> Ends {{ item.exam.end_date|date:"M d, Y" }}
+      </div>
+      {% if item.attempt and item.attempt.status in 'submitted,graded' %}
+        <a href="{% url 'siteapp:exam_results' item.attempt.id %}" class="btn btn-sm btn-outline">
+          <i class="fa-solid fa-chart-bar"></i> Results
+        </a>
+      {% elif item.attempt and item.attempt.status == 'in_progress' %}
+        <a href="{% url 'siteapp:take_exam' item.exam.id %}" class="btn btn-sm btn-warning">
+          <i class="fa-solid fa-play"></i> Continue
+        </a>
+      {% else %}
+        <a href="{% url 'siteapp:exam_detail' item.exam.id %}" class="btn btn-sm btn-primary">
+          <i class="fa-solid fa-play"></i> Start Exam
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <i class="fa-solid fa-file-circle-xmark"></i>
+    <h3>No exams found</h3>
+    <p>No exams match your current filter, or no exams have been published yet.</p>
+    <a href="{% url 'siteapp:exam_list' %}" class="btn btn-primary" style="margin-top:16px;">Clear Filters</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -15,6 +15,8 @@ from django.db import transaction
 from decimal import Decimal
 import json
 
+import os
+from django.utils.text import slugify
 from .models import (
     Exam,
     Question,
@@ -24,6 +26,7 @@ from .models import (
     ExamGrading,
     ExamHold,
     Announcement,
+    BlogPost,
 )
 from .forms import ExamAnswerForm, StudentLoginForm
 from .groq_service import get_groq_service
@@ -394,10 +397,19 @@ def view_attempts(request, exam_id=None):
     if exam_filter:
         attempts = attempts.filter(exam__id=exam_filter)
 
+    all_attempts_qs = ExamAttempt.objects.all()
+    pending_count = all_attempts_qs.filter(status="submitted").count()
+    graded_count  = all_attempts_qs.filter(status="graded").count()
+    from django.db.models import Avg as _Avg
+    avg_score = all_attempts_qs.filter(status="graded").aggregate(a=_Avg("percentage"))["a"]
+
     context = {
-        "attempts": attempts[:100],  # Limit for performance
+        "attempts": attempts[:200],
         "exam_id": exam_id,
         "exams": Exam.objects.all(),
+        "pending_count": pending_count,
+        "graded_count": graded_count,
+        "avg_score": avg_score,
     }
 
     return render(request, "siteapp/admin/view_attempts.html", context)
@@ -1189,5 +1201,113 @@ def delete_question(request, exam_id, question_id):
         messages.success(request, f"Question deleted successfully!")
     except Exception as e:
         messages.error(request, f"Error deleting question: {str(e)}")
+
+    return redirect("siteapp:edit_exam", exam_id=exam.id)
+
+
+# ============= BLOG MANAGEMENT =============
+
+@admin_required
+def admin_blog_list(request):
+    """List all blog posts for admin"""
+    posts = BlogPost.objects.all().order_by("-created_at")
+    return render(request, "siteapp/admin/blog_list.html", {"posts": posts})
+
+
+@admin_required
+def admin_blog_create(request):
+    """Create a new blog post"""
+    if request.method == "POST":
+        title    = request.POST.get("title", "").strip()
+        slug     = request.POST.get("slug", "").strip()
+        content  = request.POST.get("content", "").strip()
+        category = request.POST.get("category", "Other")
+        image    = request.FILES.get("image")
+
+        if not title or not content:
+            messages.error(request, "Title and content are required.")
+            return render(request, "siteapp/admin/blog_form.html", {"post": None})
+
+        if not slug:
+            slug = slugify(title)
+
+        base_slug = slug
+        counter = 1
+        while BlogPost.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        post = BlogPost(
+            title=title,
+            slug=slug,
+            content=content,
+            category=category,
+            author=request.user,
+        )
+        if image:
+            post.image = image
+        post.save()
+
+        messages.success(request, f'Blog post "{title}" published successfully.')
+        return redirect("siteapp:admin_blog_list")
+
+    return render(request, "siteapp/admin/blog_form.html", {"post": None})
+
+
+@admin_required
+def admin_blog_edit(request, post_id):
+    """Edit an existing blog post"""
+    post = get_object_or_404(BlogPost, id=post_id)
+
+    if request.method == "POST":
+        post.title    = request.POST.get("title", post.title).strip()
+        post.slug     = request.POST.get("slug", post.slug).strip()
+        post.content  = request.POST.get("content", post.content).strip()
+        post.category = request.POST.get("category", post.category)
+        if request.FILES.get("image"):
+            post.image = request.FILES["image"]
+        post.save()
+        messages.success(request, "Blog post updated successfully.")
+        return redirect("siteapp:admin_blog_list")
+
+    return render(request, "siteapp/admin/blog_form.html", {"post": post})
+
+
+@admin_required
+def admin_blog_delete(request, post_id):
+    """Delete a blog post"""
+    post = get_object_or_404(BlogPost, id=post_id)
+    if request.method == "POST":
+        title = post.title
+        post.delete()
+        messages.success(request, f'Blog post "{title}" deleted.')
+    return redirect("siteapp:admin_blog_list")
+
+
+# ============= STUDENT MANAGEMENT =============
+
+@admin_required
+def admin_students(request):
+    """View and search all students"""
+    students = CustomUser.objects.filter(is_staff=False).annotate(
+        attempt_count=Count("exam_attempts"),
+        avg_score=Avg("exam_attempts__percentage"),
+    ).order_by("-date_joined")
+
+    q_search = request.GET.get("q", "").strip()
+    if q_search:
+        from django.db.models import Q as Qfilter
+        students = students.filter(
+            Qfilter(first_name__icontains=q_search) |
+            Qfilter(last_name__icontains=q_search) |
+            Qfilter(email__icontains=q_search) |
+            Qfilter(student_id__icontains=q_search)
+        )
+
+    level = request.GET.get("level", "")
+    if level:
+        students = students.filter(current_level=level)
+
+    return render(request, "siteapp/admin/students.html", {"students": students})
 
     return redirect("siteapp:edit_exam", exam_id=exam.id)

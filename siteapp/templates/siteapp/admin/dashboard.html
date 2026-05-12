@@ -1,270 +1,219 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Admin Dashboard - Bluewave Academy{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
-{% endblock %}
+{% block title %}Admin Dashboard — Bluewave Academy{% endblock %}
+{% block nav_overview %}active{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ request.user.first_name }} — here's today's overview{% endblock %}
 
 {% block content %}
-<div class="admin-wrapper">
-    <!-- Admin Navbar -->
-    <nav class="admin-navbar">
-        <div class="navbar-container">
-            <div class="navbar-brand">
-                <span class="admin-badge">ADMIN</span>
-                <h1>Bluewave Academy Admin</h1>
-            </div>
-            <div class="navbar-right">
-                <div class="admin-menu">
-                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
-                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
 
-    <div class="admin-container">
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-menu">
-                <div class="menu-section">
-                    <h3 class="menu-title">Dashboard</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item active">
-                            <i class="icon">📊</i> Overview
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">Exam Management</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
-                            <i class="icon">📋</i> All Exams
-                        </a></li>
-                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
-                            <i class="icon">➕</i> Create New Exam
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">Grading & Results</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:view_attempts' %}" class="menu-item">
-                            <i class="icon">📝</i> View Attempts
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">System</h3>
-                    <ul class="menu-items">
-                        <li><a href="/admin/" class="menu-item">
-                            <i class="icon">⚙️</i> Django Admin
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h2>Admin Dashboard</h2>
-                <p class="subtitle">Real-time exam management and analytics</p>
-            </div>
-
-            <!-- Alerts -->
-            {% if messages %}
-            <div class="alerts-container">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                    <button class="close-alert">&times;</button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Quick Stats Section -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <span>📚</span>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-exams">{{ total_exams }}</div>
-                        <div class="stat-label">Total Exams</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <span>👥</span>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-students">{{ total_students }}</div>
-                        <div class="stat-label">Active Students</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <span>🎯</span>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-attempts">{{ total_attempts }}</div>
-                        <div class="stat-label">Total Attempts</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                        <span>✅</span>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-pass-rate">{{ pass_rate }}%</div>
-                        <div class="stat-label">Pass Rate</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Held Exams Alert -->
-            {% if held_exams > 0 %}
-            <div class="alert alert-warning" style="margin: 20px 0;">
-                <strong>⚠️ {{ held_exams }} exam(s) are currently held</strong>
-                <a href="{% url 'siteapp:exam_list_admin' %}?status=held" style="margin-left: 10px; text-decoration: underline;">View held exams</a>
-            </div>
-            {% endif %}
-
-            <!-- Charts and Analytics -->
-            <div class="dashboard-grid">
-                <!-- Category Statistics -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Exams by Category</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="category-list">
-                            {% for stat in category_stats %}
-                            <div class="category-item">
-                                <div class="category-name">{{ stat.category }}</div>
-                                <div class="category-bar">
-                                    {% widthratio stat.count total_exams 100 as width_percent %}
-                                    <div class="bar-fill" style="width: {% widthratio stat.count total_exams 100 %}%;">
-                                        {{ stat.count }}
-                                    </div>
-                                </div>
-                                {% if stat.avg_score %}
-                                <div class="category-score">Avg: {{ stat.avg_score|floatformat:2 }}%</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Attempts -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Recent Exam Attempts</h3>
-                        <a href="{% url 'siteapp:view_attempts' %}" class="btn-small">View All</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="attempts-list" id="recent-attempts">
-                            {% for attempt in recent_attempts %}
-                            <div class="attempt-item">
-                                <div class="attempt-left">
-                                    <div class="attempt-student">{{ attempt.student.get_full_name }}</div>
-                                    <div class="attempt-exam">{{ attempt.exam.title }}</div>
-                                </div>
-                                <div class="attempt-right">
-                                    <span class="badge status-{{ attempt.status }}">{{ attempt.get_status_display }}</span>
-                                    {% if attempt.score %}
-                                    <div class="attempt-score">{{ attempt.score|floatformat:2 }} / {{ attempt.exam.total_marks }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% empty %}
-                            <p class="empty-state">No attempts yet</p>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card" style="margin-top: 30px;">
-                <div class="card-header">
-                    <h3>Quick Actions</h3>
-                </div>
-                <div class="card-body">
-                    <div class="actions-grid">
-                        <a href="{% url 'siteapp:create_exam' %}" class="action-button">
-                            <span class="action-icon">➕</span>
-                            <span class="action-text">Create New Exam</span>
-                        </a>
-                        <a href="{% url 'siteapp:exam_list_admin' %}" class="action-button">
-                            <span class="action-icon">📋</span>
-                            <span class="action-text">Manage Exams</span>
-                        </a>
-                        <a href="{% url 'siteapp:view_attempts' %}" class="action-button">
-                            <span class="action-icon">📝</span>
-                            <span class="action-text">Grade Attempts</span>
-                        </a>
-                        <a href="/admin/siteapp/exam/" class="action-button">
-                            <span class="action-icon">⚙️</span>
-                            <span class="action-text">Django Admin</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </main>
+<!-- Stats Row -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-file-alt"></i></div>
+    <div>
+      <div class="stat-value" id="stat-exams">{{ total_exams }}</div>
+      <div class="stat-label">Total Exams</div>
     </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
+    <div>
+      <div class="stat-value" id="stat-students">{{ total_students }}</div>
+      <div class="stat-label">Active Students</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-solid fa-pen-to-square"></i></div>
+    <div>
+      <div class="stat-value" id="stat-attempts">{{ total_attempts }}</div>
+      <div class="stat-label">Total Attempts</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon cyan"><i class="fa-solid fa-percent"></i></div>
+    <div>
+      <div class="stat-value" id="stat-pass-rate">{{ pass_rate|floatformat:0 }}%</div>
+      <div class="stat-label">Pass Rate</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fa-solid fa-robot"></i></div>
+    <div>
+      <div class="stat-value">{{ total_graded }}</div>
+      <div class="stat-label">AI Graded</div>
+    </div>
+  </div>
 </div>
 
+{% if held_exams > 0 %}
+<div class="alert alert-warning" style="margin-bottom:20px;">
+  <i class="fa-solid fa-lock"></i>
+  <span><strong>{{ held_exams }} exam{% if held_exams > 1 %}s{% endif %} currently held</strong> — students cannot access them until resumed.</span>
+  <a href="{% url 'siteapp:exam_list_admin' %}?status=held" style="margin-left:12px;font-weight:700;color:var(--warning);">View held exams</a>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-bolt" style="color:var(--warning);margin-right:8px;"></i>Quick Actions</h3>
+  </div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+      <a href="{% url 'siteapp:create_exam' %}" class="btn btn-primary" style="justify-content:center;flex-direction:column;height:72px;gap:6px;font-size:12px;">
+        <i class="fa-solid fa-plus-circle" style="font-size:20px;"></i>Create Exam
+      </a>
+      <a href="{% url 'siteapp:admin_blog_create' %}" class="btn btn-accent" style="justify-content:center;flex-direction:column;height:72px;gap:6px;font-size:12px;">
+        <i class="fa-solid fa-pen-nib" style="font-size:20px;"></i>Write Blog Post
+      </a>
+      <a href="{% url 'siteapp:create_announcement' %}" class="btn btn-warning" style="justify-content:center;flex-direction:column;height:72px;gap:6px;font-size:12px;">
+        <i class="fa-solid fa-bullhorn" style="font-size:20px;"></i>Announcement
+      </a>
+      <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-success" style="justify-content:center;flex-direction:column;height:72px;gap:6px;font-size:12px;">
+        <i class="fa-solid fa-robot" style="font-size:20px;"></i>Grade Attempts
+      </a>
+      <a href="{% url 'siteapp:admin_students' %}" class="btn btn-gray" style="justify-content:center;flex-direction:column;height:72px;gap:6px;font-size:12px;">
+        <i class="fa-solid fa-users" style="font-size:20px;"></i>View Students
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Grid -->
+<div class="content-grid">
+  <div>
+    <!-- Recent Attempts -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);margin-right:8px;"></i>Recent Exam Attempts</h3>
+        <a href="{% url 'siteapp:view_attempts' %}" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body-flush">
+        {% if recent_attempts %}
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Exam</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for attempt in recent_attempts %}
+              <tr>
+                <td>
+                  <div class="td-main">{{ attempt.student.get_full_name }}</div>
+                  <div class="td-sub">{{ attempt.student.student_id }}</div>
+                </td>
+                <td>
+                  <div style="font-size:13px;color:var(--dark);">{{ attempt.exam.title }}</div>
+                  <div class="td-sub">{{ attempt.exam.get_category_display }}</div>
+                </td>
+                <td>
+                  {% if attempt.score is not None %}
+                    <strong>{{ attempt.score|floatformat:0 }}</strong>/{{ attempt.exam.total_marks }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if attempt.status == 'graded' %}
+                    <span class="badge badge-green"><i class="fa-solid fa-check"></i> Graded</span>
+                  {% elif attempt.status == 'submitted' %}
+                    <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Submitted</span>
+                  {% else %}
+                    <span class="badge badge-gray">In Progress</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'siteapp:grade_attempt' attempt.id %}" class="btn btn-sm btn-outline">
+                    <i class="fa-solid fa-pen"></i> Grade
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><i class="fa-solid fa-inbox"></i><h3>No attempts yet</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- Exams by Category -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-chart-pie" style="color:var(--accent);margin-right:8px;"></i>Exams by Category</h3>
+      </div>
+      <div class="card-body">
+        {% for stat in category_stats %}
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="font-weight:600;color:var(--dark);">{{ stat.category|title }}</span>
+            <span style="color:var(--gray-400);">{{ stat.count }} exam{% if stat.count != 1 %}s{% endif %}</span>
+          </div>
+          {% if total_exams > 0 %}
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{% widthratio stat.count total_exams 100 %}%;"></div>
+          </div>
+          {% endif %}
+          {% if stat.avg_score %}
+          <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Avg score: {{ stat.avg_score|floatformat:0 }}%</div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state" style="padding:20px;"><i class="fa-solid fa-chart-pie" style="font-size:28px;"></i><p>No data yet</p></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-server" style="color:var(--success);margin-right:8px;"></i>System Status</h3>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+            <span style="color:var(--gray-600);"><i class="fa-solid fa-robot" style="margin-right:8px;color:var(--accent);"></i>Gemini AI</span>
+            <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Active</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+            <span style="color:var(--gray-600);"><i class="fa-solid fa-database" style="margin-right:8px;color:var(--primary);"></i>Database</span>
+            <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Online</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+            <span style="color:var(--gray-600);"><i class="fa-solid fa-envelope" style="margin-right:8px;color:var(--warning);"></i>Email Service</span>
+            <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Online</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+            <span style="color:var(--gray-600);"><i class="fa-solid fa-lock" style="margin-right:8px;color:var(--danger);"></i>Held Exams</span>
+            <span class="badge {% if held_exams > 0 %}badge-red{% else %}badge-green{% endif %}">{{ held_exams }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-// Auto-refresh stats every 30 seconds
-setInterval(function() {
-    fetch('{% url "siteapp:api_dashboard_stats" %}')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('stat-exams').textContent = data.total_exams;
-            document.getElementById('stat-students').textContent = data.total_students;
-            document.getElementById('stat-attempts').textContent = data.total_attempts;
-            document.getElementById('stat-pass-rate').textContent = data.pass_rate;
-        });
-
-    // Refresh recent attempts
-    fetch('{% url "siteapp:api_recent_attempts" %}')
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('recent-attempts');
-            container.innerHTML = data.attempts.map(attempt => `
-                <div class="attempt-item">
-                    <div class="attempt-left">
-                        <div class="attempt-student">${attempt.student}</div>
-                        <div class="attempt-exam">${attempt.exam}</div>
-                    </div>
-                    <div class="attempt-right">
-                        <span class="badge status-${attempt.status}">${attempt.status}</span>
-                        <div class="attempt-score">${attempt.score.toFixed(2)} / 100</div>
-                    </div>
-                </div>
-            `).join('');
-        });
+setInterval(() => {
+  fetch('{% url "siteapp:api_dashboard_stats" %}')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('stat-exams').textContent = d.total_exams;
+      document.getElementById('stat-students').textContent = d.total_students;
+      document.getElementById('stat-attempts').textContent = d.total_attempts;
+      document.getElementById('stat-pass-rate').textContent = Math.round(d.pass_rate) + '%';
+    }).catch(()=>{});
 }, 30000);
-
-// Close alerts
-document.querySelectorAll('.close-alert').forEach(btn => {
-    btn.addEventListener('click', function() {
-        this.parentElement.remove();
-    });
-});
 </script>
 {% endblock %}

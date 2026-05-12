@@ -1,0 +1,113 @@
+{% extends "siteapp/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Students — Admin{% endblock %}
+{% block nav_students %}active{% endblock %}
+{% block page_title %}Student Management{% endblock %}
+{% block page_subtitle %}All registered students and their progress{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Students</h2>
+    <p>{{ students.count }} student{{ students.count|pluralize }} registered</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:student_performance' %}" class="btn btn-outline"><i class="fa-solid fa-chart-line"></i> Performance Report</a>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="padding:14px 20px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:2;min-width:200px;">
+        <label class="form-label">Search</label>
+        <input type="text" name="q" class="form-control" placeholder="Name, email, student ID..." value="{{ request.GET.q }}">
+      </div>
+      <div style="flex:1;min-width:140px;">
+        <label class="form-label">Level</label>
+        <select name="level" class="form-control">
+          <option value="">All Levels</option>
+          <option value="beginner" {% if request.GET.level == 'beginner' %}selected{% endif %}>Beginner</option>
+          <option value="intermediate" {% if request.GET.level == 'intermediate' %}selected{% endif %}>Intermediate</option>
+          <option value="advanced" {% if request.GET.level == 'advanced' %}selected{% endif %}>Advanced</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+        <a href="{% url 'siteapp:admin_students' %}" class="btn btn-gray">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Students Table -->
+<div class="card">
+  <div class="card-body-flush">
+    {% if students %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Student ID</th>
+            <th>Level</th>
+            <th>School</th>
+            <th>Attempts</th>
+            <th>Avg Score</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="student-avatar-sm">{{ s.first_name|slice:":1"|upper }}{{ s.last_name|slice:":1"|upper }}</div>
+                <div>
+                  <div class="td-main">{{ s.get_full_name }}</div>
+                  <div class="td-sub">{{ s.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-gray">{{ s.student_id|default:"—" }}</span></td>
+            <td>
+              {% if s.current_level == 'beginner' %}<span class="badge badge-green">Beginner</span>
+              {% elif s.current_level == 'intermediate' %}<span class="badge badge-amber">Intermediate</span>
+              {% else %}<span class="badge badge-red">Advanced</span>{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--gray-600);">{{ s.school|default:"—"|truncatechars:25 }}</td>
+            <td><strong>{{ s.attempt_count }}</strong></td>
+            <td>
+              {% if s.avg_score %}
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="progress-bar" style="width:60px;">
+                    <div class="progress-fill {% if s.avg_score >= 70 %}success{% elif s.avg_score >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ s.avg_score|floatformat:0 }}%;"></div>
+                  </div>
+                  <span style="font-size:12px;font-weight:600;">{{ s.avg_score|floatformat:0 }}%</span>
+                </div>
+              {% else %}<span style="font-size:12px;color:var(--gray-400);">No attempts</span>{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--gray-600);">{{ s.date_joined|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'siteapp:view_attempts' %}?student={{ s.id }}" class="btn btn-sm btn-outline" title="View attempts">
+                <i class="fa-solid fa-chart-bar"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-users"></i>
+      <h3>No students found</h3>
+      <p>{% if request.GET.q %}No students match your search criteria.{% else %}No students have registered yet.{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin Panel — Bluewave Academy{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="portal-shell">
+
+  <!-- ── ADMIN SIDEBAR ── -->
+  <aside class="portal-sidebar" id="portalSidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:var(--danger);"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="brand-text">
+        <strong>Bluewave Admin</strong>
+        <span>CONTROL PANEL</span>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" style="background:linear-gradient(135deg,var(--danger),#f97316);">
+        {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+      </div>
+      <div class="sidebar-user-info">
+        <strong>{{ request.user.get_full_name }}</strong>
+        <span>Administrator</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link {% block nav_overview %}{% endblock %}">
+        <i class="fa-solid fa-gauge-high"></i> Dashboard
+      </a>
+
+      <div class="sidebar-section-label">Exam System</div>
+      <a href="{% url 'siteapp:exam_list_admin' %}" class="sidebar-link {% block nav_exams %}{% endblock %}">
+        <i class="fa-solid fa-file-alt"></i> All Exams
+      </a>
+      <a href="{% url 'siteapp:create_exam' %}" class="sidebar-link {% block nav_create_exam %}{% endblock %}">
+        <i class="fa-solid fa-plus-circle"></i> Create Exam
+      </a>
+      <a href="{% url 'siteapp:view_attempts' %}" class="sidebar-link {% block nav_attempts %}{% endblock %}">
+        <i class="fa-solid fa-pen-to-square"></i> Grade Attempts
+      </a>
+
+      <div class="sidebar-section-label">Content</div>
+      <a href="{% url 'siteapp:admin_blog_list' %}" class="sidebar-link {% block nav_blog %}{% endblock %}">
+        <i class="fa-solid fa-newspaper"></i> Blog Posts
+      </a>
+      <a href="{% url 'siteapp:announcements_management' %}" class="sidebar-link {% block nav_announcements %}{% endblock %}">
+        <i class="fa-solid fa-bullhorn"></i> Announcements
+      </a>
+
+      <div class="sidebar-section-label">People</div>
+      <a href="{% url 'siteapp:admin_students' %}" class="sidebar-link {% block nav_students %}{% endblock %}">
+        <i class="fa-solid fa-users"></i> Students
+      </a>
+      <a href="{% url 'siteapp:student_submissions' %}" class="sidebar-link {% block nav_submissions %}{% endblock %}">
+        <i class="fa-solid fa-inbox"></i> Submissions
+      </a>
+
+      <div class="sidebar-section-label">Analytics</div>
+      <a href="{% url 'siteapp:exam_analytics' %}" class="sidebar-link {% block nav_analytics %}{% endblock %}">
+        <i class="fa-solid fa-chart-line"></i> Exam Analytics
+      </a>
+      <a href="{% url 'siteapp:student_performance' %}" class="sidebar-link {% block nav_performance %}{% endblock %}">
+        <i class="fa-solid fa-trophy"></i> Performance
+      </a>
+
+      <div class="sidebar-section-label">System</div>
+      <a href="/admin/" class="sidebar-link">
+        <i class="fa-solid fa-gear"></i> Django Admin
+      </a>
+      <a href="{% url 'siteapp:dashboard' %}" class="sidebar-link">
+        <i class="fa-solid fa-graduation-cap"></i> Student View
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{% url 'siteapp:logout' %}" class="sidebar-link">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ── MAIN ── -->
+  <div class="portal-main">
+    <header class="portal-topbar">
+      <button class="topbar-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title">
+        <h1>{% block page_title %}Admin Dashboard{% endblock %}</h1>
+        <p>{% block page_subtitle %}Bluewave Academy Control Panel{% endblock %}</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-user" id="userMenuTrigger">
+          <div class="topbar-avatar" style="background:linear-gradient(135deg,var(--danger),#f97316);">
+            {{ request.user.first_name|slice:":1"|upper }}
+          </div>
+          <span class="topbar-user-name">{{ request.user.first_name }}</span>
+          <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--gray-400);"></i>
+          <div class="topbar-dropdown" id="userDropdown">
+            <a href="{% url 'siteapp:dashboard' %}"><i class="fa-solid fa-graduation-cap"></i> Student Portal</a>
+            <a href="/admin/"><i class="fa-solid fa-gear"></i> Django Admin</a>
+            <hr>
+            <a href="{% url 'siteapp:logout' %}" class="danger"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-content">
+      {% if messages %}
+      <div class="alerts-wrap">
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">
+          <i class="fa-solid {% if msg.tags == 'success' %}fa-circle-check{% elif msg.tags == 'error' or msg.tags == 'danger' %}fa-circle-xmark{% elif msg.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+          <span>{{ msg }}</span>
+          <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script>
+const sidebar   = document.getElementById('portalSidebar');
+const overlay   = document.getElementById('sidebarOverlay');
+const hamburger = document.getElementById('hamburgerBtn');
+const userTrigger = document.getElementById('userMenuTrigger');
+const userDropdown = document.getElementById('userDropdown');
+
+hamburger.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('visible');
+});
+userTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  userDropdown.classList.toggle('open');
+});
+document.addEventListener('click', () => userDropdown.classList.remove('open'));
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

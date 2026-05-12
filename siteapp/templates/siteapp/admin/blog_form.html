@@ -1,0 +1,125 @@
+{% extends "siteapp/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}{% if post %}Edit Post{% else %}New Blog Post{% endif %} — Admin{% endblock %}
+{% block nav_blog %}active{% endblock %}
+{% block page_title %}{% if post %}Edit Post{% else %}Write New Post{% endif %}{% endblock %}
+{% block page_subtitle %}Bluewave Academy Blog{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{% if post %}Edit: {{ post.title|truncatechars:40 }}{% else %}New Blog Post{% endif %}</h2>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:admin_blog_list' %}" class="btn btn-gray"><i class="fa-solid fa-arrow-left"></i> Back to Blog</a>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="two-col">
+    <!-- Main Content -->
+    <div>
+      <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-pen-nib" style="color:var(--primary);margin-right:8px;"></i>Post Content</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Post Title <span class="required">*</span></label>
+            <input type="text" name="title" class="form-control" required
+                   placeholder="Write an engaging title..."
+                   value="{% if post %}{{ post.title }}{% endif %}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slug (URL) <span class="required">*</span></label>
+            <input type="text" name="slug" class="form-control" id="slugField" required
+                   placeholder="auto-generated-from-title"
+                   value="{% if post %}{{ post.slug }}{% endif %}">
+            <div class="form-hint">Used in the URL: /blog/your-slug-here/</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content <span class="required">*</span></label>
+            <textarea name="content" class="form-control" rows="16" required
+                      placeholder="Write your blog post here. You can use HTML for formatting.">{% if post %}{{ post.content }}{% endif %}</textarea>
+            <div class="form-hint">HTML tags are supported for formatting: &lt;b&gt;, &lt;i&gt;, &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;, &lt;li&gt;, etc.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-gear" style="color:var(--accent);margin-right:8px;"></i>Post Settings</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control">
+              <option value="">Select category</option>
+              <option value="Programming" {% if post and post.category == 'Programming' %}selected{% endif %}>Programming</option>
+              <option value="Web Development" {% if post and post.category == 'Web Development' %}selected{% endif %}>Web Development</option>
+              <option value="Database" {% if post and post.category == 'Database' %}selected{% endif %}>Database</option>
+              <option value="Algorithms" {% if post and post.category == 'Algorithms' %}selected{% endif %}>Algorithms</option>
+              <option value="Career Tips" {% if post and post.category == 'Career Tips' %}selected{% endif %}>Career Tips</option>
+              <option value="Academy News" {% if post and post.category == 'Academy News' %}selected{% endif %}>Academy News</option>
+              <option value="Other" {% if post and post.category == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Featured Image</label>
+            {% if post and post.image %}
+            <div style="margin-bottom:10px;">
+              <img src="{{ post.image.url }}" alt="Current image" style="width:100%;border-radius:var(--radius-sm);max-height:180px;object-fit:cover;">
+              <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Upload a new image to replace</div>
+            </div>
+            {% endif %}
+            <input type="file" name="image" class="form-control" accept="image/*">
+            <div class="form-hint">Recommended: 1200x630px, JPG or PNG</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-circle-info" style="color:var(--success);margin-right:8px;"></i>Publish</h3></div>
+        <div class="card-body">
+          <div style="margin-bottom:20px;">
+            <div style="font-size:12px;color:var(--gray-600);line-height:1.6;">
+              <div style="margin-bottom:6px;"><i class="fa-solid fa-user" style="margin-right:6px;color:var(--primary);"></i>Author: <strong>{{ request.user.get_full_name }}</strong></div>
+              {% if post %}
+              <div><i class="fa-regular fa-calendar" style="margin-right:6px;color:var(--primary);"></i>Created: <strong>{{ post.created_at|date:"M d, Y" }}</strong></div>
+              {% endif %}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+              <i class="fa-solid fa-paper-plane"></i> {% if post %}Update Post{% else %}Publish Post{% endif %}
+            </button>
+            <a href="{% url 'siteapp:admin_blog_list' %}" class="btn btn-gray" style="width:100%;justify-content:center;">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const titleInput = document.querySelector('[name="title"]');
+const slugField  = document.getElementById('slugField');
+const isEdit     = {% if post %}true{% else %}false{% endif %};
+
+if (!isEdit) {
+  titleInput.addEventListener('input', function() {
+    slugField.value = this.value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  });
+}
+</script>
+{% endblock %}

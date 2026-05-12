@@ -1,48 +1,130 @@
-{% extends 'base.html' %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Preview: {{ exam.title }}{% endblock %}
+{% block title %}Preview: {{ exam.title }} — Admin{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}Exam Preview{% endblock %}
+{% block page_subtitle %}{{ exam.title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card">
-        <div class="card-header">
-            <h2>Preview: {{ exam.title }}</h2>
-        </div>
-        <div class="card-body">
-            <p><strong>Description:</strong> {{ exam.description }}</p>
-            <p><strong>Category:</strong> {{ exam.category }}</p>
-            <p><strong>Level:</strong> {{ exam.level }}</p>
-            <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
-            <p><strong>Total Marks:</strong> {{ exam.total_marks }}</p>
-            <p><strong>Passing Marks:</strong> {{ exam.passing_marks }}</p>
-            
-            <hr>
-            
-            <h3>Questions</h3>
-            {% for question in questions %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ forloop.counter }}. {{ question.question_text }}</h5>
-                        <p class="card-text"><strong>Type:</strong> {{ question.get_question_type_display }}</p>
-                        <p class="card-text"><strong>Marks:</strong> {{ question.marks }}</p>
-                        {% if question.question_type == 'mcq' %}
-                            <ul>
-                                {% for option in question.options.all %}
-                                    <li>{{ option.option_text }} {% if option.is_correct %}(Correct){% endif %}</li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p><strong>Correct Answer:</strong> {{ question.correct_answer }}</p>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>No questions have been added to this exam yet.</p>
-            {% endfor %}
-            
-            <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-secondary">Back to Exam List</a>
-        </div>
-    </div>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ exam.title }}</h2>
+    <p>Preview — as students will see it</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn btn-primary">
+      <i class="fa-solid fa-pen"></i> Edit Exam
+    </a>
+    <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
 </div>
+
+<!-- Exam Info -->
+<div class="stats-row" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-tag"></i></div>
+    <div><div class="stat-value" style="font-size:15px;">{{ exam.get_category_display }}</div><div class="stat-label">Category</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-regular fa-clock"></i></div>
+    <div><div class="stat-value">{{ exam.duration_minutes }}</div><div class="stat-label">Minutes</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-star"></i></div>
+    <div><div class="stat-value">{{ exam.total_marks }}</div><div class="stat-label">Total Marks</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon cyan"><i class="fa-solid fa-trophy"></i></div>
+    <div><div class="stat-value">{{ exam.passing_marks }}</div><div class="stat-label">Pass Mark</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fa-solid fa-circle-question"></i></div>
+    <div><div class="stat-value">{{ questions.count }}</div><div class="stat-label">Questions</div></div>
+  </div>
+</div>
+
+{% if exam.description %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <div style="font-size:14px;color:var(--gray-700);line-height:1.7;">{{ exam.description }}</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Questions List -->
+{% if questions %}
+{% for question in questions %}
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <div>
+      <div style="font-size:12px;color:var(--gray-400);font-weight:600;text-transform:uppercase;margin-bottom:4px;">
+        Q{{ forloop.counter }} &bull; {{ question.get_question_type_display }} &bull; {{ question.marks }} mark{{ question.marks|pluralize }}
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--dark);">{{ question.question_text }}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="{% url 'siteapp:edit_question' exam.id question.id %}" class="btn btn-sm btn-outline">
+        <i class="fa-solid fa-pen"></i> Edit
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if question.question_type == 'mcq' %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      {% for letter, text in "A,B,C,D"|ljust:7|slice:":7"|cut:" " %}{% endfor %}
+      {% if question.option_a %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'A' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'A' %}border:1px solid var(--success);{% endif %}">
+        <strong style="color:var(--primary);">A.</strong> {{ question.option_a }}
+        {% if question.correct_answer == 'A' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
+      </div>{% endif %}
+      {% if question.option_b %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'B' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'B' %}border:1px solid var(--success);{% endif %}">
+        <strong style="color:var(--primary);">B.</strong> {{ question.option_b }}
+        {% if question.correct_answer == 'B' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
+      </div>{% endif %}
+      {% if question.option_c %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'C' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'C' %}border:1px solid var(--success);{% endif %}">
+        <strong style="color:var(--primary);">C.</strong> {{ question.option_c }}
+        {% if question.correct_answer == 'C' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
+      </div>{% endif %}
+      {% if question.option_d %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'D' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'D' %}border:1px solid var(--success);{% endif %}">
+        <strong style="color:var(--primary);">D.</strong> {{ question.option_d }}
+        {% if question.correct_answer == 'D' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
+      </div>{% endif %}
+    </div>
+    {% elif question.question_type == 'true_false' %}
+    <div style="display:flex;gap:12px;">
+      <div style="padding:8px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:{% if question.correct_answer == 'true' %}var(--success-light){% else %}var(--gray-100){% endif %};{% if question.correct_answer == 'true' %}border:1px solid var(--success);{% endif %}">
+        True {% if question.correct_answer == 'true' %}<i class="fa-solid fa-check" style="color:var(--success);"></i>{% endif %}
+      </div>
+      <div style="padding:8px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:{% if question.correct_answer == 'false' %}var(--success-light){% else %}var(--gray-100){% endif %};{% if question.correct_answer == 'false' %}border:1px solid var(--success);{% endif %}">
+        False {% if question.correct_answer == 'false' %}<i class="fa-solid fa-check" style="color:var(--success);"></i>{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div style="background:var(--success-light);border:1px solid var(--success);padding:10px 14px;border-radius:var(--radius-sm);">
+      <div style="font-size:11px;font-weight:700;color:var(--success);margin-bottom:4px;"><i class="fa-solid fa-robot"></i> Model Answer (Gemini AI will grade against this)</div>
+      <div style="font-size:13px;color:var(--dark);">{{ question.correct_answer|default:"Not set" }}</div>
+    </div>
+    {% endif %}
+    {% if question.explanation %}
+    <div style="margin-top:10px;font-size:12px;color:var(--gray-600);background:var(--gray-100);padding:8px 12px;border-radius:var(--radius-sm);">
+      <strong>Explanation:</strong> {{ question.explanation }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <i class="fa-solid fa-circle-question"></i>
+    <h3>No questions yet</h3>
+    <p>Add questions to this exam to see the preview.</p>
+    <a href="{% url 'siteapp:add_question' exam.id %}" class="btn btn-primary" style="margin-top:16px;">
+      <i class="fa-solid fa-plus"></i> Add First Question
+    </a>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

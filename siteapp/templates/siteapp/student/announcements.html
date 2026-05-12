@@ -1,0 +1,44 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}Announcements — Bluewave Academy{% endblock %}
+{% block nav_announcements %}active{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block page_subtitle %}Messages from your instructors{% endblock %}
+
+{% block content %}
+{% if announcements %}
+  {% for ann in announcements %}
+  <div class="announcement-card {% if ann.priority == 2 %}urgent{% elif ann.priority == 1 %}important{% endif %}" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        {% if ann.priority == 2 %}
+          <span class="badge badge-red"><i class="fa-solid fa-circle-exclamation"></i> Urgent</span>
+        {% elif ann.priority == 1 %}
+          <span class="badge badge-amber"><i class="fa-solid fa-triangle-exclamation"></i> Important</span>
+        {% else %}
+          <span class="badge badge-blue"><i class="fa-solid fa-circle-info"></i> Notice</span>
+        {% endif %}
+        <span class="badge badge-gray">{{ ann.get_target_audience_display }}</span>
+      </div>
+      <div style="font-size:11px;color:var(--gray-400);display:flex;align-items:center;gap:6px;">
+        <i class="fa-regular fa-calendar"></i> {{ ann.created_at|date:"F j, Y" }}
+      </div>
+    </div>
+    <div class="ann-title" style="font-size:16px;">{{ ann.title }}</div>
+    <div class="ann-body" style="margin-top:10px;font-size:14px;">{{ ann.content }}</div>
+    <div class="ann-meta" style="margin-top:12px;">
+      <i class="fa-solid fa-user"></i> {{ ann.created_by.get_full_name }}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <div class="empty-state">
+      <i class="fa-solid fa-bullhorn"></i>
+      <h3>No announcements</h3>
+      <p>Your instructors haven't posted anything yet. Check back later.</p>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

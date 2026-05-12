@@ -1,0 +1,69 @@
+{% extends "siteapp/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Blog Management — Admin{% endblock %}
+{% block nav_blog %}active{% endblock %}
+{% block page_title %}Blog Posts{% endblock %}
+{% block page_subtitle %}Write and manage the academy blog{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Blog Management</h2>
+    <p>{{ posts.count }} post{{ posts.count|pluralize }} published</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:blog' %}" class="btn btn-gray" target="_blank"><i class="fa-solid fa-eye"></i> View Public Blog</a>
+    <a href="{% url 'siteapp:admin_blog_create' %}" class="btn btn-primary"><i class="fa-solid fa-pen-nib"></i> Write New Post</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body-flush">
+    {% if posts %}
+    {% for post in posts %}
+    <div class="blog-list-item">
+      {% if post.image %}
+      <img src="{{ post.image.url }}" alt="{{ post.title }}" class="blog-thumb">
+      {% else %}
+      <div class="blog-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--gray-400);">
+        <i class="fa-solid fa-image" style="font-size:20px;"></i>
+      </div>
+      {% endif %}
+      <div class="blog-info">
+        <h4>{{ post.title }}</h4>
+        <p style="margin-bottom:6px;">{{ post.content|striptags|truncatechars:120 }}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          {% if post.category %}<span class="badge badge-blue">{{ post.category }}</span>{% endif %}
+          <span style="font-size:11px;color:var(--gray-400);"><i class="fa-regular fa-calendar"></i> {{ post.created_at|date:"M d, Y" }}</span>
+          <span style="font-size:11px;color:var(--gray-400);"><i class="fa-solid fa-heart"></i> {{ post.likes_count }}</span>
+          {% if post.author %}<span style="font-size:11px;color:var(--gray-400);"><i class="fa-solid fa-user"></i> {{ post.author.get_full_name }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="blog-actions">
+        <a href="{% url 'siteapp:blog_detail' post.slug %}" class="btn btn-sm btn-gray" target="_blank" title="View">
+          <i class="fa-solid fa-eye"></i>
+        </a>
+        <a href="{% url 'siteapp:admin_blog_edit' post.id %}" class="btn btn-sm btn-outline" title="Edit">
+          <i class="fa-solid fa-pen"></i>
+        </a>
+        <form method="post" action="{% url 'siteapp:admin_blog_delete' post.id %}" style="display:inline;" onsubmit="return confirm('Delete this blog post?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-newspaper"></i>
+      <h3>No blog posts yet</h3>
+      <p>Start writing to share knowledge and updates with your students.</p>
+      <a href="{% url 'siteapp:admin_blog_create' %}" class="btn btn-primary" style="margin-top:16px;">
+        <i class="fa-solid fa-pen-nib"></i> Write First Post
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

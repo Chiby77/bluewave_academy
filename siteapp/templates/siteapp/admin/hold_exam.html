@@ -1,29 +1,51 @@
-{% extends 'base.html' %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Hold Exam: {{ exam.title }}{% endblock %}
+{% block title %}Hold Exam — Admin{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}Hold Exam{% endblock %}
+{% block page_subtitle %}Temporarily restrict student access{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card">
-        <div class="card-header">
-            <h2>Hold Exam: {{ exam.title }}</h2>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="reason">Reason for holding the exam:</label>
-                    <textarea class="form-control" id="reason" name="reason" rows="3">Exam held by administrator.</textarea>
-                </div>
-                <div class="form-group">
-                    <label for="resume_at">Resume at (optional):</label>
-                    <input type="datetime-local" class="form-control" id="resume_at" name="resume_at">
-                </div>
-                <button type="submit" class="btn btn-danger">Hold Exam</button>
-                <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-secondary">Cancel</a>
-            </form>
-        </div>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Hold: {{ exam.title }}</h2>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="card" style="max-width:600px;">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-lock" style="color:var(--danger);margin-right:8px;"></i>Confirm Hold</h3>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-warning" style="margin-bottom:20px;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Holding this exam will prevent all students from accessing or submitting it until you resume it.</span>
     </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Reason for Hold <span class="required">*</span></label>
+        <textarea name="reason" class="form-control" rows="3" required>Exam held by administrator.</textarea>
+        <div class="form-hint">Students will not see this reason. It is for admin records only.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Auto-Resume At (optional)</label>
+        <input type="datetime-local" name="resume_at" class="form-control">
+        <div class="form-hint">Leave blank to hold indefinitely until manually resumed.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+        <a href="{% url 'siteapp:exam_list_admin' %}" class="btn btn-gray">Cancel</a>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa-solid fa-lock"></i> Hold Exam
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

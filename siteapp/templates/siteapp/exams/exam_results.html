@@ -1,0 +1,183 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}Exam Results — {{ attempt.exam.title }}{% endblock %}
+{% block nav_results %}active{% endblock %}
+{% block page_title %}Exam Report{% endblock %}
+{% block page_subtitle %}{{ attempt.exam.title }}{% endblock %}
+
+{% block content %}
+
+<!-- Report Header -->
+<div class="report-header">
+  <div class="report-header-top">
+    <div>
+      <div class="report-academy">Bluewave Academy — Official Exam Report</div>
+      <div class="report-title">{{ attempt.exam.title }}</div>
+      <div class="report-subtitle">{{ attempt.exam.get_category_display }} &bull; {{ attempt.exam.get_level_display }}</div>
+      {% if passed %}
+        <div class="report-verdict pass"><i class="fa-solid fa-circle-check"></i> PASSED</div>
+      {% else %}
+        <div class="report-verdict fail"><i class="fa-solid fa-circle-xmark"></i> NOT PASSED</div>
+      {% endif %}
+    </div>
+    <div class="report-score-circle">
+      <div class="pct">{% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}{% else %}0{% endif %}%</div>
+      <div class="pct-label">SCORE</div>
+    </div>
+  </div>
+
+  <div class="report-meta">
+    <div class="report-meta-item">
+      <div class="label">Student</div>
+      <div class="value">{{ attempt.student.get_full_name }}</div>
+    </div>
+    <div class="report-meta-item">
+      <div class="label">Student ID</div>
+      <div class="value">{{ attempt.student.student_id }}</div>
+    </div>
+    <div class="report-meta-item">
+      <div class="label">Score</div>
+      <div class="value">{{ attempt.score|floatformat:0 }} / {{ attempt.exam.total_marks }}</div>
+    </div>
+    <div class="report-meta-item">
+      <div class="label">Pass Mark</div>
+      <div class="value">{{ attempt.exam.passing_marks }} / {{ attempt.exam.total_marks }}</div>
+    </div>
+    <div class="report-meta-item">
+      <div class="label">Date Taken</div>
+      <div class="value">{{ attempt.created_at|date:"M d, Y" }}</div>
+    </div>
+    <div class="report-meta-item">
+      <div class="label">Time Taken</div>
+      <div class="value">{{ attempt.time_taken_minutes|default:"—" }} min</div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-row" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-list-ol"></i></div>
+    <div>
+      <div class="stat-value">{{ total_questions }}</div>
+      <div class="stat-label">Total Questions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+      <div class="stat-value">{{ correct_answers }}</div>
+      <div class="stat-label">Correct</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
+    <div>
+      <div class="stat-value">{{ incorrect_answers }}</div>
+      <div class="stat-label">Incorrect</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if passed %}green{% else %}amber{% endif %}"><i class="fa-solid fa-bullseye"></i></div>
+    <div>
+      <div class="stat-value">{% if passed %}0{% else %}{{ marks_needed|floatformat:0 }}{% endif %}</div>
+      <div class="stat-label">{% if passed %}Marks Above Pass{% else %}Marks Needed{% endif %}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+  <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-primary">
+    <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+  </a>
+  <a href="{% url 'siteapp:exam_list' %}" class="btn btn-outline">
+    <i class="fa-solid fa-arrow-left"></i> Back to Exams
+  </a>
+  <a href="{% url 'siteapp:student_results' %}" class="btn btn-gray">
+    <i class="fa-solid fa-chart-bar"></i> All My Results
+  </a>
+</div>
+
+<!-- AI Feedback -->
+{% if attempt.ai_feedback %}
+<div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent);">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-robot" style="color:var(--accent);margin-right:8px;"></i>Gemini AI Feedback</h3>
+    <span class="badge badge-cyan"><i class="fa-solid fa-sparkles"></i> AI Generated</span>
+  </div>
+  <div class="card-body">
+    <p style="font-size:14px;color:var(--gray-800);line-height:1.7;">{{ attempt.ai_feedback }}</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Answer Breakdown -->
+{% if attempt.exam.show_answers_after_submit %}
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-clipboard-list" style="color:var(--primary);margin-right:8px;"></i>Answer Breakdown</h3>
+    <span style="font-size:12px;color:var(--gray-400);">{{ correct_answers }} correct out of {{ total_questions }}</span>
+  </div>
+  <div class="card-body-flush">
+    {% for answer in answers %}
+    <div class="answer-item">
+      <div class="answer-question-header">
+        <div style="flex:1;">
+          <div class="answer-qnum">Question {{ forloop.counter }} — {{ answer.question.get_question_type_display }} — {{ answer.question.marks }} mark{% if answer.question.marks != 1 %}s{% endif %}</div>
+          <div class="answer-qtext">{{ answer.question.question_text }}</div>
+        </div>
+        <div style="flex-shrink:0;">
+          {% if answer.is_correct %}
+            <span class="badge badge-green"><i class="fa-solid fa-check"></i> +{{ answer.marks_obtained|floatformat:0 }}</span>
+          {% elif answer.is_correct == False %}
+            <span class="badge badge-red"><i class="fa-solid fa-xmark"></i> 0</span>
+          {% else %}
+            <span class="badge badge-amber"><i class="fa-solid fa-pen"></i> {{ answer.marks_obtained|floatformat:0 }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Student Answer -->
+      <div class="answer-block {% if answer.is_correct %}correct{% elif answer.is_correct == False %}wrong{% else %}student{% endif %}">
+        <div class="answer-label {% if answer.is_correct %}green{% elif answer.is_correct == False %}red{% else %}gray{% endif %}">
+          Your Answer
+        </div>
+        <div style="font-size:13px;white-space:pre-wrap;word-break:break-word;">{{ answer.answer_text|default:"(No answer provided)" }}</div>
+      </div>
+
+      <!-- Correct Answer -->
+      {% if answer.is_correct == False %}
+      <div class="answer-block correct">
+        <div class="answer-label green">Correct Answer</div>
+        <div style="font-size:13px;">{{ answer.question.correct_answer }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Explanation -->
+      {% if answer.question.explanation %}
+      <div class="answer-feedback">
+        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+          <i class="fa-solid fa-lightbulb"></i> Explanation
+        </div>
+        {{ answer.question.explanation }}
+      </div>
+      {% endif %}
+
+      <!-- AI Feedback -->
+      {% if answer.ai_feedback %}
+      <div class="answer-feedback" style="background:var(--primary-light);border-color:var(--accent);">
+        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:var(--accent);">
+          <i class="fa-solid fa-robot"></i> AI Grading Feedback
+        </div>
+        {{ answer.ai_feedback }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

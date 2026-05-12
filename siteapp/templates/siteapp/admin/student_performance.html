@@ -1,343 +1,77 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Student Performance - Admin Portal{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-<style>
-.analytics-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    background: linear-gradient(135deg, #059669, #10b981);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-}
-
-.performance-table {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-
-.performance-table table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.performance-table th {
-    background: #f8fafc;
-    padding: 15px;
-    text-align: left;
-    font-weight: 600;
-    color: #1e293b;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.performance-table td {
-    padding: 15px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.performance-table tr:hover {
-    background: #f8fafc;
-}
-
-.student-name {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.student-email {
-    display: block;
-    font-size: 0.85rem;
-    color: #64748b;
-    margin-top: 4px;
-}
-
-.score-excellent {
-    background: rgba(22,163,74,0.1);
-    color: #166534;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.score-good {
-    background: rgba(14,165,233,0.1);
-    color: #0c4a6e;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.score-fair {
-    background: rgba(245,158,11,0.1);
-    color: #92400e;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.score-poor {
-    background: rgba(239,68,68,0.1);
-    color: #7f1d1d;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.filters {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.filter-group label {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.filter-group input,
-.filter-group select {
-    padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.9rem;
-}
-
-.sorting-option {
-    padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.sorting-option:hover {
-    border-color: #10b981;
-}
-
-.performance-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.stat-card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-top: 4px solid #10b981;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #10b981;
-}
-
-.stat-label {
-    color: #64748b;
-    font-size: 0.9rem;
-    margin-top: 5px;
-}
-
-.rating-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.rating-excellent {
-    background: rgba(22,163,74,0.1);
-    color: #166534;
-}
-
-.rating-good {
-    background: rgba(14,165,233,0.1);
-    color: #0c4a6e;
-}
-
-.rating-fair {
-    background: rgba(245,158,11,0.1);
-    color: #92400e;
-}
-
-.rating-poor {
-    background: rgba(239,68,68,0.1);
-    color: #7f1d1d;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background: #e2e8f0;
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 8px;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #059669, #10b981);
-    transition: width 0.3s;
-}
-</style>
-{% endblock %}
+{% block title %}Student Performance — Admin{% endblock %}
+{% block nav_performance %}active{% endblock %}
+{% block page_title %}Student Performance{% endblock %}
+{% block page_subtitle %}Individual student progress and scores{% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <div class="analytics-header">
-        <div>
-            <h1>👥 Student Performance</h1>
-            <p>Monitor individual student progress and scores</p>
-        </div>
-        <div style="text-align: right;">
-            <p style="margin-bottom: 10px;">{{ students|length }} Students</p>
-            <a href="{% url 'siteapp:admin_dashboard' %}" style="color: white; text-decoration: none; font-weight: 600;">← Back to Dashboard</a>
-        </div>
-    </div>
-
-    <div class="performance-stats">
-        <div class="stat-card">
-            <div class="stat-number">{{ students|length }}</div>
-            <div class="stat-label">Total Students</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ total_attempts }}</div>
-            <div class="stat-label">Total Attempts</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">
-                {% if avg_pass_rate %}
-                    {{ avg_pass_rate|floatformat:1 }}%
-                {% else %}
-                    —
-                {% endif %}
-            </div>
-            <div class="stat-label">Avg Pass Rate</div>
-        </div>
-    </div>
-
-    <div class="filters">
-        <form method="GET" style="display: flex; gap: 15px; width: 100%; flex-wrap: wrap;">
-            <div class="filter-group">
-                <label for="search">Search:</label>
-                <input type="text" name="search" id="search" placeholder="Name or email" value="{{ search_query|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="sort">Sort by:</label>
-                <select name="sort" id="sort">
-                    <option value="name" {% if sort == 'name' %}selected{% endif %}>Name</option>
-                    <option value="attempts" {% if sort == 'attempts' %}selected{% endif %}>Attempts (High to Low)</option>
-                    <option value="score" {% if sort == 'score' %}selected{% endif %}>Avg Score (High to Low)</option>
-                    <option value="pass_rate" {% if sort == 'pass_rate' %}selected{% endif %}>Pass Rate (High to Low)</option>
-                </select>
-            </div>
-            <button type="submit" style="padding: 8px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Filter</button>
-        </form>
-    </div>
-
-    {% if students %}
-        <div class="performance-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Attempts</th>
-                        <th>Avg Score</th>
-                        <th>Passed</th>
-                        <th>Pass Rate</th>
-                        <th>Rating</th>
-                        <th>Progress</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                        <tr>
-                            <td>
-                                <span class="student-name">{{ student.get_full_name|default:student.username }}</span>
-                                <span class="student-email">{{ student.email }}</span>
-                            </td>
-                            <td>{{ student.total_attempts|default:0 }}</td>
-                            <td>
-                                {% if student.avg_score %}
-                                    {% if student.avg_score >= 80 %}
-                                        <span class="score-excellent">{{ student.avg_score|floatformat:1 }}%</span>
-                                    {% elif student.avg_score >= 60 %}
-                                        <span class="score-good">{{ student.avg_score|floatformat:1 }}%</span>
-                                    {% elif student.avg_score >= 40 %}
-                                        <span class="score-fair">{{ student.avg_score|floatformat:1 }}%</span>
-                                    {% else %}
-                                        <span class="score-poor">{{ student.avg_score|floatformat:1 }}%</span>
-                                    {% endif %}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>{{ student.passed_count|default:0 }}</td>
-                            <td>
-                                {% if student.pass_rate %}
-                                    {{ student.pass_rate|floatformat:1 }}%
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if student.pass_rate >= 80 %}
-                                    <span class="rating-badge rating-excellent">Excellent</span>
-                                {% elif student.pass_rate >= 60 %}
-                                    <span class="rating-badge rating-good">Good</span>
-                                {% elif student.pass_rate >= 40 %}
-                                    <span class="rating-badge rating-fair">Fair</span>
-                                {% else %}
-                                    <span class="rating-badge rating-poor">Poor</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if student.total_attempts %}
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: {% if student.pass_rate %}{{ student.pass_rate }}{% else %}0{% endif %}%"></div>
-                                    </div>
-                                {% else %}
-                                    <span style="color: #94a3b8;">No attempts</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div style="text-align: center; padding: 40px; background: white; border-radius: 12px;">
-            <p style="color: #64748b;">No student data available</p>
-        </div>
-    {% endif %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Performance Report</h2>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:admin_students' %}" class="btn btn-gray">
+      <i class="fa-solid fa-users"></i> All Students
+    </a>
+  </div>
 </div>
 
-<style>
-.admin-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
-}
-</style>
+<div class="card">
+  <div class="card-body-flush">
+    {% if performance_data %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Level</th>
+            <th>Attempts</th>
+            <th>Graded</th>
+            <th>Avg Score</th>
+            <th>Best Score</th>
+            <th>Pass Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in performance_data %}
+          <tr>
+            <td>
+              <div class="td-main">{{ p.student.get_full_name }}</div>
+              <div class="td-sub">{{ p.student.email }}</div>
+            </td>
+            <td>
+              {% if p.student.current_level == 'beginner' %}<span class="badge badge-green">Beginner</span>
+              {% elif p.student.current_level == 'intermediate' %}<span class="badge badge-amber">Intermediate</span>
+              {% else %}<span class="badge badge-red">Advanced</span>{% endif %}
+            </td>
+            <td>{{ p.total_attempts }}</td>
+            <td>{{ p.graded_attempts }}</td>
+            <td>
+              {% if p.avg_score %}
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-bar" style="width:60px;">
+                  <div class="progress-fill {% if p.avg_score >= 70 %}success{% elif p.avg_score >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ p.avg_score|floatformat:0 }}%;"></div>
+                </div>
+                {{ p.avg_score|floatformat:0 }}%
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td><strong>{{ p.best_score|floatformat:0|default:"—" }}{% if p.best_score %}%{% endif %}</strong></td>
+            <td>{{ p.pass_rate|floatformat:0|default:"—" }}{% if p.pass_rate %}%{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-chart-line"></i>
+      <h3>No performance data</h3>
+      <p>Data will appear after students complete and are graded on exams.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

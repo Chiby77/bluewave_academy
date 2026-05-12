@@ -1,554 +1,111 @@
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Announcements - Admin Panel</title>
-    <link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
-    <style>
-        .announcements-container {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
 
-        @media (max-width: 1024px) {
-            .announcements-container {
-                grid-template-columns: 1fr;
-            }
-        }
+{% block title %}Announcements — Admin{% endblock %}
+{% block nav_announcements %}active{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block page_subtitle %}Broadcast messages to your students{% endblock %}
 
-        .announcement-form {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Announcement Centre</h2>
+    <p>{{ announcements.count }} announcement{{ announcements.count|pluralize }} total</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="?create=1" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Announcement</a>
+  </div>
+</div>
 
-        .announcement-form h3 {
-            margin-top: 0;
-            color: #1e40af;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group-announcement {
-            margin-bottom: 1rem;
-        }
-
-        .form-group-announcement label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group-announcement input,
-        .form-group-announcement select,
-        .form-group-announcement textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: inherit;
-            font-size: 1rem;
-        }
-
-        .form-group-announcement textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-group-announcement input:focus,
-        .form-group-announcement select:focus,
-        .form-group-announcement textarea:focus {
-            outline: none;
-            border-color: #1e40af;
-            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
-
-        .form-actions-announcement {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn-create-announcement {
-            flex: 1;
-            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-create-announcement:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
-        }
-
-        .btn-reset-announcement {
-            flex: 1;
-            background: #e5e7eb;
-            color: #333;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-reset-announcement:hover {
-            background: #d1d5db;
-        }
-
-        .announcements-list {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .announcements-list h3 {
-            background: #f3f4f6;
-            padding: 1.5rem;
-            margin: 0;
-            color: #1e40af;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .announcement-item {
-            padding: 1.5rem;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s ease;
-        }
-
-        .announcement-item:hover {
-            background: #f9fafb;
-        }
-
-        .announcement-item:last-child {
-            border-bottom: none;
-        }
-
-        .announcement-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-            gap: 1rem;
-        }
-
-        .announcement-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0;
-            flex: 1;
-        }
-
-        .announcement-badges {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-priority-0 {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .badge-priority-1 {
-            background: #fef08a;
-            color: #854d0e;
-        }
-
-        .badge-priority-2 {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .badge-active {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-inactive {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-
-        .announcement-content {
-            color: #6b7280;
-            margin-bottom: 0.75rem;
-            line-height: 1.5;
-        }
-
-        .announcement-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.875rem;
-            color: #9ca3af;
-            margin-bottom: 1rem;
-        }
-
-        .announcement-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-small-announcement {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .btn-delete-announcement {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .btn-delete-announcement:hover {
-            background: #fca5a5;
-        }
-
-        .btn-edit-announcement {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .btn-edit-announcement:hover {
-            background: #93c5fd;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6b7280;
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            display: none;
-        }
-
-        .alert.show {
-            display: block;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border-left: 4px solid #10b981;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid #ef4444;
-        }
-
-        .no-announcements {
-            padding: 2rem;
-            text-align: center;
-            color: #9ca3af;
-        }
-
-        .refresh-button {
-            background: #f3f4f6;
-            border: 1px solid #ddd;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .refresh-button:hover {
-            background: #e5e7eb;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
-</head>
-<body class="admin-body">
-    <!-- Admin Navigation -->
-    <nav class="admin-navbar">
-        <div class="admin-nav-container" style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="admin-logo">
-                <span style="font-weight: 700; font-size: 1.25rem;">📚 Blue Wave Admin</span>
-            </div>
-            <div class="admin-user-menu">
-                <span class="admin-user-name">{{ user.get_full_name }}</span>
-                <a href="/admin/logout/" class="btn-logout" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border-radius: 4px; margin-left: 1rem;">Logout</a>
-            </div>
+{% if request.GET.create %}
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>New Announcement</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'siteapp:create_announcement' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Title <span class="required">*</span></label>
+        <input type="text" name="title" class="form-control" required placeholder="Announcement title">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message <span class="required">*</span></label>
+        <textarea name="content" class="form-control" rows="5" required placeholder="Write your message to students..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Target Audience</label>
+          <select name="target_audience" class="form-control">
+            <option value="all">All Students</option>
+            <option value="beginner">Beginner Level</option>
+            <option value="intermediate">Intermediate Level</option>
+            <option value="advanced">Advanced Level</option>
+          </select>
         </div>
-    </nav>
+        <div class="form-group">
+          <label class="form-label">Priority Level</label>
+          <select name="priority" class="form-control">
+            <option value="0">Normal</option>
+            <option value="1">Important</option>
+            <option value="2">Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="check-group">
+        <input type="checkbox" name="is_active" id="is_active" checked>
+        <label for="is_active">Publish immediately (visible to all students)</label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <a href="{% url 'siteapp:announcements_management' %}" class="btn btn-gray">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Publish Announcement</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
-    <div class="admin-container" style="display: flex; gap: 0; min-height: calc(100vh - 60px);">
-        <!-- Sidebar -->
-        <aside class="admin-sidebar" style="width: 260px; background: #f3f4f6; border-right: 1px solid #ddd; overflow-y: auto;">
-            <nav class="sidebar-menu" style="padding: 1.5rem 0;">
-                <div style="padding: 0 1rem; margin-bottom: 2rem;">
-                    <h4 style="color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin: 0 0 1rem 0; font-weight: 600;">Dashboard</h4>
-                    <a href="/admin/dashboard/" style="display: block; padding: 0.75rem 1rem; color: #6b7280; text-decoration: none; border-radius: 4px; transition: all 0.2s; margin-bottom: 0.5rem;">📊 Overview</a>
-                </div>
-
-                <div style="padding: 0 1rem; margin-bottom: 2rem;">
-                    <h4 style="color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin: 0 0 1rem 0; font-weight: 600;">Exam Management</h4>
-                    <a href="/administration/exams/" style="display: block; padding: 0.75rem 1rem; color: #6b7280; text-decoration: none; border-radius: 4px; transition: all 0.2s; margin-bottom: 0.5rem;">📝 All Exams</a>
-                    <a href="/administration/exam/create/" style="display: block; padding: 0.75rem 1rem; color: #6b7280; text-decoration: none; border-radius: 4px; transition: all 0.2s; margin-bottom: 0.5rem;">➕ Create Exam</a>
-                    <a href="/administration/attempts/" style="display: block; padding: 0.75rem 1rem; color: #6b7280; text-decoration: none; border-radius: 4px; transition: all 0.2s; margin-bottom: 0.5rem;">📋 Grade Attempts</a>
-                </div>
-
-                <div style="padding: 0 1rem; margin-bottom: 2rem;">
-                    <h4 style="color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin: 0 0 1rem 0; font-weight: 600;">Content Management</h4>
-                    <a href="/administration/announcements/" style="display: block; padding: 0.75rem 1rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-weight: 600; border-left: 4px solid #1e40af;">📢 Announcements</a>
-                </div>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main" style="flex: 1; overflow-y: auto;">
-            <div style="padding: 2rem;">
-                <!-- Header -->
-                <div class="section-title">
-                    <div>
-                        <h1 style="margin: 0; font-size: 2rem; color: #1f2937;">📢 Announcements</h1>
-                        <p style="margin: 0.5rem 0 0 0; color: #6b7280;">Create and manage student announcements in real-time</p>
-                    </div>
-                    <button class="refresh-button" onclick="loadAnnouncements()">🔄 Refresh</button>
-                </div>
-
-                <!-- Alerts -->
-                <div id="success-alert" class="alert alert-success"></div>
-                <div id="error-alert" class="alert alert-error"></div>
-
-                <!-- Content -->
-                <div class="announcements-container">
-                    <!-- Create Form -->
-                    <div class="announcement-form">
-                        <h3>✍️ Create Announcement</h3>
-                        <form id="announcement-form" onsubmit="handleFormSubmit(event)">
-                            {% csrf_token %}
-                            
-                            <div class="form-group-announcement">
-                                <label for="title">Title *</label>
-                                <input type="text" id="title" name="title" required placeholder="Announcement title" maxlength="200">
-                            </div>
-
-                            <div class="form-group-announcement">
-                                <label for="content">Content *</label>
-                                <textarea id="content" name="content" required placeholder="Announcement content..."></textarea>
-                            </div>
-
-                            <div class="form-group-announcement">
-                                <label for="target_audience">Target Audience</label>
-                                <select id="target_audience" name="target_audience">
-                                    <option value="all">All Students</option>
-                                    <option value="beginner">Beginner Level</option>
-                                    <option value="intermediate">Intermediate Level</option>
-                                    <option value="advanced">Advanced Level</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group-announcement">
-                                <label for="priority">Priority</label>
-                                <select id="priority" name="priority">
-                                    <option value="0">Normal</option>
-                                    <option value="1">Important ⭐</option>
-                                    <option value="2">Urgent 🔴</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group-announcement checkbox-group">
-                                <input type="checkbox" id="is_active" name="is_active" checked>
-                                <label for="is_active" style="margin: 0;">Active (visible to students)</label>
-                            </div>
-
-                            <div class="form-actions-announcement">
-                                <button type="submit" class="btn-create-announcement">✅ Create Announcement</button>
-                                <button type="reset" class="btn-reset-announcement">🔄 Clear</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Announcements List -->
-                    <div class="announcements-list">
-                        <h3>📝 All Announcements (Real-time updates)</h3>
-                        <div id="announcements-container">
-                            <div class="loading">⏳ Loading announcements...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+<div class="card">
+  <div class="card-body-flush">
+    {% if announcements %}
+    {% for ann in announcements %}
+    <div style="padding:18px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:16px;">
+      <div style="width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        {% if ann.priority == 2 %}background:var(--danger-light);color:var(--danger);
+        {% elif ann.priority == 1 %}background:var(--warning-light);color:var(--warning);
+        {% else %}background:var(--primary-light);color:var(--primary);{% endif %}">
+        <i class="fa-solid {% if ann.priority == 2 %}fa-circle-exclamation{% elif ann.priority == 1 %}fa-triangle-exclamation{% else %}fa-bullhorn{% endif %}"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          {% if ann.priority == 2 %}<span class="badge badge-red">Urgent</span>
+          {% elif ann.priority == 1 %}<span class="badge badge-amber">Important</span>
+          {% else %}<span class="badge badge-blue">Normal</span>{% endif %}
+          <span class="badge badge-gray">{{ ann.get_target_audience_display }}</span>
+          {% if not ann.is_active %}<span class="badge badge-gray"><i class="fa-solid fa-eye-slash"></i> Hidden</span>{% endif %}
+        </div>
+        <div style="font-weight:700;font-size:14px;color:var(--dark);margin-bottom:6px;">{{ ann.title }}</div>
+        <div style="font-size:13px;color:var(--gray-600);line-height:1.6;">{{ ann.content|truncatechars:250 }}</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:8px;display:flex;gap:14px;">
+          <span><i class="fa-regular fa-calendar"></i> {{ ann.created_at|date:"F j, Y — H:i" }}</span>
+          <span><i class="fa-solid fa-user"></i> {{ ann.created_by.get_full_name }}</span>
+        </div>
+      </div>
+      <div>
+        <form method="post" action="{% url 'siteapp:delete_announcement' ann.id %}" onsubmit="return confirm('Delete this announcement permanently?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button>
+        </form>
+      </div>
     </div>
-
-    <script>
-        // Auto-refresh announcements every 30 seconds
-        let refreshInterval = setInterval(loadAnnouncements, 30000);
-
-        // Load announcements on page load
-        document.addEventListener('DOMContentLoaded', loadAnnouncements);
-
-        function showAlert(message, type = 'success') {
-            const alertId = type === 'success' ? 'success-alert' : 'error-alert';
-            const alert = document.getElementById(alertId);
-            alert.textContent = message;
-            alert.classList.add('show');
-
-            setTimeout(() => {
-                alert.classList.remove('show');
-            }, 4000);
-        }
-
-        function loadAnnouncements() {
-            fetch('{% url "siteapp:api_announcements" %}')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        displayAnnouncements(data.announcements);
-                    } else {
-                        showAlert('Error loading announcements: ' + data.error, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showAlert('Error loading announcements', 'error');
-                });
-        }
-
-        function displayAnnouncements(announcements) {
-            const container = document.getElementById('announcements-container');
-
-            if (announcements.length === 0) {
-                container.innerHTML = '<div class="no-announcements">📭 No announcements yet. Create one to get started!</div>';
-                return;
-            }
-
-            container.innerHTML = announcements.map(announcement => {
-                const priorityClass = `badge-priority-${announcement.priority_level}`;
-                const statusClass = announcement.is_active ? 'badge-active' : 'badge-inactive';
-                const statusText = announcement.is_active ? 'Active' : 'Inactive';
-
-                return `
-                    <div class="announcement-item">
-                        <div class="announcement-header">
-                            <h4 class="announcement-title">${announcement.title}</h4>
-                            <div class="announcement-badges">
-                                <span class="badge ${priorityClass}">${announcement.priority}</span>
-                                <span class="badge ${statusClass}">${statusText}</span>
-                            </div>
-                        </div>
-                        <div class="announcement-content">${announcement.content}</div>
-                        <div class="announcement-meta">
-                            <span>👥 ${announcement.target_audience} | 👤 ${announcement.created_by} | 📅 ${announcement.created_at}</span>
-                        </div>
-                        <div class="announcement-actions">
-                            <button class="btn-small-announcement btn-delete-announcement" onclick="deleteAnnouncement(${announcement.id})">🗑️ Delete</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function handleFormSubmit(e) {
-            e.preventDefault();
-
-            const formData = new FormData(document.getElementById('announcement-form'));
-            const url = '{% url "siteapp:create_announcement" %}';
-
-            fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert(data.message, 'success');
-                    document.getElementById('announcement-form').reset();
-                    loadAnnouncements();
-                } else {
-                    showAlert('Error: ' + data.error, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Error creating announcement', 'error');
-            });
-        }
-
-        function deleteAnnouncement(id) {
-            if (!confirm('Are you sure? This will permanently delete the announcement.')) {
-                return;
-            }
-
-            const url = `{% url "siteapp:delete_announcement" announcement_id=0 %}`.replace('0', id);
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert(data.message, 'success');
-                    loadAnnouncements();
-                } else {
-                    showAlert('Error: ' + data.error, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Error deleting announcement', 'error');
-            });
-        }
-    </script>
-</body>
-</html>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-bullhorn"></i>
+      <h3>No announcements yet</h3>
+      <p>Click "New Announcement" to start communicating with your students.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

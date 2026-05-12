@@ -1,391 +1,207 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/student/base_student.html" %}
 {% load static %}
 
-{% block title %}Student Portal - BlueWave Academy{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/student-portal.css' %}">
-{% endblock %}
+{% block title %}Dashboard — Bluewave Academy{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block page_title %}Welcome, {{ request.user.first_name }}{% endblock %}
+{% block page_subtitle %}{{ current_date|date:"l, F j, Y" }}{% endblock %}
 
 {% block content %}
-<div class="student-portal">
-    <!-- HEADER WITH QUICK ACTIONS -->
-    <div class="portal-header">
-        <div class="header-content">
-            <div class="header-left">
-                <h1>Welcome, {{ user.first_name }}! 🎓</h1>
-                <p class="header-subtitle">{{ current_date|date:'l, F j, Y' }}</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn-icon" title="Notifications">🔔</button>
-                <button class="btn-icon" title="Settings">⚙️</button>
-                <div class="user-dropdown">
-                    <button class="user-btn">{{ user.first_name|slice:":1" }}</button>
-                    <div class="dropdown-menu">
-                        <a href="{% url 'siteapp:profile' %}">👤 My Profile</a>
-                        <a href="{% url 'siteapp:edit_profile' %}">✏️ Edit Profile</a>
-                        <a href="{% url 'siteapp:password_reset' %}">🔐 Change Password</a>
-                        <hr>
-                        <a href="{% url 'siteapp:logout' %}">🚪 Logout</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+<!-- Stats Row -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fa-solid fa-file-pen"></i></div>
+    <div>
+      <div class="stat-value">{{ available_exams }}</div>
+      <div class="stat-label">Exams Available</div>
     </div>
-
-    <!-- NAVIGATION TABS -->
-    <div class="portal-nav">
-        <nav class="nav-tabs">
-            <button class="nav-tab active" data-tab="dashboard">📊 Dashboard</button>
-            <button class="nav-tab" data-tab="exams">📝 My Exams</button>
-            <button class="nav-tab" data-tab="progress">📈 Progress</button>
-            <button class="nav-tab" data-tab="announcements">📢 Announcements</button>
-            <button class="nav-tab" data-tab="resources">📚 Resources</button>
-        </nav>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+      <div class="stat-value">{{ completed_exams }}</div>
+      <div class="stat-label">Completed</div>
     </div>
-
-    <!-- MAIN CONTENT AREA -->
-    <div class="portal-content">
-        <!-- DASHBOARD TAB -->
-        <div id="dashboard" class="tab-content active">
-            <!-- Quick Stats -->
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-info">
-                        <div class="stat-number">0</div>
-                        <div class="stat-label">Exams Available</div>
-                    </div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <div class="stat-number">0</div>
-                        <div class="stat-label">Completed</div>
-                    </div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-icon">⏱️</div>
-                    <div class="stat-info">
-                        <div class="stat-number">0</div>
-                        <div class="stat-label">In Progress</div>
-                    </div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-info">
-                        <div class="stat-number">0%</div>
-                        <div class="stat-label">Avg Score</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Welcome Card -->
-            <div class="welcome-card">
-                <div class="welcome-icon">🎯</div>
-                <div class="welcome-content">
-                    <h2>Ready to Start Learning?</h2>
-                    <p>Choose an exam below to begin your assessment</p>
-                    <a href="#exams" class="btn-primary" onclick="switchTab('exams')">View Available Exams →</a>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <section class="section">
-                <h2 class="section-title">📋 Recent Activity</h2>
-                <div id="recent-activity" class="activity-list">
-                    <div class="empty-message">
-                        <p>No recent activity. Start your first exam!</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Announcements Preview -->
-            <section class="section">
-                <div class="section-header">
-                    <h2 class="section-title">📢 Latest Announcements</h2>
-                    <a href="#announcements" class="link-more" onclick="switchTab('announcements')">View All →</a>
-                </div>
-                <div id="announcements-preview" class="announcements-grid">
-                    <div class="empty-message">
-                        <p>No announcements yet</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- EXAMS TAB -->
-        <div id="exams" class="tab-content">
-            <section class="section">
-                <h2 class="section-title">📝 My Exams</h2>
-                
-                <!-- Filter Tabs -->
-                <div class="exam-filter">
-                    <button class="filter-btn active" data-filter="all">All Exams</button>
-                    <button class="filter-btn" data-filter="available">Available</button>
-                    <button class="filter-btn" data-filter="completed">Completed</button>
-                    <button class="filter-btn" data-filter="pending">Pending</button>
-                </div>
-
-                <!-- Exams List -->
-                <div id="exams-list" class="exams-grid">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Loading exams...</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- PROGRESS TAB -->
-        <div id="progress" class="tab-content">
-            <section class="section">
-                <h2 class="section-title">📈 Your Progress</h2>
-                
-                <div class="progress-grid">
-                    <!-- Performance Overview -->
-                    <div class="progress-card">
-                        <h3>Performance Overview</h3>
-                        <div id="performance-stats">
-                            <div class="stat-row">
-                                <span>Total Attempts</span>
-                                <strong>0</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>Average Score</span>
-                                <strong>0%</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>Pass Rate</span>
-                                <strong>0%</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>Best Score</span>
-                                <strong>0%</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Study Hours -->
-                    <div class="progress-card">
-                        <h3>Study Time</h3>
-                        <div id="study-time">
-                            <div class="stat-row">
-                                <span>Total Study Time</span>
-                                <strong>0h 0m</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>This Week</span>
-                                <strong>0h 0m</strong>
-                            </div>
-                            <div class="stat-row">
-                                <span>This Month</span>
-                                <strong>0h 0m</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Detailed Progress -->
-                <div class="progress-card" style="grid-column: 1 / -1;">
-                    <h3>Exam-wise Performance</h3>
-                    <div id="exam-performance" class="exam-performance-list">
-                        <div class="empty-message">
-                            <p>Complete exams to see your detailed performance</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- ANNOUNCEMENTS TAB -->
-        <div id="announcements" class="tab-content">
-            <section class="section">
-                <h2 class="section-title">📢 Announcements</h2>
-                <div id="all-announcements" class="announcements-grid">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Loading announcements...</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- RESOURCES TAB -->
-        <div id="resources" class="tab-content">
-            <section class="section">
-                <h2 class="section-title">📚 Learning Resources</h2>
-                <div class="resources-grid">
-                    <div class="resource-card">
-                        <div class="resource-icon">📖</div>
-                        <h3>Study Materials</h3>
-                        <p>Access all course materials and study guides</p>
-                        <a href="{% url 'siteapp:downloads' %}" class="btn-secondary">Browse Materials</a>
-                    </div>
-                    <div class="resource-card">
-                        <div class="resource-icon">🎥</div>
-                        <h3>Tutorial Videos</h3>
-                        <p>Watch helpful tutorials and explanations</p>
-                        <a href="#" class="btn-secondary">Watch Videos</a>
-                    </div>
-                    <div class="resource-card">
-                        <div class="resource-icon">📝</div>
-                        <h3>Question Bank</h3>
-                        <p>Practice with thousands of practice questions</p>
-                        <a href="#" class="btn-secondary">Practice Now</a>
-                    </div>
-                    <div class="resource-card">
-                        <div class="resource-icon">💬</div>
-                        <h3>Community Forum</h3>
-                        <p>Connect with other students and get help</p>
-                        <a href="#" class="btn-secondary">Join Forum</a>
-                    </div>
-                </div>
-            </section>
-        </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fa-solid fa-star"></i></div>
+    <div>
+      <div class="stat-value">{% if avg_score %}{{ avg_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+      <div class="stat-label">Average Score</div>
     </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon cyan"><i class="fa-solid fa-trophy"></i></div>
+    <div>
+      <div class="stat-value">{% if best_score %}{{ best_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+      <div class="stat-label">Best Score</div>
+    </div>
+  </div>
 </div>
 
-<!-- Modals & Overlays -->
-<div class="modal-overlay" id="modal-overlay"></div>
+<!-- Main Grid -->
+<div class="content-grid">
+  <!-- Left Column -->
+  <div>
 
-<script>
-// TAB SWITCHING
-const navTabs = document.querySelectorAll('.nav-tab');
-const tabContents = document.querySelectorAll('.tab-content');
+    <!-- Available Exams -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3><i class="fa-solid fa-file-pen" style="color:var(--primary);margin-right:8px;"></i>Available Exams</h3>
+          <div class="card-subtitle">Exams currently open for you</div>
+        </div>
+        <a href="{% url 'siteapp:exam_list' %}" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body-flush">
+        {% if active_exams %}
+          {% for exam in active_exams %}
+          <div class="exam-card" style="border-radius:0;border:none;border-bottom:1px solid var(--gray-100);box-shadow:none;">
+            <div style="padding:16px;display:flex;align-items:flex-start;gap:14px;">
+              <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-file-alt" style="color:var(--primary);font-size:18px;"></i>
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:700;color:var(--dark);font-size:14px;margin-bottom:4px;">{{ exam.title }}</div>
+                <div style="font-size:12px;color:var(--gray-400);display:flex;gap:12px;flex-wrap:wrap;">
+                  <span><i class="fa-regular fa-clock"></i> {{ exam.duration_minutes }} min</span>
+                  <span><i class="fa-solid fa-layer-group"></i> {{ exam.get_level_display }}</span>
+                  <span><i class="fa-solid fa-tag"></i> {{ exam.get_category_display }}</span>
+                </div>
+              </div>
+              <a href="{% url 'siteapp:exam_detail' exam.id %}" class="btn btn-sm btn-primary">Start</a>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" style="padding:32px;">
+            <i class="fa-solid fa-file-circle-check" style="color:var(--gray-300);font-size:36px;"></i>
+            <h3>No exams available right now</h3>
+            <p>Check back later — your instructor will publish exams soon.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
 
-navTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-        switchTab(tabName);
-    });
-});
+    <!-- Recent Results -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3><i class="fa-solid fa-chart-bar" style="color:var(--success);margin-right:8px;"></i>Recent Results</h3>
+          <div class="card-subtitle">Your latest exam attempts</div>
+        </div>
+        <a href="{% url 'siteapp:student_results' %}" class="btn btn-sm btn-outline">All Results</a>
+      </div>
+      <div class="card-body-flush">
+        {% if recent_attempts %}
+          {% for attempt in recent_attempts %}
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--gray-100);">
+            <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;
+              {% if attempt.percentage >= 70 %}background:var(--success-light);color:var(--success);
+              {% elif attempt.percentage >= 50 %}background:var(--warning-light);color:var(--warning);
+              {% else %}background:var(--danger-light);color:var(--danger);{% endif %}">
+              {% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}%{% else %}—{% endif %}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;color:var(--dark);">{{ attempt.exam.title }}</div>
+              <div style="font-size:11px;color:var(--gray-400);">{{ attempt.created_at|date:"M d, Y" }} &bull; {{ attempt.exam.get_category_display }}</div>
+            </div>
+            <div style="text-align:right;">
+              {% if attempt.status == 'graded' %}
+                <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
+                  {% if attempt.is_passed %}Pass{% else %}Fail{% endif %}
+                </span>
+                <div style="margin-top:4px;">
+                  <a href="{% url 'siteapp:exam_results' attempt.id %}" style="font-size:11px;color:var(--primary);">View Report</a>
+                </div>
+              {% elif attempt.status == 'submitted' %}
+                <span class="badge badge-amber">Grading</span>
+              {% else %}
+                <span class="badge badge-gray">In Progress</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" style="padding:32px;">
+            <i class="fa-solid fa-clock-rotate-left" style="color:var(--gray-300);font-size:36px;"></i>
+            <h3>No results yet</h3>
+            <p>Complete your first exam to see results here.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
 
-function switchTab(tabName) {
-    // Update active nav tab
-    navTabs.forEach(tab => tab.classList.remove('active'));
-    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+  </div>
 
-    // Update active content
-    tabContents.forEach(content => content.classList.remove('active'));
-    document.getElementById(tabName)?.classList.add('active');
+  <!-- Right Column -->
+  <div>
 
-    // Load data for specific tabs
-    if (tabName === 'exams') {
-        loadExams();
-    } else if (tabName === 'progress') {
-        loadProgress();
-    } else if (tabName === 'announcements') {
-        loadAnnouncements();
-    }
-}
+    <!-- Announcements -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-bullhorn" style="color:var(--warning);margin-right:8px;"></i>Announcements</h3>
+        <a href="{% url 'siteapp:student_announcements' %}" class="btn btn-sm btn-outline">All</a>
+      </div>
+      <div class="card-body" style="padding:12px;">
+        {% if announcements %}
+          {% for ann in announcements %}
+          <div class="announcement-card {% if ann.priority == 2 %}urgent{% elif ann.priority == 1 %}important{% endif %}" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              {% if ann.priority == 2 %}
+                <span class="badge badge-red"><i class="fa-solid fa-circle-exclamation"></i> Urgent</span>
+              {% elif ann.priority == 1 %}
+                <span class="badge badge-amber"><i class="fa-solid fa-triangle-exclamation"></i> Important</span>
+              {% else %}
+                <span class="badge badge-blue"><i class="fa-solid fa-circle-info"></i> Notice</span>
+              {% endif %}
+            </div>
+            <div class="ann-title">{{ ann.title }}</div>
+            <div class="ann-body">{{ ann.content|truncatechars:120 }}</div>
+            <div class="ann-meta"><i class="fa-regular fa-calendar"></i> {{ ann.created_at|date:"M d, Y" }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" style="padding:20px;">
+            <i class="fa-solid fa-bullhorn" style="color:var(--gray-300);font-size:28px;"></i>
+            <p style="margin-top:8px;">No announcements yet</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
 
-// LOAD EXAM DATA
-function loadExams() {
-    const examsList = document.getElementById('exams-list');
-    if (!examsList) return;
+    <!-- Student Info Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-id-card" style="color:var(--accent);margin-right:8px;"></i>My Profile</h3>
+        <a href="{% url 'siteapp:edit_profile' %}" class="btn btn-sm btn-gray"><i class="fa-solid fa-pen"></i></a>
+      </div>
+      <div class="card-body">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:white;margin:0 auto 12px;">
+            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+          </div>
+          <div style="font-weight:700;font-size:15px;color:var(--dark);">{{ request.user.get_full_name }}</div>
+          <div style="font-size:12px;color:var(--gray-400);">{{ request.user.student_id }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+            <span style="color:var(--gray-400);">School</span>
+            <span style="font-weight:600;color:var(--dark);">{{ request.user.school|default:"—" }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+            <span style="color:var(--gray-400);">Level</span>
+            <span class="badge badge-blue">{{ request.user.get_current_level_display }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;">
+            <span style="color:var(--gray-400);">Enrolled</span>
+            <span style="font-weight:600;color:var(--dark);">{{ request.user.enrollment_date|date:"M Y" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    fetch('{% url "siteapp:exams" %}?t=' + Date.now(), {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-    })
-        .then(r => r.text())
-        .then(html => {
-            examsList.innerHTML = html || '<div class="empty-message"><p>No exams available</p></div>';
-        })
-        .catch(err => {
-            console.error('Error loading exams:', err);
-        });
-}
-
-// LOAD PROGRESS DATA
-function loadProgress() {
-    const examPerf = document.getElementById('exam-performance');
-    if (!examPerf) return;
-
-    fetch('{% url "siteapp:analytics" %}?t=' + Date.now(), {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-    })
-        .then(r => r.text())
-        .then(html => {
-            examPerf.innerHTML = html || '<div class="empty-message"><p>Complete exams to see performance</p></div>';
-        })
-        .catch(err => {
-            console.error('Error loading progress:', err);
-        });
-}
-
-// LOAD ANNOUNCEMENTS DATA
-function loadAnnouncements() {
-    const announcementsList = document.getElementById('all-announcements');
-    if (!announcementsList) return;
-
-    fetch('{% url "siteapp:announcements" %}?t=' + Date.now(), {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-    })
-        .then(r => r.text())
-        .then(html => {
-            announcementsList.innerHTML = html || '<div class="empty-message"><p>No announcements yet</p></div>';
-        })
-        .catch(err => {
-            console.error('Error loading announcements:', err);
-        });
-}
-
-// USER DROPDOWN
-const userBtn = document.querySelector('.user-btn');
-const dropdownMenu = document.querySelector('.dropdown-menu');
-
-userBtn?.addEventListener('click', () => {
-    dropdownMenu.classList.toggle('show');
-});
-
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.user-dropdown')) {
-        dropdownMenu?.classList.remove('show');
-    }
-});
-
-// FILTER BUTTONS
-const filterBtns = document.querySelectorAll('.filter-btn');
-filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        // Filter logic would go here
-    });
-});
-
-// Load initial data on page load
-window.addEventListener('load', () => {
-    loadExams();
-    loadAnnouncements();
-    loadProgress();
-    
-    // ⚡ START REAL-TIME AUTO-REFRESH
-    // Auto-refresh announcements every 10 seconds
-    setInterval(loadAnnouncements, 10000);
-    
-    // Auto-refresh exams every 15 seconds
-    setInterval(loadExams, 15000);
-    
-    // Auto-refresh progress/stats every 20 seconds
-    setInterval(loadProgress, 20000);
-});
-</script>
-
-<style>
-html {
-    scroll-behavior: smooth;
-}
-</style>
-
+  </div>
+</div>
 {% endblock %}

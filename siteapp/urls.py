@@ -55,16 +55,14 @@ urlpatterns = [
     # Student Portal
     path("portal/", views.student_dashboard, name="portal"),
     path("student/dashboard/", views.student_dashboard, name="dashboard"),
-    path("student/exams/", views.exam_list, name="exams"),  # AJAX endpoint
-    path("student/analytics/", views.analytics, name="analytics"),  # AJAX endpoint
-    path(
-        "student/announcements/", views.announcements, name="announcements"
-    ),  # AJAX endpoint
-    path("student/profile/", views.profile, name="profile"),  # AJAX endpoint
+    path("student/results/", views.student_results, name="student_results"),
+    path("student/announcements/", views.student_announcements, name="student_announcements"),
+    path("student/analytics/", views.analytics, name="analytics"),
+    path("student/profile/", views.profile, name="profile"),
     path("student/profile/edit/", views.edit_profile, name="edit_profile"),
     path("student/logout-page/", views.logout_page, name="logout_page"),
     # Exams
-    path("student/exam-list/", views.exam_list, name="exam_list"),  # Legacy support
+    path("student/exams/", views.exam_list, name="exam_list"),  # Main exam list
     path("student/exam/<int:exam_id>/", views.exam_detail, name="exam_detail"),
     path("student/exam/<int:exam_id>/take/", views.take_exam, name="take_exam"),
     path("student/exam/<int:exam_id>/submit/", views.submit_exam, name="submit_exam"),
@@ -109,6 +107,13 @@ urlpatterns = [
     path("administration/examinator/submission/<int:submission_id>/grade/", examinator_views.admin_grade_submission, name="admin_grade_submission"),
     path("administration/examinator/submission/<int:submission_id>/regrade/", examinator_views.admin_regrade_submission, name="admin_regrade_submission"),
     # ==================== ADMIN ROUTES ====================
+    # Blog Management
+    path("administration/blog/", admin_views.admin_blog_list, name="admin_blog_list"),
+    path("administration/blog/create/", admin_views.admin_blog_create, name="admin_blog_create"),
+    path("administration/blog/<int:post_id>/edit/", admin_views.admin_blog_edit, name="admin_blog_edit"),
+    path("administration/blog/<int:post_id>/delete/", admin_views.admin_blog_delete, name="admin_blog_delete"),
+    # Student Management
+    path("administration/students/", admin_views.admin_students, name="admin_students"),
     # Hidden Admin Login
     path("administration/login/", admin_views.admin_login, name="admin_login"),
     # Admin Dashboard

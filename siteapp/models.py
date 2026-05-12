@@ -465,10 +465,25 @@ class ExamHold(models.Model):
 
 
 class BlogPost(models.Model):
+    CATEGORY_CHOICES = [
+        ("Programming", "Programming"),
+        ("Web Development", "Web Development"),
+        ("Database", "Database"),
+        ("Algorithms", "Algorithms"),
+        ("Career Tips", "Career Tips"),
+        ("Academy News", "Academy News"),
+        ("Other", "Other"),
+    ]
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     content = models.TextField()
-    image = models.ImageField(upload_to="blog_pics/")
+    image = models.ImageField(upload_to="blog_pics/", blank=True, null=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, default="Other")
+    author = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="blog_posts"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     likes_count = models.PositiveIntegerField(default=0)
 

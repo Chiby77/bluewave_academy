@@ -276,16 +276,80 @@ def is_ajax(request):
 
 @login_required(login_url="siteapp:login")
 def student_dashboard(request):
-    """Student portal with tabbed interface"""
+    """Student dashboard — fully server-side rendered with real data"""
     student = request.user
-    from django.utils import timezone
+    now = timezone.now()
+
+    # Available exams (active, in window, not held)
+    active_exams = Exam.objects.filter(
+        is_active=True, is_held=False,
+        start_date__lte=now, end_date__gte=now
+    )
+
+    # Student attempts
+    all_attempts = ExamAttempt.objects.filter(student=student).select_related("exam")
+    graded_attempts = all_attempts.filter(status="graded")
+    recent_attempts = all_attempts.order_by("-created_at")[:5]
+
+    # Stats
+    avg_score = graded_attempts.aggregate(avg=Avg("percentage"))["avg"]
+    best_score = graded_attempts.aggregate(best=Avg("percentage"))
+    best_attempt = graded_attempts.order_by("-percentage").first()
+    best_score_val = best_attempt.percentage if best_attempt else None
+
+    # Announcements for student level
+    announcements = Announcement.objects.filter(
+        is_active=True
+    ).filter(
+        Q(target_audience="all") | Q(target_audience=student.current_level)
+    ).order_by("-priority", "-created_at")[:5]
 
     context = {
         "student": student,
-        "current_date": timezone.now(),
+        "current_date": now,
+        "available_exams": active_exams.count(),
+        "completed_exams": all_attempts.filter(status__in=["submitted", "graded"]).count(),
+        "avg_score": avg_score,
+        "best_score": best_score_val,
+        "active_exams": active_exams[:6],
+        "recent_attempts": recent_attempts,
+        "announcements": announcements,
     }
 
     return render(request, "siteapp/student/dashboard.html", context)
+
+
+@login_required(login_url="siteapp:login")
+def student_results(request):
+    """Student results history page"""
+    student = request.user
+    attempts = ExamAttempt.objects.filter(student=student).select_related("exam").order_by("-created_at")
+    graded = attempts.filter(status="graded")
+
+    avg_score = graded.aggregate(avg=Avg("percentage"))["avg"]
+    best_attempt = graded.order_by("-percentage").first()
+    passed_count = sum(1 for a in graded if a.is_passed())
+
+    context = {
+        "attempts": attempts,
+        "total_attempts": attempts.count(),
+        "passed_count": passed_count,
+        "avg_score": avg_score,
+        "best_score": best_attempt.percentage if best_attempt else None,
+    }
+    return render(request, "siteapp/student/results.html", context)
+
+
+@login_required(login_url="siteapp:login")
+def student_announcements(request):
+    """Full announcements page for students"""
+    student = request.user
+    announcements = Announcement.objects.filter(
+        is_active=True
+    ).filter(
+        Q(target_audience="all") | Q(target_audience=student.current_level)
+    ).order_by("-priority", "-created_at")
+    return render(request, "siteapp/student/announcements.html", {"announcements": announcements})
 
 
 @login_required(login_url="siteapp:login")
@@ -339,25 +403,37 @@ def analytics(request):
 # ============= EXAM VIEWS =============
 
 
-@cache_control(no_cache=True, no_store=True, must_revalidate=True)
 @login_required(login_url="siteapp:login")
 def exam_list(request):
-    """List all exams - returns partial HTML for AJAX"""
+    """Student exam list — full page with real data"""
     student = request.user
+    now = timezone.now()
 
-    exams = Exam.objects.filter(
-        is_active=True, start_date__lte=timezone.now(), end_date__gte=timezone.now()
+    category_filter = request.GET.get("category", "")
+    status_filter   = request.GET.get("status", "")
+
+    exams_qs = Exam.objects.filter(
+        is_active=True, is_held=False,
+        start_date__lte=now, end_date__gte=now
     )
+    if category_filter:
+        exams_qs = exams_qs.filter(category=category_filter)
+
+    # Build items with attempt info
+    items = []
+    for exam in exams_qs:
+        attempt = ExamAttempt.objects.filter(student=student, exam=exam).first()
+        if status_filter == "available" and attempt and attempt.status in ["submitted", "graded"]:
+            continue
+        if status_filter == "completed" and (not attempt or attempt.status not in ["submitted", "graded"]):
+            continue
+        items.append({"exam": exam, "attempt": attempt})
 
     context = {
-        "exams": exams,
+        "exams": items,
+        "categories": Exam.CATEGORY_CHOICES,
     }
-
-    # Return partial template for AJAX requests
-    if is_ajax(request):
-        return render(request, "siteapp/student/partials/exam_list.html", context)
-
-    return render(request, "siteapp/student/dashboard.html", context)
+    return render(request, "siteapp/student/exam_list.html", context)
 
 
 @login_required(login_url="siteapp:login")

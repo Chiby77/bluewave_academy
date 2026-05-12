@@ -1,0 +1,286 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}{{ exam.title }} — Take Exam{% endblock %}
+{% block page_title %}{{ exam.title }}{% endblock %}
+{% block page_subtitle %}Exam in progress — do not refresh{% endblock %}
+
+{% block extra_css %}
+<style>
+.portal-topbar { background: var(--dark); }
+.portal-topbar .topbar-title h1 { color: white; }
+.portal-topbar .topbar-title p  { color: rgba(255,255,255,.6); }
+.portal-topbar .topbar-hamburger { color: rgba(255,255,255,.8); }
+.portal-topbar .topbar-user { color: white; }
+.portal-topbar .topbar-avatar { background: rgba(255,255,255,.2); }
+.portal-topbar .topbar-user-name { color: rgba(255,255,255,.9); }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="examForm">
+  {% csrf_token %}
+  <input type="hidden" name="submit" value="true" id="submitFlag">
+
+  <div class="exam-shell">
+
+    <!-- Question Area -->
+    <div>
+
+      <!-- Exam Topbar -->
+      <div class="exam-topbar">
+        <div class="exam-topbar-title">
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px;">{{ exam.get_category_display }}</div>
+          {{ exam.title }}
+        </div>
+        <div class="exam-timer" id="examTimer">
+          <i class="fa-regular fa-clock"></i>
+          <span id="timerDisplay">{{ exam.duration_minutes }}:00</span>
+        </div>
+      </div>
+
+      <!-- Question Navigation -->
+      <div class="question-nav" id="questionNav">
+        {% for q in questions %}
+        <button type="button" class="q-nav-btn {% if forloop.first %}active{% endif %}" data-q="{{ forloop.counter }}" onclick="showQuestion({{ forloop.counter }})">{{ forloop.counter }}</button>
+        {% endfor %}
+      </div>
+
+      <!-- Questions -->
+      {% for question in questions %}
+      <div class="question-block" id="question-{{ forloop.counter }}" style="{% if not forloop.first %}display:none;{% endif %}">
+        <div class="question-number">Question {{ forloop.counter }} of {{ questions|length }} &bull; {{ question.marks }} mark{% if question.marks != 1 %}s{% endif %}</div>
+        <div class="question-text">{{ question.question_text }}</div>
+
+        {% if question.question_type == 'mcq' %}
+        <div class="option-list">
+          {% if question.option_a %}
+          <label class="option-item" id="opt-{{ question.id }}-a" onclick="selectOption('{{ question.id }}', 'a', this)">
+            <input type="radio" name="question_{{ question.id }}" value="a" class="hidden-radio">
+            <div class="option-label">A</div>
+            <div class="option-text">{{ question.option_a }}</div>
+          </label>
+          {% endif %}
+          {% if question.option_b %}
+          <label class="option-item" id="opt-{{ question.id }}-b" onclick="selectOption('{{ question.id }}', 'b', this)">
+            <input type="radio" name="question_{{ question.id }}" value="b" class="hidden-radio">
+            <div class="option-label">B</div>
+            <div class="option-text">{{ question.option_b }}</div>
+          </label>
+          {% endif %}
+          {% if question.option_c %}
+          <label class="option-item" id="opt-{{ question.id }}-c" onclick="selectOption('{{ question.id }}', 'c', this)">
+            <input type="radio" name="question_{{ question.id }}" value="c" class="hidden-radio">
+            <div class="option-label">C</div>
+            <div class="option-text">{{ question.option_c }}</div>
+          </label>
+          {% endif %}
+          {% if question.option_d %}
+          <label class="option-item" id="opt-{{ question.id }}-d" onclick="selectOption('{{ question.id }}', 'd', this)">
+            <input type="radio" name="question_{{ question.id }}" value="d" class="hidden-radio">
+            <div class="option-label">D</div>
+            <div class="option-text">{{ question.option_d }}</div>
+          </label>
+          {% endif %}
+        </div>
+
+        {% elif question.question_type == 'true_false' %}
+        <div class="option-list">
+          <label class="option-item" id="opt-{{ question.id }}-true" onclick="selectOption('{{ question.id }}', 'true', this)">
+            <input type="radio" name="question_{{ question.id }}" value="true" class="hidden-radio">
+            <div class="option-label" style="width:auto;padding:0 10px;border-radius:4px;">T</div>
+            <div class="option-text">True</div>
+          </label>
+          <label class="option-item" id="opt-{{ question.id }}-false" onclick="selectOption('{{ question.id }}', 'false', this)">
+            <input type="radio" name="question_{{ question.id }}" value="false" class="hidden-radio">
+            <div class="option-label" style="width:auto;padding:0 10px;border-radius:4px;">F</div>
+            <div class="option-text">False</div>
+          </label>
+        </div>
+
+        {% elif question.question_type == 'code' %}
+        <textarea name="question_{{ question.id }}" class="exam-textarea exam-code" placeholder="Write your code here..." rows="10" onchange="markAnswered({{ forloop.counter }})"></textarea>
+
+        {% else %}
+        <textarea name="question_{{ question.id }}" class="exam-textarea" placeholder="Type your answer here..." rows="6" onchange="markAnswered({{ forloop.counter }})"></textarea>
+        {% endif %}
+
+        <div class="question-nav-btns">
+          {% if not forloop.first %}
+          <button type="button" class="btn btn-gray" onclick="showQuestion({{ forloop.counter|add:'-1' }})">
+            <i class="fa-solid fa-arrow-left"></i> Previous
+          </button>
+          {% else %}
+          <span></span>
+          {% endif %}
+
+          {% if not forloop.last %}
+          <button type="button" class="btn btn-primary" onclick="showQuestion({{ forloop.counter|add:'1' }})">
+            Next <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          {% else %}
+          <button type="button" class="btn btn-success" onclick="confirmSubmit()">
+            <i class="fa-solid fa-paper-plane"></i> Submit Exam
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Sidebar Panel -->
+    <div class="exam-sidebar-panel">
+      <div class="exam-side-card">
+        <div class="exam-side-title"><i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>Exam Info</div>
+        <div class="exam-side-body">
+          <div class="exam-side-row"><span>Questions</span><strong>{{ questions|length }}</strong></div>
+          <div class="exam-side-row"><span>Total Marks</span><strong>{{ exam.total_marks }}</strong></div>
+          <div class="exam-side-row"><span>Pass Mark</span><strong>{{ exam.passing_marks }}</strong></div>
+          <div class="exam-side-row"><span>Duration</span><strong>{{ exam.duration_minutes }} min</strong></div>
+        </div>
+      </div>
+
+      <div class="exam-side-card">
+        <div class="exam-side-title"><i class="fa-solid fa-list-ol" style="margin-right:6px;"></i>Progress</div>
+        <div class="exam-side-body">
+          <div style="text-align:center;margin-bottom:12px;">
+            <div style="font-size:22px;font-weight:800;color:var(--dark);" id="answeredCount">0</div>
+            <div style="font-size:11px;color:var(--gray-400);">of {{ questions|length }} answered</div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+          </div>
+          <div style="margin-top:16px;">
+            <div class="legend-row"><div class="legend-dot" style="background:var(--success);"></div>Answered</div>
+            <div class="legend-row"><div class="legend-dot" style="background:var(--primary);"></div>Current</div>
+            <div class="legend-row"><div class="legend-dot" style="background:var(--gray-200);border:1px solid var(--gray-300);"></div>Unanswered</div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-success" style="width:100%;" onclick="confirmSubmit()">
+        <i class="fa-solid fa-paper-plane"></i> Submit Exam
+      </button>
+    </div>
+  </div>
+</form>
+
+<!-- Submit Confirmation Modal -->
+<div id="submitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:var(--radius);padding:32px;max-width:420px;width:90%;box-shadow:var(--shadow-md);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--warning-light);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:28px;color:var(--warning);"></i>
+      </div>
+      <h3 style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:8px;">Submit Exam?</h3>
+      <p style="font-size:13px;color:var(--gray-600);">You have answered <strong id="modalAnswered">0</strong> of <strong>{{ questions|length }}</strong> questions. This action cannot be undone.</p>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button type="button" class="btn btn-gray" style="flex:1;" onclick="closeModal()">
+        <i class="fa-solid fa-arrow-left"></i> Continue
+      </button>
+      <button type="button" class="btn btn-success" style="flex:1;" onclick="submitExam()">
+        <i class="fa-solid fa-paper-plane"></i> Submit Now
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const TOTAL_QUESTIONS = {{ questions|length }};
+const DURATION_SECONDS = {{ exam.duration_minutes }} * 60;
+let answered = {};
+let currentQ = 1;
+let timeLeft = DURATION_SECONDS;
+let timerInterval;
+
+function showQuestion(n) {
+  document.querySelectorAll('[id^="question-"]').forEach(el => el.style.display = 'none');
+  const q = document.getElementById('question-' + n);
+  if (q) { q.style.display = 'block'; }
+  currentQ = n;
+
+  document.querySelectorAll('.q-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const btn = document.querySelector('.q-nav-btn[data-q="' + n + '"]');
+  if (btn) btn.classList.add('active');
+}
+
+function selectOption(qId, val, labelEl) {
+  // Remove selected from siblings
+  const siblings = labelEl.parentElement.querySelectorAll('.option-item');
+  siblings.forEach(s => s.classList.remove('selected'));
+  labelEl.classList.add('selected');
+
+  // Mark radio
+  const radio = labelEl.querySelector('input[type="radio"]');
+  if (radio) radio.checked = true;
+
+  markAnswered(currentQ);
+}
+
+function markAnswered(qNum) {
+  answered[qNum] = true;
+  const btn = document.querySelector('.q-nav-btn[data-q="' + qNum + '"]');
+  if (btn && !btn.classList.contains('active')) btn.classList.add('answered');
+  else if (btn) { btn.classList.add('answered'); }
+  updateProgress();
+}
+
+function updateProgress() {
+  const count = Object.keys(answered).length;
+  document.getElementById('answeredCount').textContent = count;
+  document.getElementById('progressFill').style.width = (count / TOTAL_QUESTIONS * 100) + '%';
+}
+
+function confirmSubmit() {
+  const count = Object.keys(answered).length;
+  document.getElementById('modalAnswered').textContent = count;
+  document.getElementById('submitModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('submitModal').style.display = 'none';
+}
+
+function submitExam() {
+  document.getElementById('submitFlag').value = 'true';
+  document.getElementById('examForm').submit();
+}
+
+// Timer
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    const display = min + ':' + String(sec).padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = display;
+
+    const timerEl = document.getElementById('examTimer');
+    if (timeLeft <= 300) timerEl.classList.add('warning');
+    if (timeLeft <= 60)  { timerEl.classList.remove('warning'); timerEl.classList.add('danger'); }
+    if (timeLeft <= 0)   { clearInterval(timerInterval); submitExam(); }
+  }, 1000);
+}
+
+// Textarea change detection for text/code questions
+document.querySelectorAll('textarea').forEach(ta => {
+  ta.addEventListener('input', () => {
+    const name = ta.getAttribute('name');
+    if (name && name.startsWith('question_')) {
+      const qIdx = parseInt(ta.closest('[id^="question-"]')?.id.replace('question-', ''));
+      if (qIdx) markAnswered(qIdx);
+    }
+  });
+});
+
+// Prevent accidental page leave
+window.addEventListener('beforeunload', e => {
+  e.preventDefault(); e.returnValue = '';
+});
+
+startTimer();
+</script>
+{% endblock %}

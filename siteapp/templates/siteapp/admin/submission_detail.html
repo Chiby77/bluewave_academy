@@ -1,404 +1,82 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Submission Details - Admin Portal{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-<style>
-.detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    background: linear-gradient(135deg, #0f766e, #14b8a6);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-}
-
-.detail-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.student-section {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.section-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.info-item {
-    padding: 15px;
-    background: #f8fafc;
-    border-radius: 8px;
-    border-left: 4px solid #14b8a6;
-}
-
-.info-label {
-    color: #64748b;
-    font-size: 0.9rem;
-    margin-bottom: 5px;
-}
-
-.info-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.score-display {
-    font-size: 2rem;
-    font-weight: 700;
-}
-
-.score-excellent {
-    color: #16a34a;
-}
-
-.score-good {
-    color: #0ea5e9;
-}
-
-.score-fair {
-    color: #f59e0b;
-}
-
-.score-poor {
-    color: #ef4444;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.status-submitted {
-    background: rgba(16,185,129,0.1);
-    color: #047857;
-}
-
-.status-graded {
-    background: rgba(37,99,235,0.1);
-    color: #1e40af;
-}
-
-.status-in-progress {
-    background: rgba(245,158,11,0.1);
-    color: #92400e;
-}
-
-.answers-section {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.answer-item {
-    border-bottom: 1px solid #e2e8f0;
-    padding: 25px;
-}
-
-.answer-item:last-child {
-    border-bottom: none;
-}
-
-.question-number {
-    display: inline-block;
-    background: #14b8a6;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-}
-
-.question-text {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 15px;
-}
-
-.answer-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 15px;
-}
-
-.answer-info-item {
-    padding: 12px;
-    background: #f8fafc;
-    border-radius: 6px;
-}
-
-.answer-label {
-    color: #64748b;
-    font-size: 0.85rem;
-    margin-bottom: 5px;
-}
-
-.answer-value {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.answer-correct {
-    color: #16a34a;
-}
-
-.answer-incorrect {
-    color: #ef4444;
-}
-
-.back-link {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-block;
-}
-
-.back-link:hover {
-    text-decoration: underline;
-}
-
-.action-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-}
-
-.btn-primary {
-    background: #14b8a6;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #0d9488;
-}
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #1e293b;
-}
-
-.btn-secondary:hover {
-    background: #cbd5e1;
-}
-
-.options-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 10px;
-}
-
-.option-item {
-    padding: 10px;
-    margin: 5px 0;
-    background: #f1f5f9;
-    border-left: 3px solid transparent;
-    border-radius: 4px;
-}
-
-.option-selected {
-    background: rgba(16,185,129,0.1);
-    border-left-color: #16a34a;
-}
-
-.option-selected.wrong {
-    background: rgba(239,68,68,0.1);
-    border-left-color: #ef4444;
-}
-
-.option-correct {
-    background: rgba(22,163,74,0.1);
-    border-left-color: #16a34a;
-}
-</style>
-{% endblock %}
+{% block title %}Submission Detail — Admin{% endblock %}
+{% block nav_submissions %}active{% endblock %}
+{% block page_title %}Submission Detail{% endblock %}
+{% block page_subtitle %}{{ submission.student.get_full_name }} — {{ submission.assignment.title }}{% endblock %}
 
 {% block content %}
-<div class="detail-header">
-    <div>
-        <h1>📝 Submission Details</h1>
-        <p>Review student exam submission and answers</p>
-    </div>
-    <div style="text-align: right;">
-        <a href="{% url 'siteapp:admin_submissions' %}" class="back-link">← Back to Submissions</a>
-    </div>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ submission.assignment.title }}</h2>
+    <p>Submitted by {{ submission.student.get_full_name }} on {{ submission.submitted_at|date:"F j, Y H:i" }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:admin_submissions' submission.assignment.id %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
 </div>
 
-<div class="detail-container">
-    <!-- Student & Exam Info -->
-    <div class="student-section">
-        <div class="section-title">👤 Student & Exam Information</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Student Name</div>
-                <div class="info-value">{{ attempt.student.get_full_name }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value">{{ attempt.student.email }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Exam Title</div>
-                <div class="info-value">{{ attempt.exam.title }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Status</div>
-                <div class="info-value">
-                    <span class="status-badge status-{{ attempt.status }}">
-                        {{ attempt.get_status_display }}
-                    </span>
-                </div>
-            </div>
+<div class="content-grid">
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-file-lines" style="color:var(--primary);margin-right:8px;"></i>Submission Content</h3>
+      </div>
+      <div class="card-body">
+        <div style="font-size:14px;line-height:1.8;color:var(--dark);white-space:pre-wrap;">{{ submission.content }}</div>
+        {% if submission.file %}
+        <div style="margin-top:16px;padding:12px;background:var(--gray-100);border-radius:var(--radius-sm);">
+          <a href="{{ submission.file.url }}" class="btn btn-outline" target="_blank">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Attached File
+          </a>
         </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-star" style="color:var(--warning);margin-right:8px;"></i>Grade</h3>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'siteapp:admin_grade_submission' submission.id %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Score (0 – {{ submission.assignment.max_score }})</label>
+            <input type="number" name="score" class="form-control"
+                   value="{{ submission.score|default:'' }}"
+                   min="0" max="{{ submission.assignment.max_score }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Feedback</label>
+            <textarea name="feedback" class="form-control" rows="5"
+                      placeholder="Write feedback for the student...">{{ submission.feedback }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Grade
+          </button>
+        </form>
+      </div>
     </div>
 
-    <!-- Score Summary -->
-    <div class="student-section">
-        <div class="section-title">📊 Score Summary</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Score</div>
-                <div class="info-value">
-                    {% if attempt.percentage %}
-                        {% if attempt.percentage >= 80 %}
-                            <span class="score-display score-excellent">{{ attempt.percentage }}%</span>
-                        {% elif attempt.percentage >= 60 %}
-                            <span class="score-display score-good">{{ attempt.percentage }}%</span>
-                        {% elif attempt.percentage >= 40 %}
-                            <span class="score-display score-fair">{{ attempt.percentage }}%</span>
-                        {% else %}
-                            <span class="score-display score-poor">{{ attempt.percentage }}%</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="score-display">—</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Correct Answers</div>
-                <div class="info-value">{{ attempt.correct_count|default:0 }} / {{ total_questions }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Submitted Date</div>
-                <div class="info-value">{{ attempt.created_at|date:'M d, Y H:i' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Time Taken</div>
-                <div class="info-value">
-                    {% if attempt.time_taken_minutes %}
-                        {{ attempt.time_taken_minutes }} minutes
-                    {% else %}
-                        —
-                    {% endif %}
-                </div>
-            </div>
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-user" style="color:var(--accent);margin-right:8px;"></i>Student Info</h3>
+      </div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--gray-700);line-height:2;">
+          <div><strong>Name:</strong> {{ submission.student.get_full_name }}</div>
+          <div><strong>ID:</strong> {{ submission.student.student_id }}</div>
+          <div><strong>Email:</strong> {{ submission.student.email }}</div>
+          <div><strong>Level:</strong> {{ submission.student.current_level|title }}</div>
         </div>
+      </div>
     </div>
-
-    <!-- Answers Review -->
-    <div class="student-section">
-        <div class="section-title">✍️ Student Answers</div>
-    </div>
-
-    {% if answers %}
-        <div class="answers-section">
-            {% for answer in answers %}
-                <div class="answer-item">
-                    <span class="question-number">Question {{ forloop.counter }}</span>
-                    <div class="question-text">{{ answer.question.text }}</div>
-                    
-                    <div class="answer-info">
-                        <div class="answer-info-item">
-                            <div class="answer-label">Student's Answer</div>
-                            <div class="answer-value">
-                                {{ answer.selected_option|default:"Not answered" }}
-                            </div>
-                        </div>
-                        <div class="answer-info-item">
-                            <div class="answer-label">Correct Answer</div>
-                            <div class="answer-value">
-                                {{ answer.question.correct_answer }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="answer-info">
-                        <div class="answer-info-item">
-                            <div class="answer-label">Result</div>
-                            <div class="answer-value">
-                                {% if answer.is_correct %}
-                                    <span class="answer-correct">✓ Correct</span>
-                                {% else %}
-                                    <span class="answer-incorrect">✗ Incorrect</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="answer-info-item">
-                            <div class="answer-label">Question Type</div>
-                            <div class="answer-value">{{ answer.question.get_question_type_display }}</div>
-                        </div>
-                    </div>
-
-                    {% if answer.question.options %}
-                        <div style="margin-top: 15px;">
-                            <div class="answer-label" style="margin-bottom: 10px;">Options:</div>
-                            <ul class="options-list">
-                                {% for option in answer.question.options %}
-                                    <li class="option-item {% if option == answer.selected_option and not answer.is_correct %}option-selected wrong{% elif option == answer.selected_option %}option-selected{% elif option == answer.question.correct_answer %}option-correct{% endif %}">
-                                        {{ option }}
-                                        {% if option == answer.question.correct_answer %}
-                                            <span style="margin-left: 8px; color: #16a34a; font-weight: 600;">✓</span>
-                                        {% endif %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div style="text-align: center; padding: 40px; background: white; border-radius: 12px;">
-            <p style="color: #64748b;">No answers found for this submission</p>
-        </div>
-    {% endif %}
-
-    <!-- Action Buttons -->
-    <div style="margin-top: 30px; display: flex; gap: 10px;">
-        <a href="{% url 'siteapp:admin_submissions' %}" class="action-button btn-secondary">← Back to Submissions</a>
-    </div>
+  </div>
 </div>
 {% endblock %}

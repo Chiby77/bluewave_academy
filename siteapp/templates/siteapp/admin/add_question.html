@@ -1,433 +1,153 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
-{% block title %}Add Question - Admin Dashboard{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}">
-<style>
-    .question-form {
-        max-width: 900px;
-        margin: 0 auto;
-        background: white;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .question-form h2 {
-        color: #1e40af;
-        margin-bottom: 1.5rem;
-    }
-
-    .form-section {
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .form-section:last-child {
-        border-bottom: none;
-    }
-
-    .form-section h3 {
-        color: #374151;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-    }
-
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #1f2937;
-        font-weight: 500;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 1rem;
-        font-family: inherit;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #1e40af;
-        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-    }
-
-    .form-group textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
-
-    .form-row-full {
-        grid-column: 1 / -1;
-    }
-
-    .options-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: #f9fafb;
-        border-radius: 6px;
-    }
-
-    .option-input {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .option-input input {
-        flex: 1;
-    }
-
-    .option-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #374151;
-    }
-
-    .option-label input[type="radio"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .true-false-options {
-        display: flex;
-        gap: 2rem;
-        margin-top: 1rem;
-    }
-
-    .true-false-option {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .true-false-option input[type="radio"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .true-false-option label {
-        margin: 0;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .type-specific {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background: #f0f9ff;
-        border-left: 4px solid #1e40af;
-        border-radius: 6px;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .btn-primary {
-        flex: 0 0 auto;
-        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-        color: white;
-        padding: 0.75rem 2rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
-    }
-
-    .btn-secondary {
-        flex: 0 0 auto;
-        background: #e5e7eb;
-        color: #1f2937;
-        padding: 0.75rem 2rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-    }
-
-    .btn-secondary:hover {
-        background: #d1d5db;
-    }
-
-    .header-back {
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .header-back a {
-        color: #1e40af;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .header-back a:hover {
-        text-decoration: underline;
-    }
-
-    .alert {
-        padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 2rem;
-    }
-
-    .alert-success {
-        background: #dcfce7;
-        color: #166534;
-        border-left: 4px solid #16a34a;
-    }
-
-    .alert-error {
-        background: #fee2e2;
-        color: #991b1b;
-        border-left: 4px solid #dc2626;
-    }
-
-    .exam-info {
-        background: #f0f9ff;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 2rem;
-        border-left: 4px solid #0084ff;
-    }
-
-    .exam-info strong {
-        color: #1e40af;
-    }
-</style>
-{% endblock %}
+{% block title %}Add Question — Admin{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}Add Question{% endblock %}
+{% block page_subtitle %}{{ exam.title }}{% endblock %}
 
 {% block content %}
-<div class="admin-wrapper">
-    <!-- Admin Navbar -->
-    <nav class="admin-navbar">
-        <div class="navbar-container">
-            <div class="navbar-brand">
-                <span class="admin-badge">ADMIN</span>
-                <h1>Bluewave Academy Admin</h1>
-            </div>
-            <div class="navbar-right">
-                <div class="admin-menu">
-                    <span class="admin-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                    <a href="{% url 'siteapp:dashboard' %}" class="btn-link">Student Portal</a>
-                    <a href="{% url 'siteapp:logout' %}" class="btn-link">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="admin-container">
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-menu">
-                <div class="menu-section">
-                    <h3 class="menu-title">Dashboard</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:admin_dashboard' %}" class="menu-item">
-                            <i class="icon">📊</i> Overview
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">Exam Management</h3>
-                    <ul class="menu-items">
-                        <li><a href="{% url 'siteapp:exam_list_admin' %}" class="menu-item">
-                            <i class="icon">📋</i> All Exams
-                        </a></li>
-                        <li><a href="{% url 'siteapp:create_exam' %}" class="menu-item">
-                            <i class="icon">➕</i> Create New Exam
-                        </a></li>
-                    </ul>
-                </div>
-
-                <div class="menu-section">
-                    <h3 class="menu-title">System</h3>
-                    <ul class="menu-items">
-                        <li><a href="/admin/" class="menu-item">
-                            <i class="icon">⚙️</i> Django Admin
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <div class="header-back">
-                <a href="{% url 'siteapp:edit_exam' exam.id %}">← Back to Exam</a>
-            </div>
-
-            {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-            {% endif %}
-
-            <div class="exam-info">
-                <strong>Exam:</strong> {{ exam.title }}<br>
-                <small>Total Questions: {{ exam.questions.count }}</small>
-            </div>
-
-            <div class="question-form">
-                <h2>➕ Add New Question</h2>
-
-                <form method="post">
-                    {% csrf_token %}
-
-                    <!-- Basic Info -->
-                    <div class="form-section">
-                        <h3>Question Details</h3>
-
-                        <div class="form-group">
-                            <label for="question_type">Question Type *</label>
-                            <select name="question_type" id="question_type" required onchange="updateQuestionType()">
-                                <option value="">-- Select Type --</option>
-                                <option value="mcq">Multiple Choice (MCQ)</option>
-                                <option value="true_false">True / False</option>
-                                <option value="short_answer">Short Answer</option>
-                                <option value="essay">Essay</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="question_text">Question *</label>
-                            <textarea name="question_text" id="question_text" required placeholder="Enter the question text..."></textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="marks">Marks (Points) *</label>
-                                <input type="number" name="marks" id="marks" value="1" min="1" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- MCQ Options -->
-                    <div class="form-section" id="mcq-section" style="display: none;">
-                        <h3>MCQ Options</h3>
-
-                        <div class="options-container">
-                            <div>
-                                <div class="option-label">
-                                    <input type="radio" name="correct_answer" value="A" id="correct_a">
-                                    <label for="correct_a">Option A (Correct)</label>
-                                </div>
-                                <input type="text" name="option_a" placeholder="Enter option A">
-                            </div>
-
-                            <div>
-                                <div class="option-label">
-                                    <input type="radio" name="correct_answer" value="B" id="correct_b">
-                                    <label for="correct_b">Option B (Correct)</label>
-                                </div>
-                                <input type="text" name="option_b" placeholder="Enter option B">
-                            </div>
-
-                            <div>
-                                <div class="option-label">
-                                    <input type="radio" name="correct_answer" value="C" id="correct_c">
-                                    <label for="correct_c">Option C (Correct)</label>
-                                </div>
-                                <input type="text" name="option_c" placeholder="Enter option C">
-                            </div>
-
-                            <div>
-                                <div class="option-label">
-                                    <input type="radio" name="correct_answer" value="D" id="correct_d">
-                                    <label for="correct_d">Option D (Correct)</label>
-                                </div>
-                                <input type="text" name="option_d" placeholder="Enter option D">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- True/False Options -->
-                    <div class="form-section" id="truefalse-section" style="display: none;">
-                        <h3>Correct Answer</h3>
-
-                        <div class="true-false-options">
-                            <div class="true-false-option">
-                                <input type="radio" name="correct_answer" value="true" id="ans_true">
-                                <label for="ans_true">True</label>
-                            </div>
-                            <div class="true-false-option">
-                                <input type="radio" name="correct_answer" value="false" id="ans_false">
-                                <label for="ans_false">False</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Explanation -->
-                    <div class="form-section">
-                        <h3>Explanation (Optional)</h3>
-
-                        <div class="form-group">
-                            <label for="explanation">Explanation</label>
-                            <textarea name="explanation" id="explanation" placeholder="Provide explanation for the answer..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">✓ Add Question</button>
-                        <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn-secondary">Cancel</a>
-                    </div>
-                </form>
-            </div>
-        </main>
-    </div>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>New Question</h2>
+    <p>{{ exam.questions.count }} question{{ exam.questions.count|pluralize }} already added</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn btn-gray">
+      <i class="fa-solid fa-arrow-left"></i> Back to Exam
+    </a>
+  </div>
 </div>
 
+<div class="card" style="background:var(--primary-light);border:1px solid var(--primary-mid);margin-bottom:20px;">
+  <div class="card-body" style="padding:12px 20px;">
+    <div style="font-size:13px;color:var(--primary-dark);">
+      <strong><i class="fa-solid fa-file-alt"></i> Exam:</strong> {{ exam.title }} &bull;
+      <strong>Total Marks:</strong> {{ exam.total_marks }} &bull;
+      <strong>Pass Mark:</strong> {{ exam.passing_marks }}
+    </div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-circle-question" style="color:var(--primary);margin-right:8px;"></i>Question Details</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Question Type <span class="required">*</span></label>
+            <select name="question_type" id="question_type" class="form-control" required onchange="updateType()">
+              <option value="">Select type</option>
+              <option value="mcq">Multiple Choice (MCQ)</option>
+              <option value="true_false">True / False</option>
+              <option value="short_answer">Short Answer</option>
+              <option value="essay">Essay</option>
+              <option value="code">Code / Programming</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Question Text <span class="required">*</span></label>
+            <textarea name="question_text" class="form-control" rows="5" required
+                      placeholder="Enter the question text..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Marks (Points) <span class="required">*</span></label>
+            <input type="number" name="marks" class="form-control" value="1" min="1" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- MCQ Options -->
+      <div class="card" id="mcq-section" style="display:none;">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-list-ul" style="color:var(--accent);margin-right:8px;"></i>MCQ Options</h3>
+          <span style="font-size:12px;color:var(--gray-400);">Select which option is correct</span>
+        </div>
+        <div class="card-body">
+          {% for letter in "ABCD" %}
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input type="radio" name="correct_answer" value="{{ letter }}" id="correct_{{ letter }}"
+                   style="width:18px;height:18px;flex-shrink:0;accent-color:var(--primary);">
+            <label for="correct_{{ letter }}" style="font-weight:700;width:20px;color:var(--primary);">{{ letter }}</label>
+            <input type="text" name="option_{{ letter|lower }}" class="form-control" placeholder="Option {{ letter }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- True/False Options -->
+      <div class="card" id="tf-section" style="display:none;">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-circle-half-stroke" style="color:var(--warning);margin-right:8px;"></i>Correct Answer</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;gap:24px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;">
+              <input type="radio" name="correct_answer" value="true" style="width:18px;height:18px;accent-color:var(--success);"> True
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;">
+              <input type="radio" name="correct_answer" value="false" style="width:18px;height:18px;accent-color:var(--danger);"> False
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Answer / Explanation -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-key" style="color:var(--success);margin-right:8px;"></i>Answer &amp; Explanation</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group" id="correct-answer-field" style="display:none;">
+            <label class="form-label">Model Answer <span class="required">*</span></label>
+            <textarea name="correct_answer" class="form-control" rows="4"
+                      placeholder="Write the expected answer here (used by Gemini AI for grading)..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Explanation / Marking Guide</label>
+            <textarea name="explanation" class="form-control" rows="5"
+                      placeholder="Explain why the answer is correct (optional but recommended)..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--primary-light);border:1px solid var(--primary-mid);">
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--primary-dark);line-height:1.8;">
+            <div style="font-weight:700;margin-bottom:8px;"><i class="fa-solid fa-robot"></i> Gemini AI Grading</div>
+            <p>Short answer, essay, and code questions are automatically graded by Gemini AI using the model answer you provide.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:4px;">
+    <a href="{% url 'siteapp:edit_exam' exam.id %}" class="btn btn-gray">Cancel</a>
+    <button type="submit" name="action" value="save_add" class="btn btn-gray">
+      <i class="fa-solid fa-plus-circle"></i> Save &amp; Add Another
+    </button>
+    <button type="submit" name="action" value="save" class="btn btn-primary">
+      <i class="fa-solid fa-floppy-disk"></i> Save Question
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-function updateQuestionType() {
-    const type = document.getElementById('question_type').value;
-    document.getElementById('mcq-section').style.display = type === 'mcq' ? 'block' : 'none';
-    document.getElementById('truefalse-section').style.display = type === 'true_false' ? 'block' : 'none';
+function updateType() {
+  const type = document.getElementById('question_type').value;
+  document.getElementById('mcq-section').style.display     = type === 'mcq'       ? 'block' : 'none';
+  document.getElementById('tf-section').style.display      = type === 'true_false' ? 'block' : 'none';
+  document.getElementById('correct-answer-field').style.display =
+    ['short_answer','essay','code'].includes(type) ? 'block' : 'none';
 }
 </script>
-
 {% endblock %}
