@@ -29,7 +29,7 @@ from .models import (
     BlogPost,
 )
 from .forms import ExamAnswerForm, StudentLoginForm
-from .groq_service import get_groq_service
+from .examinator_service import get_grading_service
 from .pdf_generator import generate_student_report
 
 
@@ -426,8 +426,6 @@ def grade_attempt(request, attempt_id):
         question__question_type__in=["essay", "short_answer", "code"]
     ).select_related("question")
 
-    groq_service = get_groq_service()
-
     if request.method == "POST":
         try:
             with transaction.atomic():
@@ -478,13 +476,13 @@ def grade_attempt(request, attempt_id):
 
 @admin_required
 def auto_grade_attempt(request, attempt_id):
-    """Auto-grade attempt using Groq AI"""
+    """Auto-grade attempt using Gemini AI"""
 
     attempt = get_object_or_404(ExamAttempt, id=attempt_id)
-    groq_service = get_groq_service()
+    gemini_service = get_grading_service()
 
-    if not groq_service.is_enabled():
-        messages.error(request, "Groq AI service is not configured.")
+    if not gemini_service.is_enabled():
+        messages.error(request, "Gemini AI service is not configured. Please set the GEMINI_API_KEY environment variable.")
         return redirect("siteapp:grade_attempt", attempt_id=attempt.id)
 
     try:
@@ -497,24 +495,26 @@ def auto_grade_attempt(request, attempt_id):
             for answer in answers_to_grade:
                 question = answer.question
 
-                # Grade using Groq
+                # Grade using Gemini
                 if question.question_type == "code":
-                    grade_result = groq_service.grade_code_answer(
-                        question.question_text,
-                        question.correct_answer,
-                        answer.answer_text,
-                        question.marks,
+                    grade_result = gemini_service.grade_code_submission(
+                        question=question.question_text,
+                        rubric=getattr(question, "rubric", "") or "",
+                        expected_output=question.correct_answer or "",
+                        student_code=answer.answer_text or "",
+                        language=getattr(question, "code_language", "python") or "python",
+                        total_marks=int(question.marks),
                     )
                 else:
-                    grade_result = groq_service.grade_answer(
-                        question.question_text,
-                        question.correct_answer,
-                        answer.answer_text,
-                        question.marks,
-                        question.question_type,
+                    grade_result = gemini_service.grade_text_submission(
+                        question=question.question_text,
+                        rubric=getattr(question, "rubric", "") or "",
+                        answer_key=question.correct_answer or "",
+                        student_answer=answer.answer_text or "",
+                        total_marks=int(question.marks),
                     )
 
-                # Create grading record
+                # Store results in existing grading record (reuse groq_ fields for AI results)
                 ExamGrading.objects.update_or_create(
                     attempt=attempt,
                     question=question,
@@ -539,7 +539,7 @@ def auto_grade_attempt(request, attempt_id):
             attempt.ai_graded = True
             attempt.save()
 
-            messages.success(request, "Attempt auto-graded using Groq AI!")
+            messages.success(request, "Attempt auto-graded using Gemini AI.")
             return redirect("siteapp:view_attempts")
 
     except Exception as e:
