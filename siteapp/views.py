@@ -354,12 +354,12 @@ def student_announcements(request):
 
 @login_required(login_url="siteapp:login")
 def profile(request):
-    """View student profile - returns partial HTML"""
+    """View student profile"""
     if is_ajax(request):
         return render(
             request, "siteapp/student/partials/profile.html", {"user": request.user}
         )
-    return render(request, "siteapp/student/dashboard.html", {"user": request.user})
+    return redirect("siteapp:edit_profile")
 
 
 @login_required(login_url="siteapp:login")
@@ -370,7 +370,7 @@ def edit_profile(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully!")
-            return redirect("siteapp:profile")
+            return redirect("siteapp:edit_profile")
     else:
         form = ProfileUpdateForm(instance=request.user)
 
@@ -397,7 +397,7 @@ def analytics(request):
     if is_ajax(request):
         return render(request, "siteapp/student/partials/analytics.html", context)
 
-    return render(request, "siteapp/student/dashboard.html", context)
+    return redirect("siteapp:student_results")
 
 
 # ============= EXAM VIEWS =============

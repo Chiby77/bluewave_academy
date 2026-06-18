@@ -82,8 +82,8 @@ urlpatterns = [
         views.download_resource,
         name="download_resource",
     ),
-    # Announcements
-    path("student/announcements/", views.announcements, name="announcements"),
+    # Announcements (AJAX partial endpoint kept for backward compatibility)
+    path("student/announcements/ajax/", views.announcements, name="announcements"),
     # Special Papers (Supabase)
     path(
         "downloads/special/<int:paper_id>/",
