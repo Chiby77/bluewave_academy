@@ -4,208 +4,177 @@
 {% block title %}{{ exam.title }} — Bluewave Academy{% endblock %}
 {% block nav_exams %}active{% endblock %}
 {% block page_title %}Exam Details{% endblock %}
-{% block page_subtitle %}Review the exam before you begin{% endblock %}
+{% block page_subtitle %}Review before you begin{% endblock %}
 
 {% block content %}
 
-<div class="page-header">
-  <div class="page-header-left">
-    <h2>{{ exam.title }}</h2>
-    <p>{{ exam.get_category_display }} &bull; {{ exam.get_level_display }}</p>
-  </div>
-  <div class="page-header-actions">
-    <a href="{% url 'siteapp:exam_list' %}" class="btn btn-gray">
-      <i class="fa-solid fa-arrow-left"></i> Back to Exams
-    </a>
+<!-- Exam Hero Banner -->
+<div class="exam-hero">
+  <div style="position:relative;z-index:1;">
+    <div class="exam-hero-badge">
+      <i class="fa-solid fa-tag"></i> {{ exam.get_category_display }}
+      &nbsp;&bull;&nbsp;
+      <i class="fa-solid fa-signal"></i> {{ exam.get_level_display }}
+    </div>
+    <div class="exam-hero-title">{{ exam.title }}</div>
+    {% if exam.description %}
+    <div style="font-size:13px;color:rgba(255,255,255,.65);max-width:600px;line-height:1.6;margin-bottom:16px;">{{ exam.description|truncatechars:140 }}</div>
+    {% endif %}
+    <div class="exam-hero-meta">
+      <div class="exam-hero-meta-item"><i class="fa-regular fa-clock"></i> {{ exam.duration_minutes }} minutes</div>
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-list-ol"></i> {{ question_count }} questions</div>
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-star"></i> {{ exam.total_marks }} total marks</div>
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-bullseye"></i> Pass: {{ exam.passing_marks }} marks</div>
+    </div>
+    <div class="exam-hero-cta">
+      {% if not attempt %}
+      <a href="{% url 'siteapp:take_exam' exam.id %}" class="btn-hero-start">
+        <i class="fa-solid fa-play"></i> Start Exam Now
+      </a>
+      <a href="{% url 'siteapp:exam_list' %}" class="btn-hero-outline">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </a>
+      {% else %}
+      <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn-hero-start">
+        <i class="fa-solid fa-chart-bar"></i> View Results
+      </a>
+      <a href="{% url 'siteapp:exam_list' %}" class="btn-hero-outline">
+        <i class="fa-solid fa-arrow-left"></i> All Exams
+      </a>
+      {% endif %}
+    </div>
   </div>
 </div>
 
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}" style="margin-bottom:20px;">
+  <i class="fa-solid fa-circle-info"></i> {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+
 <div class="content-grid">
 
-  <!-- Left: Exam Info -->
+  <!-- Left -->
   <div>
 
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
-      <i class="fa-solid fa-circle-info"></i> {{ message }}
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Already attempted -->
     {% if attempt %}
-    <div class="card" style="margin-bottom:20px;border-left:4px solid {% if attempt.is_passed %}var(--success){% else %}var(--danger){% endif %};">
-      <div class="card-header">
-        <h3>
-          {% if attempt.is_passed %}
-          <i class="fa-solid fa-circle-check" style="color:var(--success);margin-right:8px;"></i>You Passed This Exam
-          {% else %}
-          <i class="fa-solid fa-circle-xmark" style="color:var(--danger);margin-right:8px;"></i>Previous Attempt
-          {% endif %}
-        </h3>
-        <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
-          {{ attempt.percentage|floatformat:0 }}%
-        </span>
-      </div>
-      <div class="card-body">
-        <div class="stats-row" style="margin-bottom:16px;">
-          <div class="stat-card">
-            <div class="stat-icon blue"><i class="fa-solid fa-star-half-stroke"></i></div>
-            <div>
-              <div class="stat-value">{{ attempt.score|floatformat:0 }}</div>
-              <div class="stat-label">Your Score</div>
+    <!-- Previous attempt result card -->
+    <div class="card" style="margin-bottom:20px;overflow:hidden;padding:0;">
+      <div style="background:linear-gradient(135deg,{% if attempt.is_passed %}#064e3b,#065f46{% else %}#1e1b4b,#1e3a8a{% endif %});padding:20px 24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Previous Attempt</div>
+            <div style="font-size:18px;font-weight:800;color:#fff;">
+              {% if attempt.is_passed %}
+              <i class="fa-solid fa-circle-check" style="color:#6ee7b7;margin-right:6px;"></i>You Passed
+              {% else %}
+              <i class="fa-solid fa-circle-xmark" style="color:#fca5a5;margin-right:6px;"></i>Not Passed
+              {% endif %}
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon green"><i class="fa-solid fa-bullseye"></i></div>
-            <div>
-              <div class="stat-value">{{ exam.passing_marks }}</div>
-              <div class="stat-label">Pass Mark</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div>
-            <div>
-              <div class="stat-value">{{ attempt.time_taken_minutes|default:"—" }}</div>
-              <div class="stat-label">Minutes Taken</div>
-            </div>
+          <div style="text-align:right;">
+            <div style="font-size:32px;font-weight:800;color:#fff;">{{ attempt.score|floatformat:0 }}<span style="font-size:16px;opacity:.6;">/{{ exam.total_marks }}</span></div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5);">{{ attempt.percentage|floatformat:0 }}%</div>
           </div>
         </div>
+      </div>
+      <div style="padding:16px 24px;display:flex;gap:10px;">
         <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn btn-primary">
-          <i class="fa-solid fa-chart-bar"></i> View Full Results
+          <i class="fa-solid fa-chart-bar"></i> View Full Report
         </a>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Description -->
-    {% if exam.description %}
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header">
-        <h3><i class="fa-solid fa-align-left" style="color:var(--primary);margin-right:8px;"></i>About This Exam</h3>
-      </div>
-      <div class="card-body">
-        <p style="font-size:14px;color:var(--gray-700);line-height:1.7;">{{ exam.description }}</p>
+        {% if attempt.time_taken_minutes %}
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gray-500);">
+          <i class="fa-regular fa-clock"></i> {{ attempt.time_taken_minutes }} min taken
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
 
     <!-- Instructions -->
-    <div class="card" style="margin-bottom:20px;">
+    <div class="card">
       <div class="card-header">
         <h3><i class="fa-solid fa-clipboard-list" style="color:var(--primary);margin-right:8px;"></i>Exam Instructions</h3>
       </div>
       <div class="card-body">
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;">
-          <li style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;">1</div>
-            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;">The exam will begin immediately when you click <strong>Start Exam</strong>. The timer cannot be paused.</span>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:14px;">
+          <li style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:800;">1</div>
+            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;line-height:1.6;">The exam begins immediately when you click <strong>Start Exam Now</strong>. The timer cannot be paused.</span>
           </li>
-          <li style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;">2</div>
-            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;">Do not refresh or close your browser during the exam — your progress may be lost.</span>
+          <li style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:800;">2</div>
+            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;line-height:1.6;">Do not refresh or close your browser — your progress may be lost.</span>
           </li>
-          <li style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;">3</div>
-            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;">Answer all {{ question_count }} questions. Use the question navigator to move between questions freely.</span>
+          <li style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:800;">3</div>
+            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;line-height:1.6;">Answer all {{ question_count }} questions. Navigate freely between questions using the panel on the right.</span>
           </li>
-          <li style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;">4</div>
-            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;">When time expires, the exam is submitted automatically. Submit early once you are satisfied with your answers.</span>
+          <li style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:800;">4</div>
+            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;line-height:1.6;">When time expires, the exam is submitted automatically. Submit early once satisfied with your answers.</span>
           </li>
           {% if exam.show_answers_after_submit %}
-          <li style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;"><i class="fa-solid fa-check"></i></div>
-            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;">Correct answers and explanations will be shown after submission.</span>
+          <li style="display:flex;align-items:flex-start;gap:14px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;"><i class="fa-solid fa-check"></i></div>
+            <span style="font-size:13px;color:var(--gray-700);padding-top:4px;line-height:1.6;">Correct answers and explanations will be shown after submission.</span>
           </li>
           {% endif %}
         </ul>
       </div>
     </div>
 
-    <!-- Start / Retake CTA -->
-    {% if not attempt %}
-    <div style="display:flex;gap:12px;">
-      <a href="{% url 'siteapp:take_exam' exam.id %}" class="btn btn-primary" style="padding:14px 32px;font-size:15px;">
-        <i class="fa-solid fa-play"></i> Start Exam
-      </a>
-      <a href="{% url 'siteapp:exam_list' %}" class="btn btn-outline">
-        <i class="fa-solid fa-arrow-left"></i> Back
-      </a>
-    </div>
-    {% else %}
-    <div style="display:flex;gap:12px;">
-      <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn btn-primary">
-        <i class="fa-solid fa-chart-bar"></i> View Results
-      </a>
-      <a href="{% url 'siteapp:exam_list' %}" class="btn btn-outline">
-        <i class="fa-solid fa-arrow-left"></i> All Exams
-      </a>
-    </div>
-    {% endif %}
-
   </div>
 
-  <!-- Right: Sidebar -->
+  <!-- Right: Summary sidebar -->
   <div>
-
-    <!-- Quick Stats -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-header">
-        <h3><i class="fa-solid fa-circle-info" style="color:var(--primary);margin-right:8px;"></i>Exam Summary</h3>
+    <div class="card" style="overflow:hidden;padding:0;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,#0f172a,#1e3a8a);padding:20px 20px 16px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Exam Summary</div>
+        <div style="font-size:15px;font-weight:700;color:#fff;">{{ exam.title }}</div>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div style="display:flex;flex-direction:column;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-solid fa-list-ol" style="width:18px;color:var(--primary);margin-right:8px;"></i>Questions</span>
-            <strong style="font-size:14px;color:var(--dark);">{{ question_count }}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-solid fa-star" style="width:18px;color:var(--warning);margin-right:8px;"></i>Total Marks</span>
-            <strong style="font-size:14px;color:var(--dark);">{{ exam.total_marks }}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-solid fa-bullseye" style="width:18px;color:var(--success);margin-right:8px;"></i>Pass Mark</span>
-            <strong style="font-size:14px;color:var(--dark);">{{ exam.passing_marks }}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-regular fa-clock" style="width:18px;color:var(--accent);margin-right:8px;"></i>Duration</span>
-            <strong style="font-size:14px;color:var(--dark);">{{ exam.duration_minutes }} min</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-solid fa-layer-group" style="width:18px;color:var(--purple, #7c3aed);margin-right:8px;"></i>Level</span>
-            <span class="badge badge-blue">{{ exam.get_level_display }}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;">
-            <span style="font-size:13px;color:var(--gray-600);"><i class="fa-solid fa-tag" style="width:18px;color:var(--gray-400);margin-right:8px;"></i>Category</span>
-            <span class="badge badge-cyan">{{ exam.get_category_display }}</span>
-          </div>
+      <div style="padding:0;">
+        {% for icon,label,value in exam_summary_rows|default:'' %}{% endfor %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-list-ol" style="width:16px;color:var(--primary);"></i>Questions</span>
+          <strong style="color:var(--dark);">{{ question_count }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-star" style="width:16px;color:var(--warning);"></i>Total Marks</span>
+          <strong style="color:var(--dark);">{{ exam.total_marks }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-bullseye" style="width:16px;color:var(--success);"></i>Pass Mark</span>
+          <strong style="color:var(--dark);">{{ exam.passing_marks }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-regular fa-clock" style="width:16px;color:var(--accent);"></i>Duration</span>
+          <strong style="color:var(--dark);">{{ exam.duration_minutes }} min</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;font-size:13px;">
+          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-regular fa-calendar" style="width:16px;color:var(--gray-400);"></i>Closes</span>
+          <strong style="color:var(--dark);">{{ exam.end_date|date:"M d, Y" }}</strong>
         </div>
       </div>
     </div>
 
-    <!-- Pass rate indicator -->
+    <!-- Pass threshold -->
     <div class="card">
       <div class="card-header">
-        <h3><i class="fa-solid fa-percent" style="color:var(--primary);margin-right:8px;"></i>Pass Requirement</h3>
+        <h3><i class="fa-solid fa-percent" style="color:var(--primary);margin-right:8px;"></i>Pass Threshold</h3>
       </div>
-      <div class="card-body">
+      <div class="card-body" style="text-align:center;">
         {% if exam.total_marks > 0 %}
-        {% with pass_pct=exam.passing_marks|floatformat:0 %}
-        <div style="text-align:center;margin-bottom:12px;">
-          <div style="font-size:32px;font-weight:800;color:var(--dark);">
-            {{ exam.passing_marks }}
-          </div>
-          <div style="font-size:12px;color:var(--gray-400);">marks needed to pass out of {{ exam.total_marks }}</div>
+        <div style="font-size:40px;font-weight:800;color:var(--dark);line-height:1;">
+          {% widthratio exam.passing_marks exam.total_marks 100 %}%
         </div>
-        <div class="progress-bar" style="margin-bottom:8px;">
-          <div class="progress-fill warning" style="width:{% widthratio exam.passing_marks exam.total_marks 100 %}%;"></div>
+        <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">minimum to pass</div>
+        <div class="progress-bar" style="height:10px;border-radius:6px;">
+          <div class="progress-fill warning" style="width:{% widthratio exam.passing_marks exam.total_marks 100 %}%;border-radius:6px;"></div>
         </div>
-        <div style="font-size:11px;color:var(--gray-400);text-align:right;">
-          {% widthratio exam.passing_marks exam.total_marks 100 %}% pass threshold
-        </div>
-        {% endwith %}
+        <div style="font-size:11px;color:var(--gray-400);margin-top:8px;">{{ exam.passing_marks }} of {{ exam.total_marks }} marks required</div>
         {% endif %}
       </div>
     </div>

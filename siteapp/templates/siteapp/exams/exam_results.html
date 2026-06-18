@@ -1,67 +1,69 @@
 {% extends "siteapp/student/base_student.html" %}
 {% load static %}
 
-{% block title %}Exam Results — {{ attempt.exam.title }}{% endblock %}
+{% block title %}Exam Report — {{ attempt.exam.title }}{% endblock %}
 {% block nav_results %}active{% endblock %}
 {% block page_title %}Exam Report{% endblock %}
 {% block page_subtitle %}{{ attempt.exam.title }}{% endblock %}
 
 {% block content %}
 
-<!-- Report Header -->
-<div class="report-header">
-  <div class="report-header-top">
-    <div>
-      <div class="report-academy">Bluewave Academy — Official Exam Report</div>
-      <div class="report-title">{{ attempt.exam.title }}</div>
-      <div class="report-subtitle">{{ attempt.exam.get_category_display }} &bull; {{ attempt.exam.get_level_display }}</div>
-      {% if passed %}
-        <div class="report-verdict pass"><i class="fa-solid fa-circle-check"></i> PASSED</div>
-      {% else %}
-        <div class="report-verdict fail"><i class="fa-solid fa-circle-xmark"></i> NOT PASSED</div>
-      {% endif %}
+<!-- Report Hero -->
+<div class="report-hero {% if passed %}pass{% else %}fail{% endif %}" style="margin-bottom:24px;">
+
+  <div class="report-hero-left">
+    <div class="report-verdict-badge {% if passed %}pass{% else %}fail{% endif %}">
+      <i class="fa-solid {% if passed %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"></i>
+      {% if passed %}PASSED{% else %}NOT PASSED{% endif %}
     </div>
-    <div class="report-score-circle">
-      <div class="pct">{% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}{% else %}0{% endif %}%</div>
-      <div class="pct-label">SCORE</div>
+    <div class="report-hero-title">{{ attempt.exam.title }}</div>
+    <div class="report-hero-sub">{{ attempt.exam.get_category_display }} &bull; {{ attempt.exam.get_level_display }}</div>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;">
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">
+        <div style="font-weight:700;color:rgba(255,255,255,.9);font-size:20px;">{{ attempt.score|floatformat:0 }}<span style="font-size:13px;opacity:.6;">/{{ attempt.exam.total_marks }}</span></div>
+        <div>Score</div>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">
+        <div style="font-weight:700;color:rgba(255,255,255,.9);font-size:20px;">{{ attempt.exam.passing_marks }}</div>
+        <div>Pass Mark</div>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">
+        <div style="font-weight:700;color:rgba(255,255,255,.9);font-size:20px;">{{ attempt.time_taken_minutes|default:"—" }}<span style="font-size:13px;opacity:.6;">{% if attempt.time_taken_minutes %} min{% endif %}</span></div>
+        <div>Time Taken</div>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);">
+        <div style="font-weight:700;color:rgba(255,255,255,.9);font-size:16px;">{{ attempt.created_at|date:"M d, Y" }}</div>
+        <div>Date</div>
+      </div>
     </div>
   </div>
 
-  <div class="report-meta">
-    <div class="report-meta-item">
-      <div class="label">Student</div>
-      <div class="value">{{ attempt.student.get_full_name }}</div>
-    </div>
-    <div class="report-meta-item">
-      <div class="label">Student ID</div>
-      <div class="value">{{ attempt.student.student_id }}</div>
-    </div>
-    <div class="report-meta-item">
-      <div class="label">Score</div>
-      <div class="value">{{ attempt.score|floatformat:0 }} / {{ attempt.exam.total_marks }}</div>
-    </div>
-    <div class="report-meta-item">
-      <div class="label">Pass Mark</div>
-      <div class="value">{{ attempt.exam.passing_marks }} / {{ attempt.exam.total_marks }}</div>
-    </div>
-    <div class="report-meta-item">
-      <div class="label">Date Taken</div>
-      <div class="value">{{ attempt.created_at|date:"M d, Y" }}</div>
-    </div>
-    <div class="report-meta-item">
-      <div class="label">Time Taken</div>
-      <div class="value">{{ attempt.time_taken_minutes|default:"—" }} min</div>
+  <!-- Animated Score Donut -->
+  <div class="report-score-donut" style="position:relative;width:130px;height:130px;flex-shrink:0;">
+    <svg class="score-svg" width="130" height="130" viewBox="0 0 130 130">
+      <circle class="score-ring-bg" cx="65" cy="65" r="54" stroke="rgba(255,255,255,.12)" stroke-width="10"/>
+      <circle class="score-ring-fill" cx="65" cy="65" r="54"
+        stroke="{% if passed %}#34d399{% else %}#818cf8{% endif %}"
+        stroke-width="10"
+        stroke-dasharray="339.3"
+        stroke-dashoffset="339.3"
+        id="scoreRing"/>
+    </svg>
+    <div class="donut-center">
+      <div class="pct" id="scoreDisplay">0%</div>
+      <div class="lbl">SCORE</div>
     </div>
   </div>
 </div>
 
-<!-- Summary Cards -->
+<!-- Stats Row -->
 <div class="stats-row" style="margin-bottom:24px;">
   <div class="stat-card">
     <div class="stat-icon blue"><i class="fa-solid fa-list-ol"></i></div>
     <div>
       <div class="stat-value">{{ total_questions }}</div>
-      <div class="stat-label">Total Questions</div>
+      <div class="stat-label">Questions</div>
     </div>
   </div>
   <div class="stat-card">
@@ -79,10 +81,12 @@
     </div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon {% if passed %}green{% else %}amber{% endif %}"><i class="fa-solid fa-bullseye"></i></div>
+    <div class="stat-icon {% if passed %}green{% else %}amber{% endif %}">
+      <i class="fa-solid {% if passed %}fa-trophy{% else %}fa-bullseye{% endif %}"></i>
+    </div>
     <div>
-      <div class="stat-value">{% if passed %}0{% else %}{{ marks_needed|floatformat:0 }}{% endif %}</div>
-      <div class="stat-label">{% if passed %}Marks Above Pass{% else %}Marks Needed{% endif %}</div>
+      <div class="stat-value">{% if passed %}+{{ attempt.score|floatformat:0|add:"-"|add:attempt.exam.passing_marks }}{% else %}{{ marks_needed|floatformat:0 }}{% endif %}</div>
+      <div class="stat-label">{% if passed %}Above Pass{% else %}Marks Short{% endif %}</div>
     </div>
   </div>
 </div>
@@ -102,13 +106,19 @@
 
 <!-- AI Feedback -->
 {% if attempt.ai_feedback %}
-<div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent);">
-  <div class="card-header">
-    <h3><i class="fa-solid fa-robot" style="color:var(--accent);margin-right:8px;"></i>Gemini AI Feedback</h3>
-    <span class="badge badge-cyan"><i class="fa-solid fa-sparkles"></i> AI Generated</span>
+<div class="card" style="margin-bottom:20px;overflow:hidden;padding:0;">
+  <div style="background:linear-gradient(135deg,#0c4a6e,#0369a1);padding:18px 24px;display:flex;align-items:center;gap:12px;">
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i class="fa-solid fa-robot" style="color:#fff;font-size:18px;"></i>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#fff;">Gemini AI Feedback</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.6);">Personalised analysis of your performance</div>
+    </div>
+    <span class="badge" style="margin-left:auto;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);">AI Generated</span>
   </div>
   <div class="card-body">
-    <p style="font-size:14px;color:var(--gray-800);line-height:1.7;">{{ attempt.ai_feedback }}</p>
+    <p style="font-size:14px;color:var(--gray-800);line-height:1.8;">{{ attempt.ai_feedback }}</p>
   </div>
 </div>
 {% endif %}
@@ -118,14 +128,16 @@
 <div class="card">
   <div class="card-header">
     <h3><i class="fa-solid fa-clipboard-list" style="color:var(--primary);margin-right:8px;"></i>Answer Breakdown</h3>
-    <span style="font-size:12px;color:var(--gray-400);">{{ correct_answers }} correct out of {{ total_questions }}</span>
+    <span style="font-size:12px;color:var(--gray-400);">{{ correct_answers }}/{{ total_questions }} correct</span>
   </div>
   <div class="card-body-flush">
     {% for answer in answers %}
     <div class="answer-item">
       <div class="answer-question-header">
         <div style="flex:1;">
-          <div class="answer-qnum">Question {{ forloop.counter }} — {{ answer.question.get_question_type_display }} — {{ answer.question.marks }} mark{% if answer.question.marks != 1 %}s{% endif %}</div>
+          <div class="answer-qnum">
+            Q{{ forloop.counter }} &bull; {{ answer.question.get_question_type_display }} &bull; {{ answer.question.marks }} mark{% if answer.question.marks != 1 %}s{% endif %}
+          </div>
           <div class="answer-qtext">{{ answer.question.question_text }}</div>
         </div>
         <div style="flex-shrink:0;">
@@ -139,7 +151,6 @@
         </div>
       </div>
 
-      <!-- Student Answer -->
       <div class="answer-block {% if answer.is_correct %}correct{% elif answer.is_correct == False %}wrong{% else %}student{% endif %}">
         <div class="answer-label {% if answer.is_correct %}green{% elif answer.is_correct == False %}red{% else %}gray{% endif %}">
           Your Answer
@@ -147,7 +158,6 @@
         <div style="font-size:13px;white-space:pre-wrap;word-break:break-word;">{{ answer.answer_text|default:"(No answer provided)" }}</div>
       </div>
 
-      <!-- Correct Answer -->
       {% if answer.is_correct == False %}
       <div class="answer-block correct">
         <div class="answer-label green">Correct Answer</div>
@@ -155,23 +165,21 @@
       </div>
       {% endif %}
 
-      <!-- Explanation -->
       {% if answer.question.explanation %}
       <div class="answer-feedback">
-        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:var(--primary);">
           <i class="fa-solid fa-lightbulb"></i> Explanation
         </div>
-        {{ answer.question.explanation }}
+        <div style="font-size:13px;color:var(--gray-700);line-height:1.6;">{{ answer.question.explanation }}</div>
       </div>
       {% endif %}
 
-      <!-- AI Feedback -->
       {% if answer.ai_feedback %}
       <div class="answer-feedback" style="background:var(--primary-light);border-color:var(--accent);">
-        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:var(--accent);">
+        <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:var(--accent);">
           <i class="fa-solid fa-robot"></i> AI Grading Feedback
         </div>
-        {{ answer.ai_feedback }}
+        <div style="font-size:13px;color:var(--gray-700);line-height:1.6;">{{ answer.ai_feedback }}</div>
       </div>
       {% endif %}
     </div>
@@ -180,4 +188,32 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate score donut
+const rawPct = {% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}{% else %}0{% endif %};
+const circumference = 339.3;
+const ring = document.getElementById('scoreRing');
+const display = document.getElementById('scoreDisplay');
+
+// Start at 0, animate to score
+ring.style.strokeDashoffset = circumference;
+
+setTimeout(() => {
+  const offset = circumference - (rawPct / 100) * circumference;
+  ring.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)';
+  ring.style.strokeDashoffset = offset;
+
+  // Animate counter
+  let count = 0;
+  const step = Math.max(1, Math.floor(rawPct / 60));
+  const timer = setInterval(() => {
+    count = Math.min(count + step, rawPct);
+    display.textContent = count + '%';
+    if (count >= rawPct) { display.textContent = rawPct + '%'; clearInterval(timer); }
+  }, 25);
+}, 200);
+</script>
 {% endblock %}

@@ -1,180 +1,237 @@
 {% extends "siteapp/student/base_student.html" %}
 {% load static %}
 
-{% block title %}{{ exam.title }} — Take Exam{% endblock %}
-{% block page_title %}{{ exam.title }}{% endblock %}
-{% block page_subtitle %}Exam in progress — do not refresh{% endblock %}
+{% block title %}{{ exam.title }} — In Progress{% endblock %}
 
 {% block extra_css %}
 <style>
-.portal-topbar { background: var(--dark); }
-.portal-topbar .topbar-title h1 { color: white; }
-.portal-topbar .topbar-title p  { color: rgba(255,255,255,.6); }
-.portal-topbar .topbar-hamburger { color: rgba(255,255,255,.8); }
-.portal-topbar .topbar-user { color: white; }
-.portal-topbar .topbar-avatar { background: rgba(255,255,255,.2); }
-.portal-topbar .topbar-user-name { color: rgba(255,255,255,.9); }
+/* Full focus mode — hide portal chrome */
+.portal-sidebar, .portal-topbar { display: none !important; }
+.portal-main { margin-left: 0 !important; }
+.portal-content { padding: 0 !important; }
+body { background: #f1f5f9; }
 </style>
 {% endblock %}
 
 {% block content %}
+
+<!-- Exam Chrome Bar -->
+<div class="exam-chrome">
+  <div class="exam-chrome-left">
+    <div class="exam-chrome-logo">BLUEWAVE</div>
+    <div class="exam-chrome-sep"></div>
+    <div class="exam-chrome-title">{{ exam.title }}</div>
+  </div>
+  <div class="exam-chrome-right">
+    <!-- Progress pill -->
+    <div style="display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:700;color:rgba(255,255,255,.7);">
+      <i class="fa-solid fa-list-check" style="font-size:12px;"></i>
+      <span id="headerProgress">0</span><span style="opacity:.5;">/{{ questions|length }}</span>
+    </div>
+    <!-- Timer -->
+    <div class="exam-timer-pill" id="examTimerPill">
+      <i class="fa-regular fa-clock"></i>
+      <span id="timerDisplay">{{ exam.duration_minutes }}:00</span>
+    </div>
+  </div>
+</div>
+
+<!-- Top progress bar -->
+<div style="position:fixed;top:56px;left:0;right:0;height:3px;background:rgba(255,255,255,.1);z-index:199;">
+  <div id="topProgressBar" style="height:100%;background:linear-gradient(90deg,#2563eb,#06b6d4);width:0%;transition:width .4s ease;"></div>
+</div>
+
+<!-- Exam Body -->
+<div class="exam-body">
 <form method="post" id="examForm">
   {% csrf_token %}
   <input type="hidden" name="submit" value="true" id="submitFlag">
 
-  <div class="exam-shell">
+  <div class="exam-layout">
 
     <!-- Question Area -->
     <div>
-
-      <!-- Exam Topbar -->
-      <div class="exam-topbar">
-        <div class="exam-topbar-title">
-          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px;">{{ exam.get_category_display }}</div>
-          {{ exam.title }}
-        </div>
-        <div class="exam-timer" id="examTimer">
-          <i class="fa-regular fa-clock"></i>
-          <span id="timerDisplay">{{ exam.duration_minutes }}:00</span>
-        </div>
-      </div>
-
-      <!-- Question Navigation -->
-      <div class="question-nav" id="questionNav">
-        {% for q in questions %}
-        <button type="button" class="q-nav-btn {% if forloop.first %}active{% endif %}" data-q="{{ forloop.counter }}" onclick="showQuestion({{ forloop.counter }})">{{ forloop.counter }}</button>
-        {% endfor %}
-      </div>
-
-      <!-- Questions -->
       {% for question in questions %}
-      <div class="question-block" id="question-{{ forloop.counter }}" style="{% if not forloop.first %}display:none;{% endif %}">
-        <div class="question-number">Question {{ forloop.counter }} of {{ questions|length }} &bull; {{ question.marks }} mark{% if question.marks != 1 %}s{% endif %}</div>
-        <div class="question-text">{{ question.question_text }}</div>
+      <div id="question-{{ forloop.counter }}" {% if not forloop.first %}style="display:none;"{% endif %}>
 
-        {% if question.question_type == 'mcq' %}
-        <div class="option-list">
-          {% if question.option_a %}
-          <label class="option-item" id="opt-{{ question.id }}-a" onclick="selectOption('{{ question.id }}', 'a', this)">
-            <input type="radio" name="question_{{ question.id }}" value="a" class="hidden-radio">
-            <div class="option-label">A</div>
-            <div class="option-text">{{ question.option_a }}</div>
-          </label>
-          {% endif %}
-          {% if question.option_b %}
-          <label class="option-item" id="opt-{{ question.id }}-b" onclick="selectOption('{{ question.id }}', 'b', this)">
-            <input type="radio" name="question_{{ question.id }}" value="b" class="hidden-radio">
-            <div class="option-label">B</div>
-            <div class="option-text">{{ question.option_b }}</div>
-          </label>
-          {% endif %}
-          {% if question.option_c %}
-          <label class="option-item" id="opt-{{ question.id }}-c" onclick="selectOption('{{ question.id }}', 'c', this)">
-            <input type="radio" name="question_{{ question.id }}" value="c" class="hidden-radio">
-            <div class="option-label">C</div>
-            <div class="option-text">{{ question.option_c }}</div>
-          </label>
-          {% endif %}
-          {% if question.option_d %}
-          <label class="option-item" id="opt-{{ question.id }}-d" onclick="selectOption('{{ question.id }}', 'd', this)">
-            <input type="radio" name="question_{{ question.id }}" value="d" class="hidden-radio">
-            <div class="option-label">D</div>
-            <div class="option-text">{{ question.option_d }}</div>
-          </label>
-          {% endif %}
+        <div class="question-card">
+          <!-- Question header gradient -->
+          <div class="question-card-header">
+            <div class="question-card-num">
+              Question {{ forloop.counter }} <span style="opacity:.4;">of {{ questions|length }}</span>
+              &nbsp;&bull;&nbsp;
+              {{ question.get_question_type_display }}
+            </div>
+            <div class="question-card-marks">{{ question.marks }} mark{% if question.marks != 1 %}s{% endif %}</div>
+          </div>
+
+          <div class="question-card-body">
+            <div class="question-text-ng">{{ question.question_text }}</div>
+
+            {% if question.question_type == 'mcq' %}
+            <div class="option-grid">
+              {% if question.option_a %}
+              <label class="option-ng" id="opt-{{ question.id }}-a" onclick="selectOption('{{ question.id }}', 'a', this)">
+                <input type="radio" name="question_{{ question.id }}" value="a" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">A</div>
+                <div class="opt-text">{{ question.option_a }}</div>
+              </label>
+              {% endif %}
+              {% if question.option_b %}
+              <label class="option-ng" id="opt-{{ question.id }}-b" onclick="selectOption('{{ question.id }}', 'b', this)">
+                <input type="radio" name="question_{{ question.id }}" value="b" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">B</div>
+                <div class="opt-text">{{ question.option_b }}</div>
+              </label>
+              {% endif %}
+              {% if question.option_c %}
+              <label class="option-ng" id="opt-{{ question.id }}-c" onclick="selectOption('{{ question.id }}', 'c', this)">
+                <input type="radio" name="question_{{ question.id }}" value="c" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">C</div>
+                <div class="opt-text">{{ question.option_c }}</div>
+              </label>
+              {% endif %}
+              {% if question.option_d %}
+              <label class="option-ng" id="opt-{{ question.id }}-d" onclick="selectOption('{{ question.id }}', 'd', this)">
+                <input type="radio" name="question_{{ question.id }}" value="d" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">D</div>
+                <div class="opt-text">{{ question.option_d }}</div>
+              </label>
+              {% endif %}
+            </div>
+
+            {% elif question.question_type == 'true_false' %}
+            <div class="option-grid">
+              <label class="option-ng" id="opt-{{ question.id }}-true" onclick="selectOption('{{ question.id }}', 'true', this)">
+                <input type="radio" name="question_{{ question.id }}" value="true" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">T</div>
+                <div class="opt-text">True</div>
+              </label>
+              <label class="option-ng" id="opt-{{ question.id }}-false" onclick="selectOption('{{ question.id }}', 'false', this)">
+                <input type="radio" name="question_{{ question.id }}" value="false" class="hidden-radio" style="display:none;">
+                <div class="opt-letter">F</div>
+                <div class="opt-text">False</div>
+              </label>
+            </div>
+
+            {% elif question.question_type == 'code' %}
+            <div style="margin-bottom:8px;">
+              <div style="background:#1e293b;border-radius:8px 8px 0 0;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#10b981;"></div>
+                <span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px;">code editor</span>
+              </div>
+              <textarea name="question_{{ question.id }}" class="exam-textarea exam-code" placeholder="// Write your code here..." rows="12"
+                style="border-radius:0 0 8px 8px;font-family:'Courier New',monospace;font-size:14px;background:#0f172a;color:#e2e8f0;border:none;padding:16px;width:100%;resize:vertical;outline:none;"
+                onchange="markAnswered({{ forloop.counter }})"></textarea>
+            </div>
+
+            {% else %}
+            <textarea name="question_{{ question.id }}" class="exam-textarea" placeholder="Type your answer here..."
+              rows="6" style="width:100%;resize:vertical;"
+              onchange="markAnswered({{ forloop.counter }})"></textarea>
+            {% endif %}
+
+            <!-- Nav buttons -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;">
+              {% if not forloop.first %}
+              <button type="button" class="btn btn-gray" onclick="showQuestion({{ forloop.counter|add:'-1' }})">
+                <i class="fa-solid fa-arrow-left"></i> Previous
+              </button>
+              {% else %}
+              <span></span>
+              {% endif %}
+
+              {% if not forloop.last %}
+              <button type="button" class="btn btn-primary" onclick="showQuestion({{ forloop.counter|add:'1' }})">
+                Next <i class="fa-solid fa-arrow-right"></i>
+              </button>
+              {% else %}
+              <button type="button" class="btn btn-success" onclick="confirmSubmit()">
+                <i class="fa-solid fa-paper-plane"></i> Submit Exam
+              </button>
+              {% endif %}
+            </div>
+          </div>
         </div>
 
-        {% elif question.question_type == 'true_false' %}
-        <div class="option-list">
-          <label class="option-item" id="opt-{{ question.id }}-true" onclick="selectOption('{{ question.id }}', 'true', this)">
-            <input type="radio" name="question_{{ question.id }}" value="true" class="hidden-radio">
-            <div class="option-label" style="width:auto;padding:0 10px;border-radius:4px;">T</div>
-            <div class="option-text">True</div>
-          </label>
-          <label class="option-item" id="opt-{{ question.id }}-false" onclick="selectOption('{{ question.id }}', 'false', this)">
-            <input type="radio" name="question_{{ question.id }}" value="false" class="hidden-radio">
-            <div class="option-label" style="width:auto;padding:0 10px;border-radius:4px;">F</div>
-            <div class="option-text">False</div>
-          </label>
-        </div>
-
-        {% elif question.question_type == 'code' %}
-        <textarea name="question_{{ question.id }}" class="exam-textarea exam-code" placeholder="Write your code here..." rows="10" onchange="markAnswered({{ forloop.counter }})"></textarea>
-
-        {% else %}
-        <textarea name="question_{{ question.id }}" class="exam-textarea" placeholder="Type your answer here..." rows="6" onchange="markAnswered({{ forloop.counter }})"></textarea>
-        {% endif %}
-
-        <div class="question-nav-btns">
-          {% if not forloop.first %}
-          <button type="button" class="btn btn-gray" onclick="showQuestion({{ forloop.counter|add:'-1' }})">
-            <i class="fa-solid fa-arrow-left"></i> Previous
-          </button>
-          {% else %}
-          <span></span>
-          {% endif %}
-
-          {% if not forloop.last %}
-          <button type="button" class="btn btn-primary" onclick="showQuestion({{ forloop.counter|add:'1' }})">
-            Next <i class="fa-solid fa-arrow-right"></i>
-          </button>
-          {% else %}
-          <button type="button" class="btn btn-success" onclick="confirmSubmit()">
-            <i class="fa-solid fa-paper-plane"></i> Submit Exam
-          </button>
-          {% endif %}
-        </div>
-      </div>
+      </div><!-- /question -->
       {% endfor %}
     </div>
 
-    <!-- Sidebar Panel -->
-    <div class="exam-sidebar-panel">
-      <div class="exam-side-card">
-        <div class="exam-side-title"><i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>Exam Info</div>
-        <div class="exam-side-body">
-          <div class="exam-side-row"><span>Questions</span><strong>{{ questions|length }}</strong></div>
-          <div class="exam-side-row"><span>Total Marks</span><strong>{{ exam.total_marks }}</strong></div>
-          <div class="exam-side-row"><span>Pass Mark</span><strong>{{ exam.passing_marks }}</strong></div>
-          <div class="exam-side-row"><span>Duration</span><strong>{{ exam.duration_minutes }} min</strong></div>
-        </div>
-      </div>
+    <!-- Right Panel -->
+    <div class="exam-panel">
 
-      <div class="exam-side-card">
-        <div class="exam-side-title"><i class="fa-solid fa-list-ol" style="margin-right:6px;"></i>Progress</div>
-        <div class="exam-side-body">
-          <div style="text-align:center;margin-bottom:12px;">
-            <div style="font-size:22px;font-weight:800;color:var(--dark);" id="answeredCount">0</div>
-            <div style="font-size:11px;color:var(--gray-400);">of {{ questions|length }} answered</div>
+      <!-- Question Navigator -->
+      <div class="exam-panel-card">
+        <div class="exam-panel-header"><i class="fa-solid fa-th"></i> Questions</div>
+        <div class="exam-panel-body">
+          <div class="exam-qgrid" id="questionNav">
+            {% for q in questions %}
+            <button type="button" class="exam-qbtn {% if forloop.first %}active{% endif %}" data-q="{{ forloop.counter }}" onclick="showQuestion({{ forloop.counter }})">{{ forloop.counter }}</button>
+            {% endfor %}
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill" style="width:0%;"></div>
-          </div>
-          <div style="margin-top:16px;">
-            <div class="legend-row"><div class="legend-dot" style="background:var(--success);"></div>Answered</div>
-            <div class="legend-row"><div class="legend-dot" style="background:var(--primary);"></div>Current</div>
-            <div class="legend-row"><div class="legend-dot" style="background:var(--gray-200);border:1px solid var(--gray-300);"></div>Unanswered</div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gray-500);">
+              <div style="width:12px;height:12px;border-radius:3px;background:#d1fae5;border:1.5px solid #10b981;"></div> Answered
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gray-500);">
+              <div style="width:12px;height:12px;border-radius:3px;background:#2563eb;"></div> Current
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gray-500);">
+              <div style="width:12px;height:12px;border-radius:3px;background:#f8fafc;border:1.5px solid #e2e8f0;"></div> Unanswered
+            </div>
           </div>
         </div>
       </div>
 
-      <button type="button" class="btn btn-success" style="width:100%;" onclick="confirmSubmit()">
+      <!-- Progress -->
+      <div class="exam-panel-card">
+        <div class="exam-panel-header"><i class="fa-solid fa-chart-simple"></i> Progress</div>
+        <div class="exam-panel-body">
+          <div style="text-align:center;margin-bottom:14px;">
+            <div style="font-size:36px;font-weight:800;color:var(--dark);line-height:1;" id="answeredCount">0</div>
+            <div style="font-size:12px;color:var(--gray-400);">of {{ questions|length }} answered</div>
+          </div>
+          <div class="progress-bar" style="height:8px;border-radius:4px;margin-bottom:8px;">
+            <div class="progress-fill" id="progressFill" style="width:0%;border-radius:4px;transition:width .4s ease;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exam Info -->
+      <div class="exam-panel-card">
+        <div class="exam-panel-header"><i class="fa-solid fa-circle-info"></i> Exam Info</div>
+        <div class="exam-panel-body" style="padding:0 18px;">
+          <div class="exam-meta-row"><span>Questions</span><strong>{{ questions|length }}</strong></div>
+          <div class="exam-meta-row"><span>Total Marks</span><strong>{{ exam.total_marks }}</strong></div>
+          <div class="exam-meta-row"><span>Pass Mark</span><strong>{{ exam.passing_marks }}</strong></div>
+          <div class="exam-meta-row"><span>Duration</span><strong>{{ exam.duration_minutes }} min</strong></div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="button" class="btn btn-success" style="width:100%;padding:13px;" onclick="confirmSubmit()">
         <i class="fa-solid fa-paper-plane"></i> Submit Exam
       </button>
+
     </div>
   </div>
 </form>
+</div>
 
-<!-- Submit Confirmation Modal -->
-<div id="submitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:var(--radius);padding:32px;max-width:420px;width:90%;box-shadow:var(--shadow-md);">
-    <div style="text-align:center;margin-bottom:24px;">
-      <div style="width:64px;height:64px;border-radius:50%;background:var(--warning-light);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size:28px;color:var(--warning);"></i>
-      </div>
-      <h3 style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:8px;">Submit Exam?</h3>
-      <p style="font-size:13px;color:var(--gray-600);">You have answered <strong id="modalAnswered">0</strong> of <strong>{{ questions|length }}</strong> questions. This action cannot be undone.</p>
+<!-- Submit Modal -->
+<div id="submitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#fff;border-radius:16px;padding:36px 32px;max-width:400px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.4);text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i class="fa-solid fa-paper-plane" style="font-size:28px;color:#d97706;"></i>
     </div>
+    <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px;">Submit Exam?</h3>
+    <p style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:24px;">
+      You have answered <strong id="modalAnswered">0</strong> of <strong>{{ questions|length }}</strong> questions.<br>
+      This cannot be undone.
+    </p>
     <div style="display:flex;gap:12px;">
       <button type="button" class="btn btn-gray" style="flex:1;" onclick="closeModal()">
         <i class="fa-solid fa-arrow-left"></i> Continue
@@ -185,6 +242,7 @@
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -194,50 +252,50 @@ const DURATION_SECONDS = {{ exam.duration_minutes }} * 60;
 let answered = {};
 let currentQ = 1;
 let timeLeft = DURATION_SECONDS;
-let timerInterval;
 
 function showQuestion(n) {
   document.querySelectorAll('[id^="question-"]').forEach(el => el.style.display = 'none');
   const q = document.getElementById('question-' + n);
-  if (q) { q.style.display = 'block'; }
+  if (q) q.style.display = 'block';
   currentQ = n;
 
-  document.querySelectorAll('.q-nav-btn').forEach(btn => btn.classList.remove('active'));
-  const btn = document.querySelector('.q-nav-btn[data-q="' + n + '"]');
+  document.querySelectorAll('.exam-qbtn').forEach(btn => btn.classList.remove('active'));
+  const btn = document.querySelector('.exam-qbtn[data-q="' + n + '"]');
   if (btn) btn.classList.add('active');
+
+  // Scroll top on mobile
+  window.scrollTo({ top: 56, behavior: 'smooth' });
 }
 
 function selectOption(qId, val, labelEl) {
-  // Remove selected from siblings
-  const siblings = labelEl.parentElement.querySelectorAll('.option-item');
+  const siblings = labelEl.parentElement.querySelectorAll('.option-ng');
   siblings.forEach(s => s.classList.remove('selected'));
   labelEl.classList.add('selected');
-
-  // Mark radio
   const radio = labelEl.querySelector('input[type="radio"]');
   if (radio) radio.checked = true;
-
   markAnswered(currentQ);
 }
 
 function markAnswered(qNum) {
   answered[qNum] = true;
-  const btn = document.querySelector('.q-nav-btn[data-q="' + qNum + '"]');
-  if (btn && !btn.classList.contains('active')) btn.classList.add('answered');
-  else if (btn) { btn.classList.add('answered'); }
+  const btn = document.querySelector('.exam-qbtn[data-q="' + qNum + '"]');
+  if (btn) btn.classList.add('answered');
   updateProgress();
 }
 
 function updateProgress() {
   const count = Object.keys(answered).length;
   document.getElementById('answeredCount').textContent = count;
-  document.getElementById('progressFill').style.width = (count / TOTAL_QUESTIONS * 100) + '%';
+  document.getElementById('headerProgress').textContent = count;
+  const pct = (count / TOTAL_QUESTIONS) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('topProgressBar').style.width = pct + '%';
 }
 
 function confirmSubmit() {
-  const count = Object.keys(answered).length;
-  document.getElementById('modalAnswered').textContent = count;
-  document.getElementById('submitModal').style.display = 'flex';
+  document.getElementById('modalAnswered').textContent = Object.keys(answered).length;
+  const modal = document.getElementById('submitModal');
+  modal.style.display = 'flex';
 }
 
 function closeModal() {
@@ -250,37 +308,42 @@ function submitExam() {
 }
 
 // Timer
-function startTimer() {
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    const min = Math.floor(timeLeft / 60);
-    const sec = timeLeft % 60;
-    const display = min + ':' + String(sec).padStart(2, '0');
-    document.getElementById('timerDisplay').textContent = display;
+const timerPill = document.getElementById('examTimerPill');
+const timerDisplay = document.getElementById('timerDisplay');
 
-    const timerEl = document.getElementById('examTimer');
-    if (timeLeft <= 300) timerEl.classList.add('warning');
-    if (timeLeft <= 60)  { timerEl.classList.remove('warning'); timerEl.classList.add('danger'); }
-    if (timeLeft <= 0)   { clearInterval(timerInterval); submitExam(); }
-  }, 1000);
-}
+const timerInterval = setInterval(() => {
+  timeLeft--;
+  const min = Math.floor(timeLeft / 60);
+  const sec = timeLeft % 60;
+  timerDisplay.textContent = min + ':' + String(sec).padStart(2, '0');
 
-// Textarea change detection for text/code questions
+  timerPill.classList.remove('warning', 'danger');
+  if (timeLeft <= 300 && timeLeft > 60) timerPill.classList.add('warning');
+  if (timeLeft <= 60) timerPill.classList.add('danger');
+  if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(); }
+}, 1000);
+
+// Textarea detection
 document.querySelectorAll('textarea').forEach(ta => {
   ta.addEventListener('input', () => {
     const name = ta.getAttribute('name');
     if (name && name.startsWith('question_')) {
-      const qIdx = parseInt(ta.closest('[id^="question-"]')?.id.replace('question-', ''));
-      if (qIdx) markAnswered(qIdx);
+      const qEl = ta.closest('[id^="question-"]');
+      if (qEl) {
+        const qIdx = parseInt(qEl.id.replace('question-', ''));
+        if (qIdx) markAnswered(qIdx);
+      }
     }
   });
 });
 
-// Prevent accidental page leave
-window.addEventListener('beforeunload', e => {
-  e.preventDefault(); e.returnValue = '';
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' && currentQ < TOTAL_QUESTIONS) showQuestion(currentQ + 1);
+  if (e.key === 'ArrowLeft'  && currentQ > 1)               showQuestion(currentQ - 1);
 });
 
-startTimer();
+// Prevent accidental leave
+window.addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; });
 </script>
 {% endblock %}
