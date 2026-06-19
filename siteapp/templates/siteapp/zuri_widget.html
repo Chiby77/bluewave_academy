@@ -2,9 +2,10 @@
 <!-- =============================================
      ZURI AI Assistant Widget
      Powered by Groq · llama-3.3-70b-versatile
+     Supports: text, images, PDF documents
      Included on: home, about, downloads, blog, contact
 ============================================= -->
-<link rel="stylesheet" href="{% static 'css/zuri.css' %}">
+<link rel="stylesheet" href="{% static 'css/zuri.css' %}?v=3">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 {% csrf_token %}
@@ -40,30 +41,39 @@
   <!-- Messages -->
   <div id="zuri-messages" aria-live="polite"></div>
 
-  <!-- Image preview strip -->
-  <div id="zuri-img-preview-wrap">
-    <img id="zuri-img-preview" src="" alt="Attached image">
-    <span id="zuri-img-name"></span>
-    <button id="zuri-img-remove" title="Remove image">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
+  <!-- File preview strip -->
+  <div id="zuri-file-preview-wrap">
+    <!-- Image preview -->
+    <div id="zuri-img-row" class="zuri-preview-row" style="display:none;">
+      <img id="zuri-img-preview" src="" alt="Attached image">
+      <span class="zuri-file-badge img-badge"><i class="fa-solid fa-image"></i> Image</span>
+      <span id="zuri-img-name" class="zuri-fname"></span>
+      <button class="zuri-remove-btn" id="zuri-img-remove" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <!-- PDF preview -->
+    <div id="zuri-pdf-row" class="zuri-preview-row" style="display:none;">
+      <div class="zuri-pdf-icon"><i class="fa-solid fa-file-pdf"></i></div>
+      <span class="zuri-file-badge pdf-badge"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+      <span id="zuri-pdf-name" class="zuri-fname"></span>
+      <button class="zuri-remove-btn" id="zuri-pdf-remove" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+    </div>
   </div>
 
-  <!-- Footer -->
+  <!-- Footer / input -->
   <div id="zuri-footer">
     <div id="zuri-rate-bar">
       <span class="zuri-rate-label">20 msgs / hour</span>
     </div>
     <div id="zuri-input-row">
-      <button id="zuri-img-btn" class="zuri-action-btn" title="Attach image" aria-label="Attach image">
+      <button id="zuri-attach-btn" class="zuri-action-btn" title="Attach image or PDF" aria-label="Attach file">
         <i class="fa-solid fa-paperclip"></i>
       </button>
       <textarea
         id="zuri-input"
         rows="1"
-        placeholder="Ask Zuri anything..."
+        placeholder="Ask anything — CS, careers, academy info..."
         aria-label="Message to Zuri"
-        maxlength="3000"
+        maxlength="4000"
       ></textarea>
       <button id="zuri-send-btn" class="zuri-action-btn" title="Send" aria-label="Send message">
         <i class="fa-solid fa-paper-plane"></i>
@@ -77,5 +87,6 @@
 
 </div>
 
-<input type="file" id="zuri-file-input" accept="image/*" style="display:none;" aria-hidden="true">
-<script src="{% static 'js/zuri.js' %}"></script>
+<!-- Hidden file input — accepts images AND PDFs -->
+<input type="file" id="zuri-file-input" accept="image/*,application/pdf,.pdf" style="display:none;" aria-hidden="true">
+<script src="{% static 'js/zuri.js' %}?v=3"></script>
