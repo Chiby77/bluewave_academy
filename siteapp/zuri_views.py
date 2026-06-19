@@ -1,6 +1,6 @@
 """
 Zuri — Bluewave Academy AI Assistant
-Powered by Google Gemini | Rate limited by IP
+Powered by Groq (llama-3.3-70b-versatile) | Rate limited by IP
 """
 
 import json
@@ -15,13 +15,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 
 try:
-    from google import genai
-    from google.genai import types as genai_types
-    HAS_GENAI = True
+    from groq import Groq as GroqClient
+    HAS_GROQ = True
 except ImportError:
-    HAS_GENAI = False
-    genai = None
-    genai_types = None
+    HAS_GROQ = False
+    GroqClient = None
 
 try:
     import requests as req_lib
@@ -31,10 +29,16 @@ except ImportError:
     HAS_SCRAPE = False
 
 # ─────────────────────────────────────────────
+# Models
+# ─────────────────────────────────────────────
+GROQ_TEXT_MODEL   = "llama-3.3-70b-versatile"
+GROQ_VISION_MODEL = "llama-3.2-11b-vision-preview"
+
+# ─────────────────────────────────────────────
 # Rate limit settings
 # ─────────────────────────────────────────────
-RATE_LIMIT_PER_HOUR = 20       # requests per IP per hour
-RATE_WINDOW_SECONDS = 3600     # 1 hour
+RATE_LIMIT_PER_HOUR = 20
+RATE_WINDOW_SECONDS = 3600
 
 # ─────────────────────────────────────────────
 # Tinodaishe M Chibi — founder bio
@@ -154,43 +158,37 @@ def _scrape_tinodaishe() -> str:
     return ""
 
 
-def _build_contents(history: list, message: str, image_bytes: bytes | None,
-                    mime: str, extra_context: str):
-    """Build the genai contents list for the API call."""
-    if not HAS_GENAI:
-        return []
+def _build_messages(history: list, message: str, image_b64: str | None, mime: str, extra_context: str) -> list:
+    """Build the Groq messages array from conversation history + current turn."""
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    contents = []
-
-    # Prior conversation turns (last 8 pairs)
+    # Prior conversation turns (last 16 messages = 8 pairs)
     for turn in history[-16:]:
-        role = "user" if turn.get("role") == "user" else "model"
-        contents.append(
-            genai_types.Content(
-                role=role,
-                parts=[genai_types.Part.from_text(turn.get("content", ""))],
-            )
-        )
+        role = turn.get("role", "user")
+        # Normalise Gemini "model" role to Groq "assistant"
+        if role == "model":
+            role = "assistant"
+        messages.append({"role": role, "content": turn.get("content", "")})
 
     # Build current user turn
-    current_parts = []
-
-    if image_bytes:
-        try:
-            current_parts.append(
-                genai_types.Part.from_bytes(data=image_bytes, mime_type=mime)
-            )
-        except Exception:
-            pass
-
     user_text = message
     if extra_context:
         user_text = f"{message}\n\n[Additional context]\n{extra_context}"
 
-    current_parts.append(genai_types.Part.from_text(user_text))
-    contents.append(genai_types.Content(role="user", parts=current_parts))
+    if image_b64:
+        # Vision message — multimodal content
+        content = []
+        if user_text:
+            content.append({"type": "text", "text": user_text})
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": image_b64},
+        })
+        messages.append({"role": "user", "content": content})
+    else:
+        messages.append({"role": "user", "content": user_text or "(image attached)"})
 
-    return contents
+    return messages
 
 
 # ─────────────────────────────────────────────
@@ -217,14 +215,14 @@ def zuri_chat(request):
         )
 
     # Check AI availability
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_AI_API_KEY", "")
-    if not HAS_GENAI or not api_key:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not HAS_GROQ or not api_key:
         return JsonResponse(
             {
                 "error": "unavailable",
                 "message": (
                     "Zuri's AI engine isn't configured yet. "
-                    "Please add your GEMINI_API_KEY to get started!"
+                    "Please add your GROQ_API_KEY to get started!"
                 ),
             },
             status=503,
@@ -236,9 +234,9 @@ def zuri_chat(request):
     except (json.JSONDecodeError, Exception):
         return JsonResponse({"error": "invalid_json"}, status=400)
 
-    message = data.get("message", "").strip()
-    image_b64 = data.get("image", "")   # optional base64 data-URL or plain base64
-    history = data.get("history", [])   # [{role, content}, ...]
+    message   = data.get("message", "").strip()
+    image_b64 = data.get("image", "")    # optional base64 data-URL
+    history   = data.get("history", [])  # [{role, content}, ...]
 
     if not message and not image_b64:
         return JsonResponse({"error": "empty"}, status=400)
@@ -246,29 +244,20 @@ def zuri_chat(request):
     if len(message) > 3000:
         return JsonResponse({"error": "too_long", "message": "Message too long (max 3000 chars)."}, status=400)
 
-    # Decode image if present
-    image_bytes = None
+    # Determine MIME for image
     mime = "image/jpeg"
     if image_b64:
-        try:
-            raw = image_b64
-            if raw.startswith("data:"):
-                header, raw = raw.split(",", 1)
-                if "png" in header:
-                    mime = "image/png"
-                elif "gif" in header:
-                    mime = "image/gif"
-                elif "webp" in header:
-                    mime = "image/webp"
-            image_bytes = base64.b64decode(raw)
-        except Exception:
-            image_bytes = None
+        if image_b64.startswith("data:image/png"):
+            mime = "image/png"
+        elif image_b64.startswith("data:image/webp"):
+            mime = "image/webp"
+        elif image_b64.startswith("data:image/gif"):
+            mime = "image/gif"
 
-    # Determine if web scrape is useful
+    # Optional web scrape for founder context
     extra_context = ""
     tinodaishe_keywords = ["tinodaishe", "chibi", "founder", "bluewave tech", "linkedin", "award", "certif"]
     if message and any(kw in message.lower() for kw in tinodaishe_keywords):
-        # Run in thread so it doesn't block if slow
         result_container = []
         def _scrape():
             result_container.append(_scrape_tinodaishe())
@@ -278,26 +267,26 @@ def zuri_chat(request):
         if result_container:
             extra_context = result_container[0]
 
-    # Build API call
-    try:
-        client = genai.Client(api_key=api_key)
-        contents = _build_contents(history, message, image_bytes, mime, extra_context)
+    # Pick model — use vision model when image is attached
+    model = GROQ_VISION_MODEL if image_b64 else GROQ_TEXT_MODEL
 
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=contents,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=1200,
-                temperature=0.72,
-            ),
+    # Build and send request
+    try:
+        client = GroqClient(api_key=api_key)
+        messages = _build_messages(history, message, image_b64 if image_b64 else None, mime, extra_context)
+
+        completion = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=1200,
+            temperature=0.72,
         )
 
-        reply = response.text or "I couldn't generate a response. Please try again."
+        reply = completion.choices[0].message.content or "I couldn't generate a response. Please try again."
         return JsonResponse({"reply": reply, "remaining": remaining, "status": "ok"})
 
     except Exception as e:
-        print(f"[Zuri] API error: {e}")
+        print(f"[Zuri] Groq API error: {e}")
         return JsonResponse(
             {
                 "error": "ai_error",
