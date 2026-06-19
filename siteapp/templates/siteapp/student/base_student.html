@@ -47,6 +47,9 @@
       </a>
 
       <div class="sidebar-section-label">Resources</div>
+      <a href="{% url 'siteapp:tutorial_list' %}" class="sidebar-link {% block nav_tutorials %}{% endblock %}">
+        <i class="fa-solid fa-film"></i> Video Tutorials
+      </a>
       <a href="{% url 'siteapp:downloads' %}" class="sidebar-link">
         <i class="fa-solid fa-download"></i> Downloads
       </a>

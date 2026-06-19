@@ -723,3 +723,81 @@ class Submission(models.Model):
     def is_passed(self):
         score = self.get_score()
         return float(score) >= self.assignment.passing_marks if score is not None else False
+
+
+# =============================================
+# VIDEO TUTORIALS
+# =============================================
+
+class Tutorial(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("published", "Published"),
+    ]
+    CATEGORY_CHOICES = [
+        ("Programming", "Programming"),
+        ("Web Development", "Web Development"),
+        ("Database", "Database"),
+        ("Algorithms", "Algorithms"),
+        ("Computer Science", "Computer Science"),
+        ("Career Tips", "Career Tips"),
+        ("Other", "Other"),
+    ]
+    VIDEO_TYPE_CHOICES = [
+        ("file", "Uploaded File"),
+        ("url", "YouTube / External URL"),
+    ]
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True)
+    thumbnail = models.ImageField(upload_to="tutorials/thumbnails/", blank=True, null=True)
+    video_type = models.CharField(max_length=10, choices=VIDEO_TYPE_CHOICES, default="url")
+    video_file = models.FileField(upload_to="tutorials/videos/", blank=True, null=True)
+    video_url = models.URLField(blank=True, help_text="YouTube or other embed-compatible URL")
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="Other")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
+    created_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="tutorials"
+    )
+    view_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Tutorial"
+        verbose_name_plural = "Tutorials"
+
+    def __str__(self):
+        return self.title
+
+    def get_embed_url(self):
+        import re
+        url = self.video_url or ""
+        yt_match = re.search(r"(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{11})", url)
+        if yt_match:
+            vid = yt_match.group(1)
+            return f"https://www.youtube-nocookie.com/embed/{vid}?rel=0&modestbranding=1&enablejsapi=1"
+        return url
+
+
+class VideoProgress(models.Model):
+    student = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="video_progress"
+    )
+    tutorial = models.ForeignKey(
+        Tutorial, on_delete=models.CASCADE, related_name="progress_records"
+    )
+    progress_pct = models.FloatField(default=0, help_text="0-100 percent watched")
+    completed = models.BooleanField(default=False)
+    last_watched = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["student", "tutorial"]
+        verbose_name = "Video Progress"
+        verbose_name_plural = "Video Progress Records"
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} — {self.tutorial.title} ({self.progress_pct:.0f}%)"

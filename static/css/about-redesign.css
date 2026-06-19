@@ -60,7 +60,7 @@
 .mv-card h4 { font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
 .mv-card p { font-size: 0.9rem; color: #64748b; line-height: 1.6; }
 
-.story-image-wrap { position: relative; border-radius: 20px; overflow: visible; }
+.story-image-wrap { position: relative; border-radius: 20px; overflow: visible; padding-bottom: 28px; }
 .story-image-wrap img { width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
 .experience-badge {
     position: absolute; bottom: -20px; left: -20px;

@@ -27,6 +27,8 @@ from .models import (
     ExamHold,
     Announcement,
     BlogPost,
+    Tutorial,
+    VideoProgress,
 )
 from .forms import ExamAnswerForm, StudentLoginForm
 from .examinator_service import get_grading_service
@@ -1282,6 +1284,117 @@ def admin_blog_delete(request, post_id):
         post.delete()
         messages.success(request, f'Blog post "{title}" deleted.')
     return redirect("siteapp:admin_blog_list")
+
+
+# ============= TUTORIAL MANAGEMENT =============
+
+@admin_required
+def admin_tutorial_list(request):
+    tutorials = Tutorial.objects.all().order_by("-created_at")
+    stats = {
+        "total": tutorials.count(),
+        "published": tutorials.filter(status="published").count(),
+        "drafts": tutorials.filter(status="draft").count(),
+    }
+    return render(request, "siteapp/admin/tutorial_list.html", {"tutorials": tutorials, "stats": stats})
+
+
+@admin_required
+def admin_tutorial_create(request):
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
+        category = request.POST.get("category", "Other")
+        status = request.POST.get("status", "draft")
+        video_type = request.POST.get("video_type", "url")
+        video_url = request.POST.get("video_url", "").strip()
+        video_file = request.FILES.get("video_file")
+        thumbnail = request.FILES.get("thumbnail")
+
+        if not title:
+            messages.error(request, "Title is required.")
+            return render(request, "siteapp/admin/tutorial_form.html", {
+                "tutorial": None,
+                "categories": Tutorial.CATEGORY_CHOICES,
+            })
+
+        slug = slugify(title)
+        base = slug
+        n = 1
+        while Tutorial.objects.filter(slug=slug).exists():
+            slug = f"{base}-{n}"
+            n += 1
+
+        t = Tutorial(
+            title=title,
+            slug=slug,
+            description=description,
+            category=category,
+            status=status,
+            video_type=video_type,
+            video_url=video_url if video_type == "url" else "",
+            created_by=request.user,
+        )
+        if video_file and video_type == "file":
+            t.video_file = video_file
+        if thumbnail:
+            t.thumbnail = thumbnail
+        t.save()
+
+        messages.success(request, f'Tutorial "{title}" saved as {status}.')
+        return redirect("siteapp:admin_tutorial_list")
+
+    return render(request, "siteapp/admin/tutorial_form.html", {
+        "tutorial": None,
+        "categories": Tutorial.CATEGORY_CHOICES,
+    })
+
+
+@admin_required
+def admin_tutorial_edit(request, tutorial_id):
+    t = get_object_or_404(Tutorial, id=tutorial_id)
+
+    if request.method == "POST":
+        t.title = request.POST.get("title", t.title).strip()
+        t.description = request.POST.get("description", t.description).strip()
+        t.category = request.POST.get("category", t.category)
+        t.status = request.POST.get("status", t.status)
+        t.video_type = request.POST.get("video_type", t.video_type)
+        if t.video_type == "url":
+            t.video_url = request.POST.get("video_url", t.video_url).strip()
+            t.video_file = None
+        if request.FILES.get("video_file") and t.video_type == "file":
+            t.video_file = request.FILES["video_file"]
+        if request.FILES.get("thumbnail"):
+            t.thumbnail = request.FILES["thumbnail"]
+        t.save()
+        messages.success(request, "Tutorial updated.")
+        return redirect("siteapp:admin_tutorial_list")
+
+    return render(request, "siteapp/admin/tutorial_form.html", {
+        "tutorial": t,
+        "categories": Tutorial.CATEGORY_CHOICES,
+    })
+
+
+@admin_required
+def admin_tutorial_delete(request, tutorial_id):
+    t = get_object_or_404(Tutorial, id=tutorial_id)
+    if request.method == "POST":
+        title = t.title
+        t.delete()
+        messages.success(request, f'Tutorial "{title}" deleted.')
+    return redirect("siteapp:admin_tutorial_list")
+
+
+@admin_required
+def admin_tutorial_toggle_status(request, tutorial_id):
+    t = get_object_or_404(Tutorial, id=tutorial_id)
+    if request.method == "POST":
+        t.status = "published" if t.status == "draft" else "draft"
+        t.save()
+        messages.success(request, f'"{t.title}" is now {t.status}.')
+    return redirect("siteapp:admin_tutorial_list")
 
 
 # ============= STUDENT MANAGEMENT =============

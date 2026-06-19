@@ -1,0 +1,189 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}Video Tutorials — Bluewave Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+.tut-toolbar {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 28px;
+}
+.tut-search-form {
+  display: flex; gap: 0; flex: 1; min-width: 220px; max-width: 380px;
+}
+.tut-search-form input {
+  flex: 1; padding: 9px 14px; border: 1.5px solid var(--gray-200);
+  border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  font-family: inherit; font-size: .88rem; color: var(--gray-900);
+  background: var(--white); outline: none;
+}
+.tut-search-form input:focus { border-color: var(--primary); }
+.tut-search-form button {
+  padding: 9px 16px; background: var(--primary); color: #fff;
+  border: none; cursor: pointer; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: .85rem;
+}
+.tut-cat-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cat-pill {
+  padding: 6px 14px; border-radius: 50px; font-size: .78rem; font-weight: 500;
+  border: 1.5px solid var(--gray-200); background: var(--white);
+  color: var(--gray-600); text-decoration: none; transition: all .18s;
+}
+.cat-pill:hover, .cat-pill.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+}
+
+.tut-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
+.tut-card {
+  background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray-200);
+  overflow: hidden; transition: box-shadow .2s, transform .2s;
+  display: flex; flex-direction: column;
+}
+.tut-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+.tut-thumb {
+  position: relative; height: 170px; background: linear-gradient(135deg, #0f172a, #1e40af);
+  overflow: hidden; flex-shrink: 0;
+}
+.tut-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.tut-thumb-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; color: rgba(255,255,255,.35);
+}
+.tut-play-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.28); opacity: 0; transition: opacity .2s;
+}
+.tut-card:hover .tut-play-overlay { opacity: 1; }
+.play-circle {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(255,255,255,.9); color: var(--primary);
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.tut-badge-cat {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(15,23,42,.75); color: #67e8f9;
+  padding: 3px 10px; border-radius: 50px; font-size: .7rem; font-weight: 600;
+}
+.tut-progress-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.2);
+}
+.tut-progress-fill { height: 100%; background: var(--success); transition: width .3s; }
+
+.tut-card-body { padding: 18px; display: flex; flex-direction: column; flex: 1; }
+.tut-card-title {
+  font-size: .97rem; font-weight: 700; color: var(--gray-900);
+  margin-bottom: 8px; line-height: 1.4;
+}
+.tut-card-desc {
+  font-size: .83rem; color: var(--gray-600); line-height: 1.6;
+  margin-bottom: 14px; flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tut-card-footer {
+  display: flex; align-items: center; justify-content: space-between; margin-top: auto;
+}
+.tut-progress-label { font-size: .75rem; color: var(--gray-600); }
+.tut-progress-label .done { color: var(--success); font-weight: 600; }
+.btn-watch {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--primary); color: #fff; font-size: .82rem; font-weight: 600;
+  padding: 7px 14px; border-radius: var(--radius-sm); text-decoration: none;
+  transition: background .18s;
+}
+.btn-watch:hover { background: var(--primary-dark); color: #fff; }
+.btn-watch.resume { background: var(--accent); }
+.btn-watch.resume:hover { background: #0891b2; }
+.btn-watch.rewatch { background: var(--success); }
+.btn-watch.rewatch:hover { background: #059669; }
+
+.tut-empty {
+  grid-column: 1 / -1; text-align: center; padding: 80px 20px;
+  color: var(--gray-600);
+}
+.tut-empty i { font-size: 3rem; color: var(--gray-200); margin-bottom: 16px; display: block; }
+.tut-empty h3 { font-size: 1.1rem; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; }
+
+@media (max-width: 640px) {
+  .tut-toolbar { flex-direction: column; align-items: stretch; }
+  .tut-search-form { max-width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block page_title %}Video Tutorials{% endblock %}
+{% block page_subtitle %}Watch lessons — sign in required, no downloads{% endblock %}
+
+{% block nav_tutorials %}active{% endblock %}
+
+{% block content %}
+<div class="tut-toolbar">
+  <form action="{% url 'siteapp:tutorial_list' %}" method="GET" class="tut-search-form">
+    {% if active_category %}
+    <input type="hidden" name="category" value="{{ active_category }}">
+    {% endif %}
+    <input type="text" name="q" placeholder="Search tutorials..." value="{{ q }}">
+    <button type="submit"><i class="fa-solid fa-search"></i></button>
+  </form>
+
+  <div class="tut-cat-pills">
+    <a href="{% url 'siteapp:tutorial_list' %}{% if q %}?q={{ q }}{% endif %}" class="cat-pill {% if not active_category %}active{% endif %}">All</a>
+    {% for val, label in categories %}
+    <a href="{% url 'siteapp:tutorial_list' %}?category={{ val }}{% if q %}&q={{ q }}{% endif %}" class="cat-pill {% if active_category == val %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="tut-grid">
+  {% for item in tutorial_data %}
+  {% with t=item.tutorial pct=item.progress done=item.completed %}
+  <div class="tut-card">
+    <div class="tut-thumb">
+      {% if t.thumbnail %}
+        <img src="{{ t.thumbnail.url }}" alt="{{ t.title }}" loading="lazy">
+      {% else %}
+        <div class="tut-thumb-placeholder"><i class="fa-solid fa-play-circle"></i></div>
+      {% endif %}
+      <div class="tut-play-overlay"><div class="play-circle"><i class="fa-solid fa-play"></i></div></div>
+      <span class="tut-badge-cat">{{ t.category }}</span>
+      {% if pct > 0 %}
+      <div class="tut-progress-bar"><div class="tut-progress-fill" style="width:{{ pct|floatformat:0 }}%"></div></div>
+      {% endif %}
+    </div>
+    <div class="tut-card-body">
+      <h3 class="tut-card-title">{{ t.title }}</h3>
+      {% if t.description %}
+      <p class="tut-card-desc">{{ t.description }}</p>
+      {% endif %}
+      <div class="tut-card-footer">
+        <span class="tut-progress-label">
+          {% if done %}
+            <span class="done"><i class="fa-solid fa-circle-check"></i> Completed</span>
+          {% elif pct > 0 %}
+            {{ pct|floatformat:0 }}% watched
+          {% else %}
+            Not started
+          {% endif %}
+        </span>
+        <a href="{% url 'siteapp:tutorial_detail' t.slug %}" class="btn-watch {% if done %}rewatch{% elif pct > 0 %}resume{% endif %}">
+          <i class="fa-solid {% if done %}fa-rotate-right{% elif pct > 0 %}fa-play{% else %}fa-play{% endif %}"></i>
+          {% if done %}Rewatch{% elif pct > 0 %}Resume{% else %}Watch{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div class="tut-empty">
+    <i class="fa-solid fa-film"></i>
+    <h3>No tutorials found</h3>
+    <p>{% if q %}No results for &ldquo;{{ q }}&rdquo;.{% else %}Tutorials will appear here once published.{% endif %}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

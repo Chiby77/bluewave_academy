@@ -4,6 +4,7 @@ from . import views
 from . import admin_views
 from . import examinator_views
 from . import zuri_views
+from . import tutorial_views
 from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 app_name = "siteapp"
@@ -106,12 +107,23 @@ urlpatterns = [
     path("administration/examinator/assignment/<int:assignment_id>/submissions/", examinator_views.admin_submissions, name="admin_submissions"),
     path("administration/examinator/submission/<int:submission_id>/grade/", examinator_views.admin_grade_submission, name="admin_grade_submission"),
     path("administration/examinator/submission/<int:submission_id>/regrade/", examinator_views.admin_regrade_submission, name="admin_regrade_submission"),
+    # ==================== VIDEO TUTORIALS (Student) ====================
+    path("student/tutorials/", tutorial_views.tutorial_list, name="tutorial_list"),
+    path("student/tutorials/progress/update/", tutorial_views.update_video_progress, name="update_video_progress"),
+    path("student/tutorials/<slug:slug>/", tutorial_views.tutorial_detail, name="tutorial_detail"),
+
     # ==================== ADMIN ROUTES ====================
     # Blog Management
     path("administration/blog/", admin_views.admin_blog_list, name="admin_blog_list"),
     path("administration/blog/create/", admin_views.admin_blog_create, name="admin_blog_create"),
     path("administration/blog/<int:post_id>/edit/", admin_views.admin_blog_edit, name="admin_blog_edit"),
     path("administration/blog/<int:post_id>/delete/", admin_views.admin_blog_delete, name="admin_blog_delete"),
+    # Tutorial Management
+    path("administration/tutorials/", admin_views.admin_tutorial_list, name="admin_tutorial_list"),
+    path("administration/tutorials/create/", admin_views.admin_tutorial_create, name="admin_tutorial_create"),
+    path("administration/tutorials/<int:tutorial_id>/edit/", admin_views.admin_tutorial_edit, name="admin_tutorial_edit"),
+    path("administration/tutorials/<int:tutorial_id>/delete/", admin_views.admin_tutorial_delete, name="admin_tutorial_delete"),
+    path("administration/tutorials/<int:tutorial_id>/toggle/", admin_views.admin_tutorial_toggle_status, name="admin_tutorial_toggle"),
     # Student Management
     path("administration/students/", admin_views.admin_students, name="admin_students"),
     # Hidden Admin Login

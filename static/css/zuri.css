@@ -294,7 +294,7 @@
 
 /* ─── RESPONSIVE ─────────────────────────── */
 @media (max-width:480px) {
-  #zuri-panel   { width:calc(100vw - 20px); right:10px; bottom:90px; max-height:80vh; }
+  #zuri-panel   { width:calc(100vw - 20px); right:10px; bottom:90px; max-height:calc(100dvh - 110px); }
   #zuri-trigger { right:16px; bottom:16px; }
   #zuri-tooltip { right:16px; bottom:88px; }
 }
