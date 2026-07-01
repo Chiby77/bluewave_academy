@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse_lazy
 from django.views.decorators.cache import cache_control
-from datetime import timedelta
+from django.db import transaction
 
 from .models import (
     CustomUser,
@@ -18,6 +18,7 @@ from .models import (
     Question,
     ExamAttempt,
     Answer,
+    ExamGrading,
     Announcement,
     DownloadResource,
     BlogPost,
@@ -204,14 +205,19 @@ def register(request):
             messages.success(
                 request, f"Welcome to Bluewave Academy, {user.first_name}!"
             )
-            # Send Tinodaishe's personal welcome email
             if user.email:
                 _send_welcome_email(user, request)
             return redirect("siteapp:dashboard")
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{error}")
+            # Show field errors as toasts; terms error is most specific
+            for field, errs in form.errors.items():
+                for err in errs:
+                    if field == "terms":
+                        messages.error(request, "You must accept the Terms of Service and Privacy Policy to register.")
+                    elif field != "__all__":
+                        messages.error(request, err)
+                    else:
+                        messages.error(request, err)
     else:
         form = StudentRegistrationForm()
 
@@ -403,6 +409,69 @@ def analytics(request):
 # ============= EXAM VIEWS =============
 
 
+def _grade_attempt_now(attempt):
+    """
+    Grade an attempt immediately after submission.
+    MCQ/true_false: auto-checked via check_answer().
+    code/essay/short_answer: graded via Groq AI (or keyword fallback).
+    Always finalises score and sets status='graded'.
+    """
+    from .examinator_service import get_grading_service
+    from .models import ExamGrading
+
+    svc = get_grading_service()
+    svc.is_enabled()  # re-check key in case singleton was stale
+
+    # Step 1: MCQ / True-False — just run check_answer
+    for answer in attempt.answers.filter(
+        question__question_type__in=["mcq", "true_false"]
+    ).select_related("question"):
+        answer.check_answer()
+
+    # Step 2: Subjective / code — Groq AI or keyword fallback
+    for answer in attempt.answers.filter(
+        question__question_type__in=["essay", "short_answer", "code"]
+    ).select_related("question"):
+        q = answer.question
+        if q.question_type == "code":
+            result = svc.grade_code_submission(
+                question=q.question_text,
+                rubric="",
+                expected_output=q.correct_answer or "",
+                student_code=answer.answer_text or "",
+                language="python",
+                total_marks=int(q.marks),
+            )
+        else:
+            result = svc.grade_text_submission(
+                question=q.question_text,
+                rubric="",
+                answer_key=q.correct_answer or "",
+                student_answer=answer.answer_text or "",
+                total_marks=int(q.marks),
+            )
+        answer.marks_obtained = result["score"]
+        answer.is_correct = result["is_correct"]
+        answer.ai_graded = True
+        answer.ai_feedback = result["feedback"]
+        answer.save()
+        ExamGrading.objects.update_or_create(
+            attempt=attempt, question=q,
+            defaults={
+                "student_answer": answer.answer_text,
+                "groq_score": result["score"],
+                "groq_feedback": result["feedback"],
+                "groq_reasoning": result["reasoning"],
+            },
+        )
+
+    # Step 3: Finalise
+    attempt.calculate_score()
+    attempt.status = "graded"
+    attempt.ai_graded = True
+    attempt.save()
+
+
 @login_required(login_url="siteapp:login")
 def exam_list(request):
     """Student exam list — full page with real data"""
@@ -422,12 +491,25 @@ def exam_list(request):
     # Build items with attempt info
     items = []
     for exam in exams_qs:
-        attempt = ExamAttempt.objects.filter(student=student, exam=exam).first()
-        if status_filter == "available" and attempt and attempt.status in ["submitted", "graded"]:
+        finished = ExamAttempt.objects.filter(
+            student=student, exam=exam, status__in=["submitted", "graded"]
+        )
+        finished_count = finished.count()
+        latest_attempt = ExamAttempt.objects.filter(student=student, exam=exam).order_by("-attempt_number").first()
+        in_progress = ExamAttempt.objects.filter(student=student, exam=exam, status="in_progress").first()
+        can_retake = finished_count < 2
+
+        if status_filter == "available" and finished_count > 0 and not can_retake:
             continue
-        if status_filter == "completed" and (not attempt or attempt.status not in ["submitted", "graded"]):
+        if status_filter == "completed" and finished_count == 0:
             continue
-        items.append({"exam": exam, "attempt": attempt})
+        items.append({
+            "exam": exam,
+            "attempt": latest_attempt,
+            "in_progress": in_progress,
+            "attempt_count": finished_count,
+            "can_retake": can_retake,
+        })
 
     context = {
         "exams": items,
@@ -440,12 +522,18 @@ def exam_list(request):
 def exam_detail(request, exam_id):
     """View exam details"""
     exam = get_object_or_404(Exam, id=exam_id)
+    student = request.user
 
-    attempt = ExamAttempt.objects.filter(student=request.user, exam=exam).first()
+    attempts = ExamAttempt.objects.filter(student=student, exam=exam).order_by("attempt_number")
+    latest_attempt = attempts.last()
+    attempt_count = attempts.filter(status__in=["submitted", "graded"]).count()
+    can_retake = attempt_count < 2
 
     context = {
         "exam": exam,
-        "attempt": attempt,
+        "attempt": latest_attempt,
+        "attempt_count": attempt_count,
+        "can_retake": can_retake,
         "question_count": exam.questions.count(),
     }
 
@@ -454,7 +542,7 @@ def exam_detail(request, exam_id):
 
 @login_required(login_url="siteapp:login")
 def take_exam(request, exam_id):
-    """Take an exam"""
+    """Take an exam — max 2 attempts per student."""
     exam = get_object_or_404(Exam, id=exam_id)
     student = request.user
 
@@ -462,60 +550,78 @@ def take_exam(request, exam_id):
         messages.error(request, "This exam is not currently available.")
         return redirect("siteapp:exam_list")
 
-    # Only redirect to results if exam was already submitted/graded
-    existing_attempt = ExamAttempt.objects.filter(
-        student=student, exam=exam, status__in=["submitted", "graded"]
-    ).first()
-
-    if existing_attempt:
-        messages.warning(request, "You have already attempted this exam.")
-        return redirect("siteapp:exam_results", attempt_id=existing_attempt.id)
-
-    # Check if there's an in-progress attempt and use it, otherwise create new
-    in_progress_attempt = ExamAttempt.objects.filter(
-        student=student, exam=exam, status="in_progress"
-    ).first()
-
-    if in_progress_attempt:
-        attempt = in_progress_attempt
-    else:
-        attempt = ExamAttempt.objects.create(
-            student=student, exam=exam, status="in_progress"
+    with transaction.atomic():
+        finished_attempts = (
+            ExamAttempt.objects.select_for_update()
+            .filter(student=student, exam=exam, status__in=["submitted", "graded"])
         )
+        finished_count = finished_attempts.count()
+
+        if finished_count >= 2:
+            messages.warning(request, "You have used both attempts for this exam.")
+            last = finished_attempts.order_by("-attempt_number").first()
+            return redirect("siteapp:exam_results", attempt_id=last.id)
+
+        # Next attempt number
+        next_number = finished_count + 1
+
+        attempt, created = ExamAttempt.objects.get_or_create(
+            student=student,
+            exam=exam,
+            attempt_number=next_number,
+            defaults={"status": "in_progress"},
+        )
+
+        # If this attempt was already submitted (edge case), redirect
+        if not created and attempt.status in ["submitted", "graded"]:
+            messages.warning(request, "That attempt is already submitted.")
+            return redirect("siteapp:exam_results", attempt_id=attempt.id)
 
     questions = exam.questions.all()
 
-    # Only submit exam when user confirms (submit=true)
     if request.method == "POST" and request.POST.get("submit") == "true":
-        # Delete existing answers to avoid duplicates
-        attempt.answers.all().delete()
+        try:
+            with transaction.atomic():
+                locked = ExamAttempt.objects.select_for_update().get(id=attempt.id)
+                if locked.status in ["submitted", "graded"]:
+                    messages.warning(request, "This exam was already submitted.")
+                    return redirect("siteapp:exam_results", attempt_id=locked.id)
 
-        # Process answers
-        for question in questions:
-            answer_text = request.POST.get(f"question_{question.id}")
-            if answer_text:
-                answer = Answer.objects.create(
-                    attempt=attempt, question=question, answer_text=answer_text
-                )
-                answer.check_answer()
+                locked.answers.all().delete()
+                for question in questions:
+                    answer_text = request.POST.get(f"question_{question.id}")
+                    if answer_text:
+                        ans = Answer.objects.create(
+                            attempt=locked, question=question, answer_text=answer_text
+                        )
+                        ans.check_answer()
 
-        attempt.end_time = timezone.now()
-        time_diff = attempt.end_time - attempt.start_time
-        attempt.time_taken_minutes = int(time_diff.total_seconds() / 60)
-        attempt.status = "submitted"
-        attempt.save()
+                locked.end_time = timezone.now()
+                time_diff = locked.end_time - locked.start_time
+                locked.time_taken_minutes = int(time_diff.total_seconds() / 60)
+                locked.status = "submitted"
+                locked.save()
 
-        attempt.calculate_score()
+                # Instant grading
+                _grade_attempt_now(locked)
 
-        messages.success(request, "Exam submitted successfully!")
-        return redirect("siteapp:exam_results", attempt_id=attempt.id)
+            results_url = f"/student/exam/results/{locked.id}/"
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "redirect_url": results_url})
+            messages.success(request, "Exam submitted successfully!")
+            return redirect("siteapp:exam_results", attempt_id=locked.id)
+        except Exception as e:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"error": str(e)}, status=500)
+            messages.error(request, "Submission failed. Please try again or contact support.")
+            return redirect("siteapp:exam_list")
 
     context = {
         "exam": exam,
         "attempt": attempt,
+        "attempt_number": attempt.attempt_number,
         "questions": questions,
     }
-
     return render(request, "siteapp/exams/take_exam.html", context)
 
 
@@ -680,6 +786,20 @@ def like_post(request, slug):
         post.save()
         return JsonResponse({"new_count": post.likes_count})
     return JsonResponse({"error": "invalid request"}, status=400)
+
+
+# ============= ERROR HANDLING VIEWS =============
+def handler400(request, exception=None):
+    return render(request, 'siteapp/400.html', status=400)
+
+def handler403(request, exception=None):
+    return render(request, 'siteapp/403.html', status=403)
+
+def handler404(request, exception=None):
+    return render(request, 'siteapp/404.html', status=404)
+
+def handler500(request):
+    return render(request, 'siteapp/500.html', status=500)
 
 
 # ============= CUSTOM PASSWORD RESET VIEWS =============

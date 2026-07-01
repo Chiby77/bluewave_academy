@@ -20,6 +20,28 @@
             <p class="exam-page-sub">{{ assignment.classroom.name }}</p>
         </div>
 
+        {% if submission.status == 'grading' %}
+        <!-- Grading in progress indicator -->
+        <div class="feedback-card" style="text-align:center;padding:40px;" id="grading-status">
+            <div style="font-size:48px;margin-bottom:16px;"><i class="fa-solid fa-robot fa-spin" style="color:#2563eb;"></i></div>
+            <h3 style="margin-bottom:8px;">AI Grading in Progress</h3>
+            <p style="color:#64748b;">Your submission is being graded. This page will refresh automatically.</p>
+            <div style="margin-top:20px;height:4px;border-radius:4px;background:#e2e8f0;overflow:hidden;">
+                <div style="height:100%;width:60%;background:linear-gradient(90deg,#2563eb,#06b6d4);border-radius:4px;animation:pulse 1.5s ease-in-out infinite;"></div>
+            </div>
+        </div>
+        <style>@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}</style>
+        <script>
+        // Poll every 4 seconds until grading completes
+        setTimeout(function check() {
+            fetch(window.location.href + '?status_check=1', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(r => r.json())
+            .then(d => { if (d.status !== 'grading') location.reload(); else setTimeout(check, 4000); })
+            .catch(() => setTimeout(check, 6000));
+        }, 4000);
+        </script>
+        {% else %}
+
         <!-- Score Card -->
         <div class="result-score-card {% if submission.is_passed %}result-passed{% else %}result-failed{% endif %}">
             <div class="result-score-circle">
@@ -46,6 +68,13 @@
             </div>
         </div>
 
+        {% if submission.status == 'manual_review' %}
+        <div class="feedback-card feedback-card-orange" style="margin-top:16px;">
+            <div class="feedback-card-header"><i class="fa-solid fa-clock"></i> Awaiting Manual Review</div>
+            <p class="feedback-text">Automatic grading could not be completed. Your instructor will review and grade your submission shortly.</p>
+        </div>
+        {% endif %}
+
         <!-- AI Feedback -->
         {% if submission.ai_feedback %}
         <div class="feedback-section">
@@ -58,61 +87,48 @@
 
             {% if submission.ai_strengths %}
             <div class="feedback-card feedback-card-green">
-                <div class="feedback-card-header">
-                    <i class="fa-solid fa-thumbs-up"></i> Strengths
-                </div>
+                <div class="feedback-card-header"><i class="fa-solid fa-thumbs-up"></i> Strengths</div>
                 <ul class="feedback-list">
-                    {% for strength in submission.ai_strengths %}
-                    <li><i class="fa-solid fa-check"></i> {{ strength }}</li>
-                    {% endfor %}
+                    {% for strength in submission.ai_strengths %}<li><i class="fa-solid fa-check"></i> {{ strength }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
 
             {% if submission.ai_improvements %}
             <div class="feedback-card feedback-card-orange">
-                <div class="feedback-card-header">
-                    <i class="fa-solid fa-lightbulb"></i> Areas for Improvement
-                </div>
+                <div class="feedback-card-header"><i class="fa-solid fa-lightbulb"></i> Areas for Improvement</div>
                 <ul class="feedback-list">
-                    {% for area in submission.ai_improvements %}
-                    <li><i class="fa-solid fa-arrow-right"></i> {{ area }}</li>
-                    {% endfor %}
+                    {% for area in submission.ai_improvements %}<li><i class="fa-solid fa-arrow-right"></i> {{ area }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
 
             {% if submission.ai_improvement_tips %}
             <div class="feedback-card feedback-card-blue">
-                <div class="feedback-card-header">
-                    <i class="fa-solid fa-graduation-cap"></i> Study Tips
-                </div>
+                <div class="feedback-card-header"><i class="fa-solid fa-graduation-cap"></i> Study Tips</div>
                 <ul class="feedback-list">
-                    {% for tip in submission.ai_improvement_tips %}
-                    <li><i class="fa-solid fa-book-open"></i> {{ tip }}</li>
-                    {% endfor %}
+                    {% for tip in submission.ai_improvement_tips %}<li><i class="fa-solid fa-book-open"></i> {{ tip }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
         </div>
         {% endif %}
 
-        <!-- Instructor feedback -->
         {% if submission.instructor_feedback %}
-        <div class="feedback-card feedback-card-purple" style="margin-top: 16px;">
-            <div class="feedback-card-header">
-                <i class="fa-solid fa-chalkboard-user"></i> Instructor Feedback
-            </div>
+        <div class="feedback-card feedback-card-purple" style="margin-top:16px;">
+            <div class="feedback-card-header"><i class="fa-solid fa-chalkboard-user"></i> Instructor Feedback</div>
             <p class="feedback-text">{{ submission.instructor_feedback }}</p>
         </div>
         {% endif %}
+
+        {% endif %}{# end status != grading #}
 
         <!-- Actions -->
         <div class="result-actions">
             <a href="{% url 'siteapp:classroom_detail' assignment.classroom.slug %}" class="btn-exam-outline">
                 <i class="fa-solid fa-arrow-left"></i> Back to Classroom
             </a>
-            {% if assignment.allow_resubmit and not assignment.is_past_deadline %}
+            {% if assignment.allow_resubmit and not assignment.is_past_deadline and submission.status != 'grading' %}
             <a href="{% url 'siteapp:take_assignment' assignment.id %}" class="btn-exam-primary">
                 <i class="fa-solid fa-rotate-right"></i> Resubmit
             </a>
@@ -120,4 +136,17 @@
         </div>
     </main>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if submission.status == 'grading' %}
+{# Handled inline above #}
+{% else %}
+<script>
+// Handle AJAX status check requests
+if (window.location.search.includes('status_check=1')) {
+    document.body.innerHTML = '';
+}
+</script>
+{% endif %}
 {% endblock %}

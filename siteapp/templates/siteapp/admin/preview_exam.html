@@ -103,7 +103,7 @@
     </div>
     {% else %}
     <div style="background:var(--success-light);border:1px solid var(--success);padding:10px 14px;border-radius:var(--radius-sm);">
-      <div style="font-size:11px;font-weight:700;color:var(--success);margin-bottom:4px;"><i class="fa-solid fa-robot"></i> Model Answer (Gemini AI will grade against this)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--success);margin-bottom:4px;"><i class="fa-solid fa-robot"></i> Model Answer (Groq AI will grade against this)</div>
       <div style="font-size:13px;color:var(--dark);">{{ question.correct_answer|default:"Not set" }}</div>
     </div>
     {% endif %}

@@ -1,0 +1,20 @@
+{% extends "siteapp/base.html" %}
+
+{% block title %}Page Not Found - Bluewave Academy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>404</h1>
+        <p>Oops! The page you're looking for doesn't exist.</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container text-center">
+        <div style="font-size: 8rem; margin-bottom: 30px;">🔍</div>
+        <p class="text-muted mb-3">The page you tried to reach might have been removed, had its name changed, or is temporarily unavailable.</p>
+        <a href="{% url 'siteapp:home' %}" class="btn btn-primary">Go Back to Home</a>
+    </div>
+</section>
+{% endblock %}

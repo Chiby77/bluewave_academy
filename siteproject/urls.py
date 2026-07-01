@@ -19,14 +19,32 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from siteapp.views import handler400, handler403, handler404, handler500
+
+
+def health_check(request):
+    """Lightweight health check endpoint for Railway and load balancers."""
+    return JsonResponse({"status": "ok"})
+
 
 urlpatterns = [
+    path("health/", health_check, name="health_check"),
     path("admin/", admin.site.urls),
     path("", include("siteapp.urls")),
 ]
+
+# Serve media files locally in development.
+# In production, media is served directly from Supabase Storage.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Error handling pages
+handler400 = handler400
+handler403 = handler403
+handler404 = handler404
+handler500 = handler500
 
 admin.site.site_header = "Bluewave Academy Administration"
 admin.site.site_title = "Bluewave Academy Admin"

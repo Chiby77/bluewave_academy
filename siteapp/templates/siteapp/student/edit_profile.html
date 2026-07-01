@@ -1,23 +1,21 @@
 {% extends "siteapp/student/base_student.html" %}
 {% load static %}
 
-{% block title %}Profile — Bluewave Academy{% endblock %}
+{% block title %}Edit Profile — Bluewave Academy{% endblock %}
 {% block nav_profile %}active{% endblock %}
 {% block page_title %}My Profile{% endblock %}
-{% block page_subtitle %}Manage your account details{% endblock %}
+{% block page_subtitle %}Manage your account information{% endblock %}
 
 {% block content %}
 
 <div class="content-grid">
 
-  <!-- Left: Form Card with Hero -->
+  <!-- Left: Form -->
   <div>
-    <div class="card" style="margin-bottom:20px;overflow:hidden;padding:0;">
+    <div class="card" style="overflow:hidden;padding:0;">
 
-      <!-- Cover -->
+      <!-- Cover + Avatar -->
       <div class="profile-cover"></div>
-
-      <!-- Avatar on cover -->
       <div style="position:relative;">
         <div class="profile-avatar-outer">
           <div class="profile-avatar-xl">
@@ -26,152 +24,135 @@
         </div>
       </div>
 
-      <!-- Info bar -->
+      <!-- Name bar -->
       <div class="profile-info-bar">
         <div>
           <div class="profile-info-name">{{ request.user.get_full_name|default:request.user.username }}</div>
           <div class="profile-info-email">{{ request.user.email }}</div>
         </div>
         {% if request.user.student_id %}
-        <span class="badge badge-blue"><i class="fa-solid fa-id-badge"></i> {{ request.user.student_id }}</span>
+        <span class="badge badge-blue" style="font-size:11px;"><i class="fa-solid fa-id-badge"></i> {{ request.user.student_id }}</span>
         {% endif %}
       </div>
 
       <!-- Form -->
-      <div style="padding:0 28px 28px;">
-        {% if messages %}
-          {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}" style="margin-bottom:16px;">
-            <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"></i>
-            <span>{{ message }}</span>
-            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
-          </div>
-          {% endfor %}
-        {% endif %}
-
-        {% if form.non_field_errors %}
-        <div class="alert alert-error" style="margin-bottom:16px;">
-          <i class="fa-solid fa-circle-xmark"></i>
-          <span>{{ form.non_field_errors.0 }}</span>
-        </div>
-        {% endif %}
-
+      <div style="padding:4px 28px 28px;">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
 
-          <div class="form-section" style="border-top:1px solid var(--gray-100);padding-top:24px;margin-bottom:0;">
+          <!-- Name -->
+          <div class="form-section" style="border-top:1px solid var(--gray-100);padding-top:24px;">
             <div class="form-section-title"><i class="fa-solid fa-id-card"></i> Full Name</div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">First Name <span class="required">*</span></label>
-                <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}" class="form-control {% if form.first_name.errors %}error{% endif %}" placeholder="First name" required>
+                <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}" class="form-control" placeholder="First name" required>
                 {% if form.first_name.errors %}<div class="form-error">{{ form.first_name.errors.0 }}</div>{% endif %}
               </div>
               <div class="form-group">
                 <label class="form-label">Last Name <span class="required">*</span></label>
-                <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}" class="form-control {% if form.last_name.errors %}error{% endif %}" placeholder="Last name" required>
+                <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}" class="form-control" placeholder="Last name" required>
                 {% if form.last_name.errors %}<div class="form-error">{{ form.last_name.errors.0 }}</div>{% endif %}
               </div>
             </div>
           </div>
 
+          <!-- Contact -->
           <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-address-book"></i> Contact Details</div>
             <div class="form-group">
               <label class="form-label">Email Address</label>
-              <input type="email" name="email" value="{{ form.email.value|default:'' }}" class="form-control" readonly>
-              <div class="form-hint">Email cannot be changed. Contact support if needed.</div>
+              <input type="email" name="email" value="{{ form.email.value|default:'' }}" class="form-control" readonly style="background:var(--gray-100);cursor:not-allowed;">
+              <div class="form-hint"><i class="fa-solid fa-lock" style="font-size:10px;"></i> Email cannot be changed. Contact support if needed.</div>
             </div>
             <div class="form-group">
               <label class="form-label">Phone Number</label>
-              <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" class="form-control {% if form.phone.errors %}error{% endif %}" placeholder="+1 234 567 8900">
+              <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" class="form-control" placeholder="+263 712 345 678">
               {% if form.phone.errors %}<div class="form-error">{{ form.phone.errors.0 }}</div>{% endif %}
             </div>
           </div>
 
+          <!-- Academic -->
           <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-school"></i> Academic Information</div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Student ID</label>
-                <input type="text" name="student_id" value="{{ form.student_id.value|default:'' }}" class="form-control" readonly>
+                <input type="text" name="student_id" value="{{ form.student_id.value|default:'' }}" class="form-control" readonly style="background:var(--gray-100);cursor:not-allowed;">
                 <div class="form-hint">Auto-assigned by the system.</div>
               </div>
               <div class="form-group">
                 <label class="form-label">School / Institution</label>
-                <input type="text" name="school" value="{{ form.school.value|default:'' }}" class="form-control {% if form.school.errors %}error{% endif %}" placeholder="Your school name">
+                <input type="text" name="school" value="{{ form.school.value|default:'' }}" class="form-control" placeholder="Your school name">
                 {% if form.school.errors %}<div class="form-error">{{ form.school.errors.0 }}</div>{% endif %}
               </div>
             </div>
           </div>
 
-          <div style="display:flex;gap:12px;margin-top:8px;">
-            <button type="submit" class="btn btn-primary">
-              <i class="fa-solid fa-floppy-disk"></i> Save Changes
-            </button>
-            <a href="{% url 'siteapp:dashboard' %}" class="btn btn-gray">
-              <i class="fa-solid fa-xmark"></i> Cancel
-            </a>
+          <div style="display:flex;gap:12px;padding-top:4px;">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            <a href="{% url 'siteapp:dashboard' %}" class="btn btn-gray"><i class="fa-solid fa-xmark"></i> Cancel</a>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Right: Security + Stats -->
+  <!-- Right: Account info + Security -->
   <div>
 
-    <!-- Account Stats -->
-    <div class="card" style="margin-bottom:16px;overflow:hidden;padding:0;">
-      <div style="background:linear-gradient(135deg,#0f172a,#1e3a8a);padding:20px 20px 16px;">
-        <div style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Account Overview</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.7);">Member since {{ request.user.date_joined|date:'M d, Y' }}</div>
+    <!-- Account overview -->
+    <div class="card" style="margin-bottom:20px;overflow:hidden;padding:0;">
+      <div style="background:linear-gradient(135deg,#0f172a,#1e3a8a);padding:20px;">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">Account Overview</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.8);font-weight:600;">{{ request.user.get_full_name }}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;">Member since {{ request.user.date_joined|date:"M d, Y" }}</div>
       </div>
-      <div style="padding:0;">
+      <div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
-          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-user" style="width:16px;color:var(--primary);"></i>Username</span>
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-user" style="color:var(--primary);width:14px;"></i>Username</span>
           <strong style="color:var(--dark);">{{ request.user.username }}</strong>
         </div>
-        {% if request.user.school %}
         <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
-          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-school" style="width:16px;color:var(--accent);"></i>School</span>
-          <strong style="color:var(--dark);max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ request.user.school }}</strong>
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-signal" style="color:var(--accent);width:14px;"></i>Level</span>
+          <span class="badge badge-blue">{{ request.user.get_current_level_display }}</span>
         </div>
-        {% endif %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-school" style="color:var(--warning);width:14px;"></i>School</span>
+          <span style="font-weight:600;color:var(--dark);max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ request.user.school|default:"Not set" }}</span>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 20px;font-size:13px;">
-          <span style="color:var(--gray-600);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-circle-check" style="width:16px;color:var(--success);"></i>Status</span>
-          <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Active</span>
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-circle-check" style="color:var(--success);width:14px;"></i>Status</span>
+          <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Active Student</span>
         </div>
       </div>
     </div>
 
     <!-- Security -->
-    <div class="card">
-      <div class="card-header">
+    <div class="card" style="overflow:hidden;padding:0;">
+      <div class="card-header" style="padding:16px 20px;">
         <h3><i class="fa-solid fa-shield-halved" style="color:var(--primary);margin-right:8px;"></i>Security</h3>
       </div>
-      <div class="card-body" style="padding:0;">
-        <a href="{% url 'siteapp:password_reset' %}" style="display:flex;align-items:center;gap:12px;padding:16px 20px;text-decoration:none;color:var(--gray-800);border-bottom:1px solid var(--gray-100);transition:background var(--transition);" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-          <div style="width:38px;height:38px;border-radius:var(--radius-sm);background:var(--warning-light);color:var(--warning);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fa-solid fa-key"></i>
-          </div>
-          <div>
-            <div style="font-size:13px;font-weight:700;">Change Password</div>
-            <div style="font-size:11px;color:var(--gray-400);">Update your login credentials</div>
-          </div>
-          <i class="fa-solid fa-chevron-right" style="margin-left:auto;color:var(--gray-300);font-size:11px;"></i>
-        </a>
-        <a href="{% url 'siteapp:logout' %}" style="display:flex;align-items:center;gap:12px;padding:16px 20px;text-decoration:none;color:var(--danger);transition:background var(--transition);" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
-          <div style="width:38px;height:38px;border-radius:var(--radius-sm);background:var(--danger-light);color:var(--danger);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </div>
-          <div>
-            <div style="font-size:13px;font-weight:700;">Sign Out</div>
-            <div style="font-size:11px;color:var(--gray-400);">End your current session</div>
-          </div>
-          <i class="fa-solid fa-chevron-right" style="margin-left:auto;color:var(--danger);font-size:11px;opacity:.4;"></i>
-        </a>
-      </div>
+      <a href="{% url 'siteapp:password_reset' %}" style="display:flex;align-items:center;gap:14px;padding:16px 20px;text-decoration:none;color:var(--gray-800);border-bottom:1px solid var(--gray-100);transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--warning-light);color:var(--warning);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--dark);">Change Password</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:1px;">Update your login credentials</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--gray-300);font-size:11px;"></i>
+      </a>
+      <a href="{% url 'siteapp:logout' %}" style="display:flex;align-items:center;gap:14px;padding:16px 20px;text-decoration:none;color:var(--danger);transition:background .15s;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--danger-light);color:var(--danger);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Sign Out</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:1px;">End your current session</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--danger);font-size:11px;opacity:.4;"></i>
+      </a>
     </div>
 
   </div>

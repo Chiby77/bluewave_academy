@@ -30,9 +30,11 @@ from .models import (
     Tutorial,
     VideoProgress,
 )
-from .forms import ExamAnswerForm, StudentLoginForm
+from .forms import ExamAnswerForm
+from django.contrib.auth.forms import AuthenticationForm
 from .examinator_service import get_grading_service
 from .pdf_generator import generate_student_report
+from .notifications import send_notification_to_user
 
 
 def is_admin(user):
@@ -63,7 +65,7 @@ def admin_login(request):
         return redirect("siteapp:admin_dashboard")
 
     if request.method == "POST":
-        form = StudentLoginForm(request.POST)
+        form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             username = form.cleaned_data.get("username")
             password = form.cleaned_data.get("password")
@@ -84,7 +86,7 @@ def admin_login(request):
             else:
                 messages.error(request, "Invalid email or password.")
     else:
-        form = StudentLoginForm()
+        form = AuthenticationForm()
 
     context = {"form": form, "is_admin_login": True}
     return render(request, "siteapp/admin/login.html", context)
@@ -431,13 +433,13 @@ def grade_attempt(request, attempt_id):
     if request.method == "POST":
         try:
             with transaction.atomic():
-                # Update scores and feedback
                 for answer in answers_to_grade:
-                    score = Decimal(request.POST.get(f"score_{answer.id}", 0))
+                    raw_score = request.POST.get(f"score_{answer.id}", "").strip()
                     feedback = request.POST.get(f"feedback_{answer.id}", "")
+                    score = Decimal(str(raw_score)) if raw_score else Decimal("0")
+                    score = max(Decimal("0"), min(score, Decimal(str(answer.question.marks))))
 
-                    # Create or update grading record
-                    grading, created = ExamGrading.objects.update_or_create(
+                    ExamGrading.objects.update_or_create(
                         attempt=attempt,
                         question=answer.question,
                         defaults={
@@ -449,20 +451,28 @@ def grade_attempt(request, attempt_id):
                         },
                     )
 
-                    # Update answer with final score
                     answer.marks_obtained = score
-                    answer.is_correct = score >= (answer.question.marks * 0.8)
+                    answer.is_correct = score >= (answer.question.marks * Decimal("0.8"))
                     answer.save()
 
-                # Recalculate total score
                 attempt.calculate_score()
-
-                # Update status if all answers graded
                 attempt.status = "graded"
                 attempt.ai_graded = True
                 attempt.save()
 
-                messages.success(request, "Answers graded successfully!")
+                # Send notification
+                try:
+                    send_notification_to_user(
+                        user=attempt.student,
+                        title="Exam Graded!",
+                        message=f"Your attempt for '{attempt.exam.title}' has been graded! Score: {attempt.score}/{attempt.exam.total_marks}",
+                        notification_type="result",
+                        url=f"/student/exam/results/{attempt.id}/",
+                    )
+                except Exception as e:
+                    print(f"[Notification] Error sending manual exam grading notice: {e}")
+
+                messages.success(request, f"Answers graded. Score: {attempt.score}/{attempt.exam.total_marks}")
                 return redirect("siteapp:view_attempts")
 
         except Exception as e:
@@ -478,28 +488,30 @@ def grade_attempt(request, attempt_id):
 
 @admin_required
 def auto_grade_attempt(request, attempt_id):
-    """Auto-grade attempt using Gemini AI"""
+    """Auto-grade attempt using Groq AI"""
 
     attempt = get_object_or_404(ExamAttempt, id=attempt_id)
-    gemini_service = get_grading_service()
-
-    if not gemini_service.is_enabled():
-        messages.error(request, "Gemini AI service is not configured. Please set the GEMINI_API_KEY environment variable.")
-        return redirect("siteapp:grade_attempt", attempt_id=attempt.id)
+    grading_service = get_grading_service()
+    grading_service.is_enabled()  # force re-check of API key
 
     try:
-        # Get non-MCQ answers
-        answers_to_grade = attempt.answers.filter(
-            question__question_type__in=["essay", "short_answer", "code"]
-        ).select_related("question")
-
         with transaction.atomic():
+            # Step 1: re-grade MCQ / true_false answers (check_answer fixes is_correct + marks)
+            for answer in attempt.answers.filter(
+                question__question_type__in=["mcq", "true_false"]
+            ).select_related("question"):
+                answer.check_answer()
+
+            # Step 2: AI-grade subjective answers
+            answers_to_grade = attempt.answers.filter(
+                question__question_type__in=["essay", "short_answer", "code"]
+            ).select_related("question")
+
             for answer in answers_to_grade:
                 question = answer.question
 
-                # Grade using Gemini
                 if question.question_type == "code":
-                    grade_result = gemini_service.grade_code_submission(
+                    grade_result = grading_service.grade_code_submission(
                         question=question.question_text,
                         rubric=getattr(question, "rubric", "") or "",
                         expected_output=question.correct_answer or "",
@@ -508,7 +520,7 @@ def auto_grade_attempt(request, attempt_id):
                         total_marks=int(question.marks),
                     )
                 else:
-                    grade_result = gemini_service.grade_text_submission(
+                    grade_result = grading_service.grade_text_submission(
                         question=question.question_text,
                         rubric=getattr(question, "rubric", "") or "",
                         answer_key=question.correct_answer or "",
@@ -516,7 +528,6 @@ def auto_grade_attempt(request, attempt_id):
                         total_marks=int(question.marks),
                     )
 
-                # Store results in existing grading record (reuse groq_ fields for AI results)
                 ExamGrading.objects.update_or_create(
                     attempt=attempt,
                     question=question,
@@ -528,21 +539,31 @@ def auto_grade_attempt(request, attempt_id):
                     },
                 )
 
-                # Update answer
                 answer.marks_obtained = grade_result["score"]
                 answer.is_correct = grade_result["is_correct"]
                 answer.ai_graded = True
                 answer.ai_feedback = grade_result["feedback"]
                 answer.save()
 
-            # Recalculate total
             attempt.calculate_score()
             attempt.status = "graded"
             attempt.ai_graded = True
             attempt.save()
 
-            messages.success(request, "Attempt auto-graded using Gemini AI.")
-            return redirect("siteapp:view_attempts")
+            # Send notification
+            try:
+                send_notification_to_user(
+                    user=attempt.student,
+                    title="Exam Graded!",
+                    message=f"Your attempt for '{attempt.exam.title}' has been graded! Score: {attempt.score}/{attempt.exam.total_marks}",
+                    notification_type="result",
+                    url=f"/student/exam/results/{attempt.id}/",
+                )
+            except Exception as e:
+                print(f"[Notification] Error sending auto exam grading notice: {e}")
+
+        messages.success(request, f"Attempt graded successfully. Score: {attempt.score}/{attempt.exam.total_marks}")
+        return redirect("siteapp:view_attempts")
 
     except Exception as e:
         messages.error(request, f"Error auto-grading: {str(e)}")

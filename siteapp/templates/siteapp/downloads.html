@@ -528,11 +528,8 @@
         </div>
     </footer>
 
+    <script src="{% static 'js/nav.js' %}"></script>
     <script>
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-        if (mobileMenu) mobileMenu.addEventListener('click', () => navLinks.classList.toggle('active'));
-
         // Filter tabs
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', () => {

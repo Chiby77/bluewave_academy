@@ -249,13 +249,7 @@
         </div>
     </footer>
 
-    <script>
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-        if (mobileMenu) {
-            mobileMenu.addEventListener('click', () => navLinks.classList.toggle('active'));
-        }
-    </script>
+    <script src="{% static 'js/nav.js' %}"></script>
 
 {% include 'siteapp/zuri_widget.html' %}
 </body>

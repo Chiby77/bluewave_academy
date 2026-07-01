@@ -15,6 +15,15 @@ from .models import (
     Enrollment,
     Assignment,
     Submission,
+    Notification,
+    ChatMessage,
+    TutorConversation,
+    TutorMessage,
+    Tutorial,
+    VideoProgress,
+    Material,
+    ExamGrading,
+    ExamHold,
 )
 
 
@@ -376,3 +385,134 @@ class SubmissionAdmin(admin.ModelAdmin):
         ("Instructor Override", {"fields": ("final_score", "instructor_feedback", "graded_by", "graded_at")}),
         ("Timestamps", {"fields": ("submitted_at", "report_sent"), "classes": ("collapse",)}),
     )
+
+
+# =============================================
+# NOTIFICATIONS & CHAT
+# =============================================
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ["user", "title", "notification_type", "is_read", "created_at"]
+    list_filter = ["notification_type", "is_read", "created_at"]
+    search_fields = ["user__username", "title", "message"]
+    readonly_fields = ["created_at"]
+    list_editable = ["is_read"]
+
+    fieldsets = (
+        ("Notification", {"fields": ("user", "title", "message", "notification_type", "url")}),
+        ("Status", {"fields": ("is_read", "created_at")}),
+    )
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ["user", "classroom", "content", "created_at"]
+    list_filter = ["classroom", "created_at"]
+    search_fields = ["user__username", "content"]
+    readonly_fields = ["created_at"]
+
+    fieldsets = (
+        ("Message", {"fields": ("classroom", "user", "content")}),
+        ("Timestamp", {"fields": ("created_at",)}),
+    )
+
+
+# =============================================
+# AI TUTOR
+# =============================================
+
+class TutorMessageInline(admin.TabularInline):
+    model = TutorMessage
+    extra = 0
+    readonly_fields = ["role", "content", "timestamp"]
+    can_delete = False
+
+
+@admin.register(TutorConversation)
+class TutorConversationAdmin(admin.ModelAdmin):
+    list_display = ["user", "created_at", "updated_at"]
+    list_filter = ["created_at", "updated_at"]
+    search_fields = ["user__username", "user__email"]
+    readonly_fields = ["created_at", "updated_at"]
+    inlines = [TutorMessageInline]
+
+
+@admin.register(TutorMessage)
+class TutorMessageAdmin(admin.ModelAdmin):
+    list_display = ["conversation", "role", "timestamp"]
+    list_filter = ["role", "timestamp"]
+    search_fields = ["conversation__user__username", "content"]
+    readonly_fields = ["timestamp"]
+
+
+# =============================================
+# VIDEO TUTORIALS
+# =============================================
+
+class VideoProgressInline(admin.TabularInline):
+    model = VideoProgress
+    extra = 0
+    readonly_fields = ["student", "progress_pct", "completed", "last_watched"]
+    can_delete = False
+
+
+@admin.register(Tutorial)
+class TutorialAdmin(admin.ModelAdmin):
+    prepopulated_fields = {"slug": ("title",)}
+    list_display = ["title", "category", "status", "view_count", "created_at"]
+    list_filter = ["category", "status", "created_at"]
+    search_fields = ["title", "description"]
+    readonly_fields = ["view_count", "created_at", "updated_at"]
+    inlines = [VideoProgressInline]
+
+    fieldsets = (
+        ("Tutorial Details", {"fields": ("title", "slug", "description", "category", "status")}),
+        ("Video", {"fields": ("video_type", "video_url", "video_file", "thumbnail")}),
+        ("Statistics", {"fields": ("view_count", "created_at", "updated_at", "created_by"), "classes": ("collapse",)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(VideoProgress)
+class VideoProgressAdmin(admin.ModelAdmin):
+    list_display = ["student", "tutorial", "progress_pct", "completed", "last_watched"]
+    list_filter = ["completed", "tutorial", "last_watched"]
+    search_fields = ["student__username", "tutorial__title"]
+    readonly_fields = ["last_watched"]
+
+
+# =============================================
+# CLASSROOM MATERIALS
+# =============================================
+
+@admin.register(Material)
+class MaterialAdmin(admin.ModelAdmin):
+    list_display = ["classroom", "title", "material_type", "is_active", "order", "created_at"]
+    list_filter = ["classroom", "material_type", "is_active", "created_at"]
+    search_fields = ["title", "description"]
+    readonly_fields = ["created_at"]
+
+
+# =============================================
+# EXAM GRADING & HOLDS
+# =============================================
+
+@admin.register(ExamGrading)
+class ExamGradingAdmin(admin.ModelAdmin):
+    list_display = ["attempt", "question", "groq_score", "admin_overridden", "graded_at"]
+    list_filter = ["admin_overridden", "graded_at"]
+    search_fields = ["attempt__student__username", "question__question_text"]
+    readonly_fields = ["graded_at", "updated_at"]
+
+
+@admin.register(ExamHold)
+class ExamHoldAdmin(admin.ModelAdmin):
+    list_display = ["exam", "held_by", "held_at", "is_active", "resume_at"]
+    list_filter = ["is_active", "held_at", "resume_at"]
+    search_fields = ["exam__title", "held_by__username"]
+    readonly_fields = ["held_at", "updated_at"]

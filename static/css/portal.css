@@ -1130,3 +1130,91 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .action-grid  { grid-template-columns: repeat(3, 1fr); }
   .exam-chrome-title { max-width: 140px; }
 }
+
+/* ══════════════════════════════════════════════
+   PORTAL POLISH — UI refinements
+   ══════════════════════════════════════════════ */
+
+/* Sidebar active link — pill style */
+.sidebar-link.active {
+  color: var(--white);
+  background: rgba(37,99,235,.18);
+  border-right: none;
+  margin: 0 10px;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.sidebar-link.active i { color: #60a5fa; }
+
+/* Non-active links get same padding so nothing shifts */
+.sidebar-link {
+  margin: 1px 10px;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.sidebar-link:hover {
+  background: rgba(255,255,255,.06);
+  color: var(--white);
+}
+.sidebar-section-label { padding: 10px 22px 4px; }
+
+/* Topbar brand accent bar */
+.portal-topbar {
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 0 var(--gray-200);
+}
+
+/* Card hover lift for clickable cards */
+.card-lift {
+  transition: transform .2s, box-shadow .2s;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Stat card — tighter bottom margin */
+.stat-card {
+  transition: transform .2s, box-shadow .2s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* d-none-xs for very small screens */
+@media (max-width: 480px) {
+  .d-none-xs { display: none !important; }
+}
+
+/* Profile cover — richer gradient */
+.profile-cover {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
+}
+
+/* KPI strip mobile — 2 columns */
+@media (max-width: 640px) {
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
+  .kpi-value { font-size: 26px; }
+}
+@media (max-width: 380px) {
+  .kpi-strip { grid-template-columns: 1fr; }
+  .kpi-item:nth-child(odd) { border-right: none; }
+}
+
+/* Action grid — 3 cols on small screens */
+@media (max-width: 500px) {
+  .action-grid { grid-template-columns: repeat(3, 1fr); }
+  .action-tile { padding: 18px 10px; font-size: 11px; min-height: 80px; }
+  .action-tile i { font-size: 20px; }
+}
+
+/* Announcement card body line-breaks */
+.ann-body p { margin-bottom: 8px; }
+.ann-body p:last-child { margin-bottom: 0; }
+
+/* Results score ring pulse on hover */
+.result-score-donut { transition: transform .2s; }
+.result-score-donut:hover { transform: scale(1.04); }

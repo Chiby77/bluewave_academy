@@ -160,16 +160,7 @@
       <div class="rg-form-title">Create your account</div>
       <div class="rg-form-sub">Free access to exams, results and study resources</div>
 
-      {% if messages %}
-        {% for message in messages %}
-        <div class="rg-alert {{ message.tags }}">
-          <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
-          <span>{{ message }}</span>
-        </div>
-        {% endfor %}
-      {% endif %}
-
-      <form method="POST">
+<form method="POST">
         {% csrf_token %}
 
         <div class="fg-row">
@@ -208,10 +199,18 @@
           {% if form.password2.errors %}<span class="field-error">{{ form.password2.errors.0 }}</span>{% endif %}
         </div>
 
+        <div class="fg">
+          <label for="id_phone">Phone Number <span style="color:#ef4444">*</span></label>
+          <input type="tel" id="id_phone" name="phone" placeholder="+263 712 345 678" required value="{{ form.phone.value|default:'' }}">
+          {% if form.phone.errors %}<span class="field-error">{{ form.phone.errors.0 }}</span>{% endif %}
+        </div>
+
         <div class="fg-check">
-          <input type="checkbox" id="id_terms" name="agree_terms" required>
+          <input type="checkbox" id="id_terms" name="terms" required
+            {% if form.terms.value %}checked{% endif %}>
           <label for="id_terms">I agree to the <a href="{% url 'siteapp:terms_of_service' %}" target="_blank">Terms of Service</a> and <a href="{% url 'siteapp:privacy_policy' %}" target="_blank">Privacy Policy</a></label>
         </div>
+        {% if form.terms.errors %}<span class="field-error" style="display:block;margin-top:-12px;margin-bottom:12px;">{{ form.terms.errors.0 }}</span>{% endif %}
 
         <button type="submit" class="rg-submit">
           <i class="fa-solid fa-user-plus"></i> Create Account

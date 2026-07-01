@@ -34,6 +34,14 @@
       <a href="{% url 'siteapp:exam_list' %}" class="btn-hero-outline">
         <i class="fa-solid fa-arrow-left"></i> Back
       </a>
+      {% elif can_retake and attempt.status in 'submitted,graded' %}
+      <a href="{% url 'siteapp:take_exam' exam.id %}" class="btn-hero-start">
+        <i class="fa-solid fa-rotate-right"></i> Retake Exam
+        <span style="font-size:11px;opacity:.7;margin-left:6px;">Attempt {{ attempt_count|add:1 }} of 2</span>
+      </a>
+      <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn-hero-outline">
+        <i class="fa-solid fa-chart-bar"></i> View Last Results
+      </a>
       {% else %}
       <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn-hero-start">
         <i class="fa-solid fa-chart-bar"></i> View Results
@@ -41,6 +49,11 @@
       <a href="{% url 'siteapp:exam_list' %}" class="btn-hero-outline">
         <i class="fa-solid fa-arrow-left"></i> All Exams
       </a>
+      {% if attempt_count >= 2 %}
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:8px;">
+        <i class="fa-solid fa-lock"></i> Both attempts used
+      </div>
+      {% endif %}
       {% endif %}
     </div>
   </div>

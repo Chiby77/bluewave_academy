@@ -1,47 +1,56 @@
 """
 The Examinator — AI Grading Service
-Powered by Google Gemini for intelligent, multimodal exam grading.
+Powered by Groq (llama-3.3-70b-versatile / moonshotai/kimi-k2-instruct)
+Grades text, code, essay and PDF submissions with fallback keyword scoring.
 """
 
 import os
 import json
-import base64
+import threading
 from decimal import Decimal
 from typing import Dict, Optional
 
 try:
-    from google import genai
-    from google.genai import types as genai_types
-    HAS_GEMINI = True
+    from groq import Groq
+    HAS_GROQ = True
 except ImportError:
-    try:
-        import google.generativeai as genai
-        genai_types = None
-        HAS_GEMINI = True
-    except ImportError:
-        HAS_GEMINI = False
-        genai = None
-        genai_types = None
+    HAS_GROQ = False
+    Groq = None
+
+try:
+    import pypdf
+    import io
+    HAS_PYPDF = True
+except ImportError:
+    HAS_PYPDF = False
 
 
-class GeminiGradingService:
+# Latest Groq models (as of 2025)
+GROQ_PRIMARY_MODEL = "openai/gpt-oss-120b"          # Primary model (GPT OSS 120B)
+GROQ_SECONDARY_MODEL = "qwen/qwen3.6-27b"           # Secondary model
+GROQ_FALLBACK_MODEL = "deepseek-ai/DeepSeek-R1-V2"  # Final fallback
+
+
+class GroqGradingService:
     """
-    AI grading engine using Google Gemini 1.5 Pro.
+    Unified AI grading engine using Groq.
     Grades text, code, and PDF submissions against instructor rubrics.
+    Falls back to keyword matching if Groq is unavailable.
     """
-
-    MODEL_NAME = "gemini-2.0-flash"
 
     def __init__(self):
-        self.api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_AI_API_KEY")
-        self.enabled = bool(self.api_key and HAS_GEMINI)
-        if self.enabled:
-            # New google.genai SDK
-            self.client = genai.Client(api_key=self.api_key)
-        else:
-            self.client = None
+        # Re-read env var every time so the singleton picks up the key
+        self.api_key = os.environ.get("GROQ_API_KEY", "").strip().strip('"\'')
+        self.enabled = bool(self.api_key and HAS_GROQ)
+        self.client = Groq(api_key=self.api_key) if self.enabled else None
 
     def is_enabled(self) -> bool:
+        # Always re-check so a stale singleton is never stuck as disabled
+        api_key = os.environ.get("GROQ_API_KEY", "").strip().strip('"\'')
+        if api_key and HAS_GROQ and not self.enabled:
+            self.api_key = api_key
+            self.enabled = True
+            self.client = Groq(api_key=self.api_key)
         return self.enabled
 
     # ------------------------------------------------------------------
@@ -57,11 +66,38 @@ class GeminiGradingService:
         total_marks: int,
     ) -> Dict:
         """Grade a text / short-answer / essay submission."""
-        if not self.enabled:
+        self.is_enabled()  # re-check in case singleton was stale
+        if not self.enabled or not student_answer.strip():
             return self._offline_grade(student_answer, answer_key, total_marks)
 
-        prompt = self._build_text_prompt(question, rubric, answer_key, student_answer, total_marks)
-        return self._call_gemini(prompt, total_marks)
+        prompt = f"""You are a fair and rigorous academic grader.
+
+QUESTION:
+{question}
+
+MARKING RUBRIC:
+{rubric or "Award marks based on accuracy, completeness, and clarity."}
+
+MODEL ANSWER:
+{answer_key}
+
+STUDENT'S ANSWER:
+{student_answer}
+
+TOTAL MARKS: {total_marks}
+
+Return ONLY valid JSON:
+{{
+  "score": <integer 0-{total_marks}>,
+  "percentage": <float>,
+  "is_correct": <boolean>,
+  "feedback": "<2-3 sentence summary>",
+  "strengths": ["<point 1>", "<point 2>"],
+  "improvements": ["<area 1>", "<area 2>"],
+  "improvement_tips": ["<tip 1>", "<tip 2>"],
+  "reasoning": "<detailed grading explanation>"
+}}"""
+        return self._call_groq(prompt, total_marks)
 
     def grade_code_submission(
         self,
@@ -73,77 +109,11 @@ class GeminiGradingService:
         total_marks: int,
     ) -> Dict:
         """Grade a programming / code submission."""
-        if not self.enabled:
+        self.is_enabled()  # re-check in case singleton was stale
+        if not self.enabled or not student_code.strip():
             return self._offline_grade(student_code, expected_output, total_marks)
 
-        prompt = self._build_code_prompt(
-            question, rubric, expected_output, student_code, language, total_marks
-        )
-        return self._call_gemini(prompt, total_marks)
-
-    def grade_pdf_submission(
-        self,
-        question: str,
-        rubric: str,
-        answer_key: str,
-        pdf_bytes: bytes,
-        total_marks: int,
-    ) -> Dict:
-        """Grade a PDF submission using Gemini's multimodal capability."""
-        if not self.enabled:
-            return self._get_pending_response(total_marks)
-
-        try:
-            encoded = base64.b64encode(pdf_bytes).decode("utf-8")
-            user_prompt = self._build_pdf_prompt(question, rubric, answer_key, total_marks)
-
-            response = self.client.models.generate_content(
-                model=self.MODEL_NAME,
-                contents=[
-                    genai_types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-                    user_prompt,
-                ],
-            )
-            return self._parse_response(response.text, total_marks)
-        except Exception as e:
-            print(f"[Gemini PDF] Error: {e}")
-            return self._get_pending_response(total_marks)
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _build_text_prompt(self, question, rubric, answer_key, student_answer, total_marks) -> str:
-        return f"""You are a fair and rigorous academic grader evaluating a student's exam answer.
-
-QUESTION:
-{question}
-
-MARKING RUBRIC:
-{rubric or "Award marks based on accuracy, completeness, and clarity."}
-
-MODEL ANSWER / ANSWER KEY:
-{answer_key}
-
-STUDENT'S ANSWER:
-{student_answer}
-
-TOTAL MARKS: {total_marks}
-
-Grade this answer strictly and fairly. Return ONLY valid JSON in this exact format:
-{{
-  "score": <integer 0–{total_marks}>,
-  "percentage": <float>,
-  "is_correct": <boolean>,
-  "feedback": "<2–3 sentence summary of the grade>",
-  "strengths": ["<point 1>", "<point 2>"],
-  "improvements": ["<area 1>", "<area 2>"],
-  "improvement_tips": ["<specific tip 1>", "<specific tip 2>"],
-  "reasoning": "<detailed grading explanation>"
-}}"""
-
-    def _build_code_prompt(self, question, rubric, expected_output, student_code, language, total_marks) -> str:
-        return f"""You are an expert software engineer and educator grading a student's programming exam.
+        prompt = f"""You are an expert software engineer grading a student's programming exam.
 
 QUESTION:
 {question}
@@ -151,7 +121,7 @@ QUESTION:
 LANGUAGE: {language}
 
 RUBRIC:
-{rubric or "Award marks for correct logic, syntax, efficiency, and handling of edge cases."}
+{rubric or "Award marks for correct logic, syntax, efficiency, and edge case handling."}
 
 EXPECTED OUTPUT / SOLUTION:
 {expected_output}
@@ -163,9 +133,9 @@ STUDENT'S CODE:
 
 TOTAL MARKS: {total_marks}
 
-Evaluate: correctness, syntax, logic, efficiency, edge cases. Return ONLY valid JSON:
+Return ONLY valid JSON:
 {{
-  "score": <integer 0–{total_marks}>,
+  "score": <integer 0-{total_marks}>,
   "percentage": <float>,
   "is_correct": <boolean>,
   "has_syntax_errors": <boolean>,
@@ -175,43 +145,60 @@ Evaluate: correctness, syntax, logic, efficiency, edge cases. Return ONLY valid 
   "improvement_tips": ["<tip 1>", "<tip 2>"],
   "reasoning": "<detailed explanation>"
 }}"""
+        return self._call_groq(prompt, total_marks)
 
-    def _build_pdf_prompt(self, question, rubric, answer_key, total_marks) -> str:
-        return f"""Grade the student's handwritten or typed exam answer in the attached PDF.
+    def grade_pdf_submission(
+        self,
+        question: str,
+        rubric: str,
+        answer_key: str,
+        pdf_bytes: bytes,
+        total_marks: int,
+    ) -> Dict:
+        """Grade a PDF submission by extracting text then grading via Groq."""
+        pdf_text = self._extract_pdf_text(pdf_bytes)
 
-QUESTION:
-{question}
+        if not pdf_text or pdf_text.startswith("["):
+            # Could not extract text — queue for manual review
+            return self._get_pending_response(total_marks)
 
-RUBRIC:
-{rubric or "Award marks based on accuracy, completeness, and clarity."}
+        return self.grade_text_submission(
+            question=question,
+            rubric=rubric,
+            answer_key=answer_key,
+            student_answer=pdf_text,
+            total_marks=total_marks,
+        )
 
-MODEL ANSWER:
-{answer_key}
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
-TOTAL MARKS: {total_marks}
-
-Return ONLY valid JSON:
-{{
-  "score": <integer 0–{total_marks}>,
-  "percentage": <float>,
-  "is_correct": <boolean>,
-  "feedback": "<2–3 sentences>",
-  "strengths": ["<point>"],
-  "improvements": ["<area>"],
-  "improvement_tips": ["<tip>"],
-  "reasoning": "<explanation>"
-}}"""
-
-    def _call_gemini(self, prompt: str, total_marks: int) -> Dict:
-        try:
-            response = self.client.models.generate_content(
-                model=self.MODEL_NAME,
-                contents=prompt,
-            )
-            return self._parse_response(response.text, total_marks)
-        except Exception as e:
-            print(f"[Gemini] API error: {e}")
-            return self._get_error_response(total_marks)
+    def _call_groq(self, prompt: str, total_marks: int) -> Dict:
+        """Call Groq API with automatic model fallback (GPT OSS 120B first, then others)."""
+        models_to_try = [GROQ_PRIMARY_MODEL, GROQ_SECONDARY_MODEL, GROQ_FALLBACK_MODEL]
+        
+        for model in models_to_try:
+            try:
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert academic grader. Return only valid JSON as instructed.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.2,
+                    max_tokens=1200,
+                )
+                return self._parse_response(response.choices[0].message.content, total_marks)
+            except Exception as e:
+                print(f"[Groq Grading] Error with model {model}: {e}")
+                continue
+                
+        # All models failed
+        return self._get_error_response(total_marks)
 
     def _parse_response(self, text: str, total_marks: int) -> Dict:
         try:
@@ -232,23 +219,37 @@ Return ONLY valid JSON:
                 "score": Decimal(str(score)),
                 "percentage": percentage,
                 "is_correct": data.get("is_correct", score >= total_marks * 0.8),
-                "feedback": data.get("feedback", "Graded by AI."),
+                "feedback": data.get("feedback", "Graded by Groq AI."),
                 "strengths": data.get("strengths", []),
                 "improvements": data.get("improvements", []),
                 "improvement_tips": data.get("improvement_tips", []),
                 "reasoning": data.get("reasoning", ""),
                 "has_syntax_errors": data.get("has_syntax_errors", False),
             }
-        except (json.JSONDecodeError, ValueError, KeyError) as e:
-            print(f"[Gemini] Parse error: {e}\nRaw: {text[:500]}")
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"[Groq Grading] Parse error: {e} | Raw: {text[:300]}")
             return self._get_error_response(total_marks)
 
+    def _extract_pdf_text(self, pdf_bytes: bytes) -> str:
+        if not HAS_PYPDF:
+            return "[PDF processing unavailable — install pypdf]"
+        try:
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            pages = []
+            for i, page in enumerate(reader.pages[:40]):
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages.append(f"--- Page {i + 1} ---\n{text.strip()}")
+            return "\n\n".join(pages) if pages else "[No extractable text in PDF — may be scanned image]"
+        except Exception as e:
+            return f"[Could not read PDF: {e}]"
+
     # ------------------------------------------------------------------
-    # Offline / error responses
+    # Fallback responses
     # ------------------------------------------------------------------
 
     def _offline_grade(self, student_answer: str, reference: str, total_marks: int) -> Dict:
-        """Basic keyword-matching fallback when Gemini is unavailable."""
+        """Keyword-matching fallback when Groq is unavailable."""
         student_lower = student_answer.lower()
         ref_lower = reference.lower()
         keywords = {w for w in ref_lower.split() if len(w) > 3}
@@ -262,11 +263,11 @@ Return ONLY valid JSON:
             "score": Decimal(str(score)),
             "percentage": round((score / total_marks) * 100, 2) if total_marks else 0,
             "is_correct": score >= total_marks * 0.6,
-            "feedback": f"Answer analysed offline. {score}/{total_marks} marks awarded. Manual review recommended.",
+            "feedback": f"Graded offline (AI unavailable). {score}/{total_marks} marks awarded. Manual review recommended.",
             "strengths": [],
             "improvements": ["Manual review by instructor recommended for accurate grading."],
             "improvement_tips": [],
-            "reasoning": "Graded offline via keyword matching — AI service not available.",
+            "reasoning": "Offline keyword-matching — Groq AI not available.",
             "has_syntax_errors": False,
         }
 
@@ -275,34 +276,40 @@ Return ONLY valid JSON:
             "score": Decimal("0"),
             "percentage": 0.0,
             "is_correct": False,
-            "feedback": "PDF submission received. Awaiting manual grading.",
+            "feedback": "PDF submission received. Awaiting manual grading by your instructor.",
             "strengths": [],
             "improvements": [],
             "improvement_tips": [],
-            "reasoning": "Gemini AI not configured. Please grade manually.",
+            "reasoning": "Could not extract text from PDF. Manual grading required.",
             "has_syntax_errors": False,
         }
 
-    def _get_error_response(self, total_marks: int) -> Dict:
+    def _get_error_response(self, total_marks: int, student_answer: str = "", reference: str = "") -> Dict:
+        """On API error, fall back to keyword matching rather than returning zeros."""
+        if student_answer and reference:
+            return self._offline_grade(student_answer, reference, total_marks)
         return {
             "score": Decimal("0"),
             "percentage": 0.0,
             "is_correct": False,
-            "feedback": "Grading error. Please contact your instructor.",
+            "feedback": "Grading encountered an error. Keyword fallback was used.",
             "strengths": [],
             "improvements": [],
             "improvement_tips": [],
-            "reasoning": "An error occurred during AI grading.",
+            "reasoning": "AI grading error — fallback to keyword scoring.",
             "has_syntax_errors": False,
         }
 
 
-# Singleton
-_service: Optional[GeminiGradingService] = None
+# Thread-safe singleton
+_service_lock = threading.Lock()
+_service: Optional[GroqGradingService] = None
 
 
-def get_grading_service() -> GeminiGradingService:
+def get_grading_service() -> GroqGradingService:
     global _service
     if _service is None:
-        _service = GeminiGradingService()
+        with _service_lock:
+            if _service is None:
+                _service = GroqGradingService()
     return _service

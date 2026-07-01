@@ -1,0 +1,1 @@
+web: python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn siteproject.asgi:application -k uvicorn.workers.UvicornWorker --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT --log-level warning --access-logfile - --error-logfile -

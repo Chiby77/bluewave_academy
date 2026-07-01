@@ -1,171 +1,148 @@
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if tutorial %}Edit{% else %}Add{% endif %} Tutorial — Admin</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/portal.css' %}">
-  <style>
-    .form-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 32px; max-width: 760px; }
+
+{% block title %}{% if tutorial %}Edit{% else %}Add{% endif %} Tutorial — Bluewave Academy Admin{% endblock %}
+{% block nav_tutorials %}active{% endblock %}
+{% block page_title %}{% if tutorial %}Edit Tutorial{% else %}New Tutorial{% endif %}{% endblock %}
+{% block page_subtitle %}{% if tutorial %}Update video details{% else %}Upload or link a video tutorial{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
     .form-section { margin-bottom: 28px; }
-    .form-section-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--gray-600); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
+    .form-section-title { 
+        font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--gray-600); 
+        margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); 
+    }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
     .field label { font-size: .85rem; font-weight: 500; color: var(--gray-900); }
     .field input, .field select, .field textarea {
-      padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-      font-family: inherit; font-size: .9rem; color: var(--gray-900);
-      background: var(--white); outline: none; transition: border-color .2s;
+        padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+        font-family: inherit; font-size: .9rem; color: var(--gray-900);
+        background: var(--white); outline: none; transition: border-color .2s;
     }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+    .field input:focus, .field select:focus, .field textarea:focus { 
+        border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); 
+    }
     .field textarea { resize: vertical; min-height: 100px; }
     .field small { font-size: .77rem; color: var(--gray-600); }
     .vtype-toggle { display: flex; gap: 0; }
     .vtype-btn {
-      flex: 1; padding: 10px; border: 1.5px solid var(--gray-200); background: var(--gray-100);
-      cursor: pointer; font-family: inherit; font-size: .88rem; font-weight: 500; color: var(--gray-600);
-      transition: all .18s;
+        flex: 1; padding: 10px; border: 1.5px solid var(--gray-200); background: var(--gray-100);
+        cursor: pointer; font-family: inherit; font-size: .88rem; font-weight: 500; color: var(--gray-600);
+        transition: all .18s;
     }
     .vtype-btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
     .vtype-btn:last-child  { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border-left: none; }
     .vtype-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .hidden { display: none !important; }
-    .form-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
-    .btn-save { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 11px 24px; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; transition: opacity .18s; }
-    .btn-save:hover { opacity: .88; }
-    .btn-cancel { display: inline-flex; align-items: center; gap: 8px; background: var(--gray-100); color: var(--gray-600); padding: 11px 24px; border-radius: var(--radius-sm); text-decoration: none; font-size: .9rem; font-weight: 500; transition: background .18s; }
-    .btn-cancel:hover { background: var(--gray-200); color: var(--gray-900); }
-  </style>
-</head>
-<body>
-<div class="portal-shell">
-  <aside class="portal-sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon"><i class="fa-solid fa-wave-square"></i></div>
-      <div class="brand-text"><strong>Bluewave Academy</strong><span>ADMIN PORTAL</span></div>
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:760px;">
+    <div class="card-body" style="padding:32px;">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-section">
+                <div class="form-section-title">Basic Details</div>
+                <div class="field">
+                    <label for="id_title">Title <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="id_title" name="title" required value="{{ tutorial.title|default:'' }}" placeholder="e.g. Introduction to Python Variables">
+                </div>
+                <div class="field">
+                    <label for="id_description">Description</label>
+                    <textarea id="id_description" name="description" placeholder="Brief description shown on the tutorial card...">{{ tutorial.description|default:'' }}</textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="field">
+                        <label for="id_category">Category</label>
+                        <select id="id_category" name="category">
+                            {% for val, label in categories %}
+                            <option value="{{ val }}" {% if tutorial and tutorial.category == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="id_status">Status</label>
+                        <select id="id_status" name="status">
+                            <option value="draft" {% if not tutorial or tutorial.status == 'draft' %}selected{% endif %}>Draft (hidden from students)</option>
+                            <option value="published" {% if tutorial and tutorial.status == 'published' %}selected{% endif %}>Published (visible to students)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Video Source</div>
+                <div class="field">
+                    <label>Video Type</label>
+                    <div class="vtype-toggle">
+                        <button type="button" class="vtype-btn {% if not tutorial or tutorial.video_type == 'url' %}active{% endif %}" id="btnUrl" onclick="setType('url')">
+                            <i class="fa-brands fa-youtube"></i> YouTube / URL
+                        </button>
+                        <button type="button" class="vtype-btn {% if tutorial and tutorial.video_type == 'file' %}active{% endif %}" id="btnFile" onclick="setType('file')">
+                            <i class="fa-solid fa-file-video"></i> Upload File
+                        </button>
+                    </div>
+                    <input type="hidden" id="id_video_type" name="video_type" value="{{ tutorial.video_type|default:'url' }}">
+                </div>
+                <div id="urlSection" class="{% if tutorial and tutorial.video_type == 'file' %}hidden{% endif %}">
+                    <div class="field">
+                        <label for="id_video_url">Video URL</label>
+                        <input type="url" id="id_video_url" name="video_url" value="{{ tutorial.video_url|default:'' }}" placeholder="https://www.youtube.com/watch?v=...">
+                        <small>Paste a YouTube link — it will be converted to a safe embed automatically.</small>
+                    </div>
+                </div>
+                <div id="fileSection" class="{% if not tutorial or tutorial.video_type != 'file' %}hidden{% endif %}">
+                    <div class="field">
+                        <label for="id_video_file">Video File (MP4 recommended)</label>
+                        <input type="file" id="id_video_file" name="video_file" accept="video/*">
+                        {% if tutorial and tutorial.video_file %}
+                            <small style="color:var(--success)"><i class="fa-solid fa-circle-check"></i> Current: {{ tutorial.video_file.name }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Thumbnail (optional)</div>
+                <div class="field">
+                    <label for="id_thumbnail">Cover Image</label>
+                    <input type="file" id="id_thumbnail" name="thumbnail" accept="image/*">
+                    {% if tutorial and tutorial.thumbnail %}
+                    <div style="margin-top:8px;">
+                        <img src="{{ tutorial.thumbnail.url }}" style="max-height:120px;border-radius:8px;border:1px solid var(--gray-200);">
+                        <small style="display:block;margin-top:4px;color:var(--gray-600);">Upload a new image to replace.</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Tutorial
+                </button>
+                <a href="{% url 'siteapp:admin_tutorial_list' %}" class="btn btn-outline">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </a>
+            </div>
+
+        </form>
     </div>
-    <nav class="sidebar-nav" style="margin-top:16px;">
-      <div class="sidebar-section-label">Dashboard</div>
-      <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-house"></i> Dashboard</a>
-      <div class="sidebar-section-label">Content</div>
-      <a href="{% url 'siteapp:admin_blog_list' %}" class="sidebar-link"><i class="fa-solid fa-newspaper"></i> Blog Posts</a>
-      <a href="{% url 'siteapp:admin_tutorial_list' %}" class="sidebar-link active"><i class="fa-solid fa-film"></i> Tutorials</a>
-    </nav>
-  </aside>
-
-  <div class="portal-main">
-    <header class="portal-topbar">
-      <div class="topbar-title">
-        <h1>{% if tutorial %}Edit Tutorial{% else %}New Tutorial{% endif %}</h1>
-        <p>{% if tutorial %}Update video details{% else %}Upload or link a video tutorial{% endif %}</p>
-      </div>
-    </header>
-    <main class="portal-content">
-      {% if messages %}
-      <div class="alerts-wrap">
-        {% for msg in messages %}
-        <div class="alert alert-{{ msg.tags }}"><i class="fa-solid fa-circle-info"></i><span>{{ msg }}</span><button class="alert-close" onclick="this.parentElement.remove()">&times;</button></div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="form-card">
-
-          <div class="form-section">
-            <div class="form-section-title">Basic Details</div>
-            <div class="field">
-              <label for="id_title">Title <span style="color:var(--danger)">*</span></label>
-              <input type="text" id="id_title" name="title" required value="{{ tutorial.title|default:'' }}" placeholder="e.g. Introduction to Python Variables">
-            </div>
-            <div class="field">
-              <label for="id_description">Description</label>
-              <textarea id="id_description" name="description" placeholder="Brief description shown on the tutorial card...">{{ tutorial.description|default:'' }}</textarea>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <div class="field">
-                <label for="id_category">Category</label>
-                <select id="id_category" name="category">
-                  {% for val, label in categories %}
-                  <option value="{{ val }}" {% if tutorial and tutorial.category == val %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="field">
-                <label for="id_status">Status</label>
-                <select id="id_status" name="status">
-                  <option value="draft" {% if not tutorial or tutorial.status == 'draft' %}selected{% endif %}>Draft (hidden from students)</option>
-                  <option value="published" {% if tutorial and tutorial.status == 'published' %}selected{% endif %}>Published (visible to students)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">Video Source</div>
-            <div class="field">
-              <label>Video Type</label>
-              <div class="vtype-toggle">
-                <button type="button" class="vtype-btn {% if not tutorial or tutorial.video_type == 'url' %}active{% endif %}" id="btnUrl" onclick="setType('url')">
-                  <i class="fa-brands fa-youtube"></i> YouTube / URL
-                </button>
-                <button type="button" class="vtype-btn {% if tutorial and tutorial.video_type == 'file' %}active{% endif %}" id="btnFile" onclick="setType('file')">
-                  <i class="fa-solid fa-file-video"></i> Upload File
-                </button>
-              </div>
-              <input type="hidden" id="id_video_type" name="video_type" value="{{ tutorial.video_type|default:'url' }}">
-            </div>
-            <div id="urlSection" class="{% if tutorial and tutorial.video_type == 'file' %}hidden{% endif %}">
-              <div class="field">
-                <label for="id_video_url">Video URL</label>
-                <input type="url" id="id_video_url" name="video_url" value="{{ tutorial.video_url|default:'' }}" placeholder="https://www.youtube.com/watch?v=...">
-                <small>Paste a YouTube link — it will be converted to a safe embed automatically.</small>
-              </div>
-            </div>
-            <div id="fileSection" class="{% if not tutorial or tutorial.video_type != 'file' %}hidden{% endif %}">
-              <div class="field">
-                <label for="id_video_file">Video File (MP4 recommended)</label>
-                <input type="file" id="id_video_file" name="video_file" accept="video/*">
-                {% if tutorial and tutorial.video_file %}<small style="color:var(--success)"><i class="fa-solid fa-circle-check"></i> Current: {{ tutorial.video_file.name }}</small>{% endif %}
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">Thumbnail (optional)</div>
-            <div class="field">
-              <label for="id_thumbnail">Cover Image</label>
-              <input type="file" id="id_thumbnail" name="thumbnail" accept="image/*">
-              {% if tutorial and tutorial.thumbnail %}
-              <div style="margin-top:8px;">
-                <img src="{{ tutorial.thumbnail.url }}" style="max-height:120px;border-radius:8px;border:1px solid var(--gray-200);">
-                <small style="display:block;margin-top:4px;color:var(--gray-600);">Upload a new image to replace.</small>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Tutorial</button>
-            <a href="{% url 'siteapp:admin_tutorial_list' %}" class="btn-cancel"><i class="fa-solid fa-xmark"></i> Cancel</a>
-          </div>
-
-        </div>
-      </form>
-    </main>
-  </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
 function setType(t) {
-  document.getElementById('id_video_type').value = t;
-  document.getElementById('btnUrl').classList.toggle('active', t === 'url');
-  document.getElementById('btnFile').classList.toggle('active', t === 'file');
-  document.getElementById('urlSection').classList.toggle('hidden', t !== 'url');
-  document.getElementById('fileSection').classList.toggle('hidden', t !== 'file');
+    document.getElementById('id_video_type').value = t;
+    document.getElementById('btnUrl').classList.toggle('active', t === 'url');
+    document.getElementById('btnFile').classList.toggle('active', t === 'file');
+    document.getElementById('urlSection').classList.toggle('hidden', t !== 'url');
+    document.getElementById('fileSection').classList.toggle('hidden', t !== 'file');
 }
 </script>
-</body>
-</html>
+{% endblock %}

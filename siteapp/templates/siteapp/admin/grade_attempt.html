@@ -16,8 +16,8 @@
     {% if attempt.exam.enable_instant_grading %}
     <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}"
        class="btn btn-accent"
-       onclick="return confirm('Use Gemini AI to auto-grade this attempt?');">
-      <i class="fa-solid fa-robot"></i> Auto-Grade with Gemini AI
+       onclick="return confirm('Use Groq AI to auto-grade this attempt?');">
+      <i class="fa-solid fa-robot"></i> Auto-Grade with Groq AI
     </a>
     {% endif %}
     <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-gray">
@@ -109,7 +109,7 @@
       {% if answer.ai_feedback %}
       <div class="answer-feedback" style="margin-bottom:16px;">
         <div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:var(--accent);">
-          <i class="fa-solid fa-robot"></i> Previous Gemini AI Feedback
+          <i class="fa-solid fa-robot"></i> Previous Groq AI Feedback
         </div>
         {{ answer.ai_feedback }}
       </div>

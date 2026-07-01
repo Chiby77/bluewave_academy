@@ -4,120 +4,173 @@
 {% block title %}My Results — Bluewave Academy{% endblock %}
 {% block nav_results %}active{% endblock %}
 {% block page_title %}My Results{% endblock %}
-{% block page_subtitle %}All your exam history and scores{% endblock %}
+{% block page_subtitle %}Full exam history and performance summary{% endblock %}
 
 {% block content %}
 
-<!-- Stats Row -->
-<div class="stats-row" style="margin-bottom:24px;">
-  <div class="stat-card">
-    <div class="stat-icon blue"><i class="fa-solid fa-list-check"></i></div>
-    <div>
-      <div class="stat-value">{{ total_attempts }}</div>
-      <div class="stat-label">Total Attempts</div>
+<!-- Stats Strip -->
+<div class="kpi-strip" style="margin-bottom:28px;">
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-list-check"></i></div>
+    <div class="kpi-value">{{ total_attempts }}</div>
+    <div class="kpi-label">Total Attempts</div>
+    <div class="kpi-trend neutral"><i class="fa-solid fa-layer-group" style="font-size:9px;"></i> All time</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+    <div class="kpi-value">{{ passed_count }}</div>
+    <div class="kpi-label">Passed</div>
+    <div class="kpi-trend up"><i class="fa-solid fa-check" style="font-size:9px;"></i> Exams passed</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
+    <div class="kpi-value">{% if avg_score %}{{ avg_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+    <div class="kpi-label">Average Score</div>
+    <div class="kpi-trend {% if avg_score and avg_score >= 70 %}up{% elif avg_score %}warn{% else %}neutral{% endif %}">
+      {% if avg_score and avg_score >= 70 %}<i class="fa-solid fa-arrow-up" style="font-size:9px;"></i> Strong{% elif avg_score %}<i class="fa-solid fa-minus" style="font-size:9px;"></i> Improving{% else %}No data{% endif %}
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
-    <div>
-      <div class="stat-value">{{ passed_count }}</div>
-      <div class="stat-label">Passed</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon amber"><i class="fa-solid fa-percent"></i></div>
-    <div>
-      <div class="stat-value">{% if avg_score %}{{ avg_score|floatformat:0 }}%{% else %}—{% endif %}</div>
-      <div class="stat-label">Average Score</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon cyan"><i class="fa-solid fa-trophy"></i></div>
-    <div>
-      <div class="stat-value">{% if best_score %}{{ best_score|floatformat:0 }}%{% else %}—{% endif %}</div>
-      <div class="stat-label">Best Score</div>
-    </div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-trophy"></i></div>
+    <div class="kpi-value">{% if best_score %}{{ best_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+    <div class="kpi-label">Personal Best</div>
+    <div class="kpi-trend neutral"><i class="fa-solid fa-star" style="font-size:9px;"></i> All time high</div>
   </div>
 </div>
 
-<!-- Results Table -->
+<!-- Results List -->
 <div class="card">
   <div class="card-header">
-    <h3><i class="fa-solid fa-table-list" style="color:var(--primary);margin-right:8px;"></i>All Exam Attempts</h3>
+    <div>
+      <h3><i class="fa-solid fa-table-list" style="color:var(--primary);margin-right:8px;"></i>Exam History</h3>
+      <div class="card-subtitle">{{ total_attempts }} attempt{% if total_attempts != 1 %}s{% endif %} recorded</div>
+    </div>
+    <a href="{% url 'siteapp:exam_list' %}" class="btn btn-sm btn-primary">
+      <i class="fa-solid fa-file-pen"></i> Take Exam
+    </a>
   </div>
+
   <div class="card-body-flush">
     {% if attempts %}
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Exam</th>
-            <th>Category</th>
-            <th>Score</th>
-            <th>Percentage</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for attempt in attempts %}
-          <tr>
-            <td>
-              <div class="td-main">{{ attempt.exam.title }}</div>
-              <div class="td-sub">{{ attempt.exam.get_level_display }}</div>
-            </td>
-            <td><span class="badge badge-blue">{{ attempt.exam.get_category_display }}</span></td>
-            <td>
-              {% if attempt.score is not None %}
-                <strong>{{ attempt.score|floatformat:0 }}</strong> / {{ attempt.exam.total_marks }}
-              {% else %}—{% endif %}
-            </td>
-            <td>
-              {% if attempt.percentage is not None %}
+
+      <!-- Desktop table -->
+      <div class="table-wrap" style="display:none;" id="desktopTable">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Exam</th>
+              <th>Category</th>
+              <th>Score</th>
+              <th>Percentage</th>
+              <th>Result</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for attempt in attempts %}
+            <tr>
+              <td>
+                <div class="td-main">{{ attempt.exam.title }}</div>
+                <div class="td-sub">{{ attempt.exam.get_level_display }}</div>
+              </td>
+              <td><span class="badge badge-blue">{{ attempt.exam.get_category_display }}</span></td>
+              <td>
+                {% if attempt.score is not None %}
+                  <strong>{{ attempt.score|floatformat:0 }}</strong><span style="color:var(--gray-400);"> / {{ attempt.exam.total_marks }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if attempt.percentage is not None %}
                 <div style="display:flex;align-items:center;gap:8px;">
-                  <div class="progress-bar" style="width:80px;">
+                  <div class="progress-bar" style="width:72px;">
                     <div class="progress-fill {% if attempt.percentage >= 70 %}success{% elif attempt.percentage >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ attempt.percentage|floatformat:0 }}%;"></div>
                   </div>
-                  <span style="font-size:12px;font-weight:600;">{{ attempt.percentage|floatformat:0 }}%</span>
+                  <span style="font-size:12px;font-weight:700;color:var(--dark);">{{ attempt.percentage|floatformat:0 }}%</span>
                 </div>
-              {% else %}—{% endif %}
-            </td>
-            <td>
-              {% if attempt.status == 'graded' %}
-                <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
-                  {% if attempt.is_passed %}Pass{% else %}Fail{% endif %}
-                </span>
-              {% elif attempt.status == 'submitted' %}
-                <span class="badge badge-amber">Grading</span>
-              {% else %}
-                <span class="badge badge-gray">In Progress</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if attempt.status == 'graded' %}
+                  <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
+                    {% if attempt.is_passed %}<i class="fa-solid fa-check"></i> Pass{% else %}<i class="fa-solid fa-xmark"></i> Fail{% endif %}
+                  </span>
+                {% elif attempt.status == 'submitted' %}
+                  <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Grading</span>
+                {% else %}
+                  <span class="badge badge-gray"><i class="fa-solid fa-play"></i> In Progress</span>
+                {% endif %}
+              </td>
+              <td style="font-size:12px;color:var(--gray-500);">{{ attempt.created_at|date:"M d, Y" }}</td>
+              <td>
+                {% if attempt.status == 'graded' %}
+                  <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn btn-sm btn-outline"><i class="fa-solid fa-chart-bar"></i> Report</a>
+                {% elif attempt.status == 'in_progress' %}
+                  <a href="{% url 'siteapp:take_exam' attempt.exam.id %}" class="btn btn-sm btn-warning"><i class="fa-solid fa-play"></i> Continue</a>
+                {% else %}
+                  <span style="font-size:12px;color:var(--gray-400);">Pending</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile / default card list -->
+      <div id="cardList">
+        {% for attempt in attempts %}
+        <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--gray-100);transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+          <!-- Score badge -->
+          <div style="width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:12px;
+            {% if attempt.percentage >= 70 %}background:var(--success-light);color:var(--success);border:2px solid var(--success);
+            {% elif attempt.percentage >= 50 %}background:var(--warning-light);color:var(--warning);border:2px solid var(--warning);
+            {% elif attempt.percentage %}background:var(--danger-light);color:var(--danger);border:2px solid var(--danger);
+            {% else %}background:var(--gray-100);color:var(--gray-400);border:2px solid var(--gray-200);{% endif %}">
+            {% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}<span style="font-size:9px;font-weight:600;">%</span>{% else %}<i class="fa-solid fa-hourglass-half" style="font-size:14px;"></i>{% endif %}
+          </div>
+
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ attempt.exam.title }}</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap;">
+              <span>{{ attempt.created_at|date:"M d, Y" }}</span>
+              <span>&bull;</span>
+              <span>{{ attempt.exam.get_category_display }}</span>
+              {% if attempt.score is not None %}
+              <span>&bull;</span>
+              <span>{{ attempt.score|floatformat:0 }}/{{ attempt.exam.total_marks }}</span>
               {% endif %}
-            </td>
-            <td style="font-size:12px;color:var(--gray-600);">{{ attempt.created_at|date:"M d, Y" }}</td>
-            <td>
-              {% if attempt.status == 'graded' %}
-                <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn btn-sm btn-outline">
-                  <i class="fa-solid fa-chart-bar"></i> Report
-                </a>
-              {% elif attempt.status == 'in_progress' %}
-                <a href="{% url 'siteapp:take_exam' attempt.exam.id %}" class="btn btn-sm btn-warning">
-                  <i class="fa-solid fa-play"></i> Continue
-                </a>
-              {% else %}
-                <span style="font-size:12px;color:var(--gray-400);">Pending</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            </div>
+            {% if attempt.percentage %}
+            <div style="margin-top:6px;">
+              <div class="progress-bar" style="height:4px;">
+                <div class="progress-fill {% if attempt.percentage >= 70 %}success{% elif attempt.percentage >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ attempt.percentage|floatformat:0 }}%;"></div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            {% if attempt.status == 'graded' %}
+              <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
+                {% if attempt.is_passed %}Pass{% else %}Fail{% endif %}
+              </span>
+              <a href="{% url 'siteapp:exam_results' attempt.id %}" class="btn btn-sm btn-outline">Report</a>
+            {% elif attempt.status == 'submitted' %}
+              <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Grading</span>
+            {% elif attempt.status == 'in_progress' %}
+              <a href="{% url 'siteapp:take_exam' attempt.exam.id %}" class="btn btn-sm btn-warning"><i class="fa-solid fa-play"></i> Continue</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
     {% else %}
     <div class="empty-state">
       <i class="fa-solid fa-chart-bar"></i>
       <h3>No results yet</h3>
-      <p>You haven't completed any exams. Head to the exam centre to get started.</p>
+      <p>You haven't completed any exams. Head to the Exam Centre to get started.</p>
       <a href="{% url 'siteapp:exam_list' %}" class="btn btn-primary" style="margin-top:16px;">
         <i class="fa-solid fa-file-pen"></i> Go to Exams
       </a>
@@ -125,4 +178,5 @@
     {% endif %}
   </div>
 </div>
+
 {% endblock %}

@@ -8,9 +8,76 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/unified-styles.css' %}">
     {% block extra_css %}{% endblock %}
+    <style>
+    /* Global Toast Notifications */
+    #bw-toast-container {
+        position: fixed; top: 20px; right: 20px; z-index: 99999;
+        display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .bw-toast {
+        min-width: 280px; max-width: 380px;
+        padding: 14px 18px; border-radius: 10px;
+        display: flex; align-items: flex-start; gap: 12px;
+        font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 500;
+        box-shadow: 0 8px 32px rgba(0,0,0,.18);
+        pointer-events: all;
+        animation: bwToastIn .35s cubic-bezier(.4,0,.2,1);
+        position: relative; overflow: hidden;
+    }
+    .bw-toast::after {
+        content: ''; position: absolute; bottom: 0; left: 0; height: 3px;
+        background: rgba(255,255,255,.4);
+        animation: bwToastBar 5s linear forwards;
+    }
+    .bw-toast.success { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
+    .bw-toast.error, .bw-toast.danger { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
+    .bw-toast.warning { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
+    .bw-toast.info { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; }
+    .bw-toast-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+    .bw-toast-close {
+        margin-left: auto; background: none; border: none;
+        color: inherit; opacity: .6; cursor: pointer; font-size: 14px;
+        padding: 0; flex-shrink: 0;
+    }
+    .bw-toast-close:hover { opacity: 1; }
+    @keyframes bwToastIn {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes bwToastOut {
+        from { opacity: 1; transform: translateX(0); max-height: 100px; margin: 0; padding: 14px 18px; }
+        to   { opacity: 0; transform: translateX(40px); max-height: 0; margin: 0; padding: 0; }
+    }
+    @keyframes bwToastBar { from { width: 100%; } to { width: 0%; } }
+    </style>
 </head>
 <body>
+    <!-- Global toast container -->
+    <div id="bw-toast-container"></div>
+
     {% block content %}{% endblock %}
     {% block extra_js %}{% endblock %}
+    <script src="{% static 'js/nav.js' %}"></script>
+
+    {% if messages %}
+    <script>
+    (function(){
+        const icons = { success:'fa-circle-check', error:'fa-circle-xmark', danger:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+        const msgs = [{% for m in messages %}{"tag":"{{ m.tags }}","text":"{{ m.message|escapejs }}"},{% endfor %}];
+        const container = document.getElementById('bw-toast-container');
+        msgs.forEach(m => {
+            const tag = m.tag || 'info';
+            const toast = document.createElement('div');
+            toast.className = 'bw-toast ' + tag;
+            toast.innerHTML = `<i class="fa-solid ${icons[tag]||'fa-circle-info'} bw-toast-icon"></i><span style="flex:1">${m.text}</span><button class="bw-toast-close" onclick="this.closest('.bw-toast').remove()"><i class="fa-solid fa-xmark"></i></button>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'bwToastOut .4s forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 5000);
+        });
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

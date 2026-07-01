@@ -1,0 +1,20 @@
+{% extends "siteapp/base.html" %}
+
+{% block title %}Forbidden - Bluewave Academy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>403</h1>
+        <p>Sorry, you don't have permission to access this page.</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container text-center">
+        <div style="font-size: 8rem; margin-bottom: 30px;">🚫</div>
+        <p class="text-muted mb-3">If you believe this is an error, please contact support or check your account permissions.</p>
+        <a href="{% url 'siteapp:home' %}" class="btn btn-primary">Go Back to Home</a>
+    </div>
+</section>
+{% endblock %}

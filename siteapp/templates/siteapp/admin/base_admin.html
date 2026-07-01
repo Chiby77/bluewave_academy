@@ -50,7 +50,18 @@
         <i class="fa-solid fa-pen-to-square"></i> Grade Attempts
       </a>
 
+      <div class="sidebar-section-label">The Examinator</div>
+      <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link {% block nav_classrooms %}{% endblock %}">
+        <i class="fa-solid fa-door-open"></i> Classrooms
+      </a>
+      <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link {% block nav_assignments %}{% endblock %}">
+        <i class="fa-solid fa-tasks"></i> Assignments
+      </a>
+
       <div class="sidebar-section-label">Content</div>
+      <a href="{% url 'siteapp:admin_tutorial_list' %}" class="sidebar-link {% block nav_tutorials %}{% endblock %}">
+        <i class="fa-solid fa-video"></i> Video Tutorials
+      </a>
       <a href="{% url 'siteapp:admin_blog_list' %}" class="sidebar-link {% block nav_blog %}{% endblock %}">
         <i class="fa-solid fa-newspaper"></i> Blog Posts
       </a>

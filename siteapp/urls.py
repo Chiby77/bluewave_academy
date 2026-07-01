@@ -5,6 +5,7 @@ from . import admin_views
 from . import examinator_views
 from . import zuri_views
 from . import tutorial_views
+from . import api_views
 from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 app_name = "siteapp"
@@ -97,6 +98,7 @@ urlpatterns = [
     path("examinator/browse/", examinator_views.browse_classrooms, name="browse_classrooms"),
     path("examinator/classroom/<slug:slug>/", examinator_views.classroom_detail, name="classroom_detail"),
     path("examinator/classroom/<slug:slug>/enroll/", examinator_views.enroll_classroom, name="enroll_classroom"),
+    path("examinator/classroom/<slug:slug>/payment-required/", examinator_views.payment_required, name="payment_required"),
     path("examinator/assignment/<int:assignment_id>/take/", examinator_views.take_assignment, name="take_assignment"),
     path("examinator/submission/<int:submission_id>/result/", examinator_views.submission_result, name="submission_result"),
     # Admin Examinator
@@ -104,6 +106,9 @@ urlpatterns = [
     path("administration/examinator/classrooms/create/", examinator_views.admin_create_classroom, name="admin_create_classroom"),
     path("administration/examinator/classrooms/<slug:slug>/", examinator_views.admin_classroom_detail, name="admin_classroom_detail"),
     path("administration/examinator/classrooms/<slug:slug>/assignment/create/", examinator_views.admin_create_assignment, name="admin_create_assignment"),
+    path("administration/examinator/classrooms/<slug:slug>/material/upload/", examinator_views.admin_upload_material, name="admin_upload_material"),
+    path("administration/examinator/material/<int:material_id>/delete/", examinator_views.admin_delete_material, name="admin_delete_material"),
+    path("administration/examinator/enrollment/<int:enrollment_id>/fee/", examinator_views.admin_set_enrollment_fee, name="admin_set_enrollment_fee"),
     path("administration/examinator/assignment/<int:assignment_id>/submissions/", examinator_views.admin_submissions, name="admin_submissions"),
     path("administration/examinator/submission/<int:submission_id>/grade/", examinator_views.admin_grade_submission, name="admin_grade_submission"),
     path("administration/examinator/submission/<int:submission_id>/regrade/", examinator_views.admin_regrade_submission, name="admin_regrade_submission"),
@@ -111,6 +116,21 @@ urlpatterns = [
     path("student/tutorials/", tutorial_views.tutorial_list, name="tutorial_list"),
     path("student/tutorials/progress/update/", tutorial_views.update_video_progress, name="update_video_progress"),
     path("student/tutorials/<slug:slug>/", tutorial_views.tutorial_detail, name="tutorial_detail"),
+
+    # ==================== API ENDPOINTS ====================
+    # Notifications
+    path("api/notifications/", api_views.api_notifications_list, name="api_notifications"),
+    path("api/notifications/<int:notification_id>/read/", api_views.api_notification_mark_read, name="api_notification_read"),
+    path("api/notifications/mark-all-read/", api_views.api_notifications_mark_all_read, name="api_notifications_mark_all_read"),
+    # AI Tutor
+    path("api/tutor/conversation/", api_views.api_tutor_get_conversation, name="api_tutor_conversation"),
+    path("api/tutor/send-message/", api_views.api_tutor_send_message, name="api_tutor_send_message"),
+    # Video Tutorials (API)
+    path("api/tutorials/", api_views.api_tutorials_list, name="api_tutorials_list"),
+    path("api/tutorials/<slug:slug>/", api_views.api_tutorial_detail, name="api_tutorial_detail"),
+    path("api/tutorials/progress/update/", api_views.api_tutorial_update_progress, name="api_tutorial_update_progress"),
+    # Exams (API)
+    path("api/exams/", api_views.api_exams_list, name="api_exams_list"),
 
     # ==================== ADMIN ROUTES ====================
     # Blog Management

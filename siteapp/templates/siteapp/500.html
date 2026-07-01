@@ -1,0 +1,20 @@
+{% extends "siteapp/base.html" %}
+
+{% block title %}Server Error - Bluewave Academy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>500</h1>
+        <p>Sorry, we're experiencing some technical difficulties on our end.</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container text-center">
+        <div style="font-size: 8rem; margin-bottom: 30px;">⚠️</div>
+        <p class="text-muted mb-3">We're working to fix this issue. Please try again later or contact us if the problem persists.</p>
+        <a href="{% url 'siteapp:home' %}" class="btn btn-primary">Go Back to Home</a>
+    </div>
+</section>
+{% endblock %}

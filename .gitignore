@@ -1,0 +1,131 @@
+# =============================================================================
+# Bluewave Academy — .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SECRETS — never commit these
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets.json
+
+# -----------------------------------------------------------------------------
+# PYTHON
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.manifest
+*.spec
+
+# -----------------------------------------------------------------------------
+# VIRTUAL ENVIRONMENTS
+# -----------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.Python
+
+# -----------------------------------------------------------------------------
+# UV
+# -----------------------------------------------------------------------------
+# Keep uv.lock committed — it ensures reproducible installs on Railway
+# .python-version is fine to commit too (runtime pin)
+
+# -----------------------------------------------------------------------------
+# DJANGO
+# -----------------------------------------------------------------------------
+# Local SQLite database — production uses Railway PostgreSQL
+db.sqlite3
+db.sqlite3-journal
+
+# Migrations — run makemigrations + migrate against the live Railway DB
+# Keep only the __init__.py so Django recognises the migrations package
+*/migrations/*.py
+!*/migrations/__init__.py
+*/migrations/__pycache__/
+
+# Collected static files — Railway runs collectstatic at build time
+staticfiles/
+
+# User-uploaded media — production files live in Supabase Storage
+media/
+
+# Django cache files
+*.pyc
+.cache/
+
+# -----------------------------------------------------------------------------
+# IDE & EDITORS
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -----------------------------------------------------------------------------
+# OS
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# -----------------------------------------------------------------------------
+# TESTING & COVERAGE
+# -----------------------------------------------------------------------------
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# -----------------------------------------------------------------------------
+# LOGS
+# -----------------------------------------------------------------------------
+*.log
+logs/
+
+# -----------------------------------------------------------------------------
+# TEMPORARY & BUILD FILES
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+
+# -----------------------------------------------------------------------------
+# PAI (Kiro/AI tooling) — keep prompts, skip generated output if any
+# -----------------------------------------------------------------------------
+# .pai/ is IDE metadata — exclude from repo
+.pai/

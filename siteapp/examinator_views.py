@@ -2,8 +2,8 @@
 The Examinator — Student-facing and Admin views for the digital assessment platform.
 """
 
-import os
 import json
+import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -12,12 +12,15 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.views.decorators.http import require_POST
+from django.db import transaction
 
 from .models import (
-    Classroom, Enrollment, Assignment, Submission, SpecialPaper, CustomUser
+    Classroom, Enrollment, Assignment, Submission, SpecialPaper, CustomUser, Material
 )
 from .examinator_service import get_grading_service
 from .pdf_generator import generate_student_report
+from .classroom_access import classroom_access_required
+from .notifications import send_notification_to_user
 
 
 # ====================================================
@@ -35,33 +38,55 @@ def examinator_home(request):
 
 
 @login_required
+@classroom_access_required
 def classroom_detail(request, slug):
-    """Classroom detail — shows assignments for this class."""
+    """Classroom detail — assignments, materials, videos, pending tasks."""
     classroom = get_object_or_404(Classroom, slug=slug, is_active=True)
 
-    # Check enrollment
-    enrolled = Enrollment.objects.filter(
+    # Enrollment check
+    enrollment = Enrollment.objects.filter(
         student=request.user, classroom=classroom, is_active=True
-    ).exists()
+    ).first()
+    enrolled = enrollment is not None
 
     if not enrolled and not request.user.is_staff:
         messages.error(request, "You are not enrolled in this classroom.")
         return redirect("siteapp:examinator_home")
 
+    now = timezone.now()
     assignments = classroom.assignments.filter(is_active=True).order_by("deadline")
 
-    # Annotate each assignment with submission status
+    # Annotate each assignment with student's submission
     for assignment in assignments:
         try:
-            submission = Submission.objects.get(student=request.user, assignment=assignment)
-            assignment.my_submission = submission
+            assignment.my_submission = Submission.objects.get(
+                student=request.user, assignment=assignment
+            )
         except Submission.DoesNotExist:
             assignment.my_submission = None
 
+    # Pending tasks = not yet submitted, deadline in future
+    pending_assignments = [
+        a for a in assignments
+        if a.my_submission is None and not a.is_past_deadline()
+    ]
+
+    # Materials split by type
+    materials_qs = classroom.materials.filter(is_active=True)
+    notes   = materials_qs.filter(material_type="note")
+    videos  = materials_qs.filter(material_type="video")
+    links   = materials_qs.filter(material_type="link")
+
     context = {
         "classroom": classroom,
+        "enrollment": enrollment,
         "assignments": assignments,
         "enrolled": enrolled,
+        "pending_assignments": pending_assignments,
+        "notes": notes,
+        "videos": videos,
+        "links": links,
+        "now": now,
     }
     return render(request, "siteapp/examinator/classroom_detail.html", context)
 
@@ -86,6 +111,20 @@ def enroll_classroom(request, slug):
 
 
 @login_required
+def payment_required(request, slug):
+    """Shown when a student's payment is overdue for a classroom."""
+    classroom = get_object_or_404(Classroom, slug=slug, is_active=True)
+    enrollment = Enrollment.objects.filter(
+        student=request.user, classroom=classroom, is_active=True
+    ).first()
+    return render(request, "siteapp/examinator/payment_required.html", {
+        "classroom": classroom,
+        "enrollment": enrollment,
+    })
+
+
+@login_required
+@classroom_access_required
 def take_assignment(request, assignment_id):
     """Page where student takes / submits an assignment."""
     assignment = get_object_or_404(Assignment, id=assignment_id, is_active=True)
@@ -123,7 +162,7 @@ def take_assignment(request, assignment_id):
 
 
 def _handle_submission(request, assignment):
-    """Process a submitted assignment and trigger AI grading."""
+    """Process a submitted assignment and trigger async AI grading."""
     student = request.user
     text_answer = request.POST.get("text_answer", "").strip()
     code_text = request.POST.get("code_text", "").strip()
@@ -134,41 +173,70 @@ def _handle_submission(request, assignment):
         messages.error(request, "Please provide your answer before submitting.")
         return redirect("siteapp:take_assignment", assignment_id=assignment.id)
 
-    # Create or update submission
-    submission, _ = Submission.objects.update_or_create(
-        student=student,
-        assignment=assignment,
-        defaults={
-            "text_answer": text_answer,
-            "code_text": code_text,
-            "pdf_file": pdf_file,
-            "status": "grading",
-            "time_taken_seconds": int(time_taken) if time_taken else None,
-        }
-    )
+    try:
+        with transaction.atomic():
+            submission, _ = Submission.objects.update_or_create(
+                student=student,
+                assignment=assignment,
+                defaults={
+                    "text_answer": text_answer,
+                    "code_text": code_text,
+                    "pdf_file": pdf_file,
+                    "status": "grading",
+                    "time_taken_seconds": int(time_taken) if time_taken else None,
+                }
+            )
+    except Exception:
+        messages.error(request, "Submission failed. Please try again.")
+        return redirect("siteapp:take_assignment", assignment_id=assignment.id)
 
-    # Run AI grading
-    _run_ai_grading(submission)
+    # Run AI grading in background thread — main request returns immediately
+    t = threading.Thread(target=_run_ai_grading, args=(submission.id,), daemon=True)
+    t.start()
 
-    messages.success(request, "Assignment submitted successfully!")
+    # Send notification
+    try:
+        send_notification_to_user(
+            user=student,
+            title="Assignment Submitted!",
+            message=f"Your submission for '{assignment.title}' has been received and is being graded.",
+            notification_type="assignment",
+            url=f"/examinator/submission/{submission.id}/result/",
+        )
+    except Exception as e:
+        print(f"[Notification] Error sending submission notice: {e}")
+
+    messages.success(request, "Assignment submitted! Grading is in progress.")
     return redirect("siteapp:submission_result", submission_id=submission.id)
 
 
-def _run_ai_grading(submission: Submission):
-    """Trigger Gemini AI grading based on submission type."""
+def _run_ai_grading(submission_id: int):
+    """Trigger Groq AI grading in a background thread with full fallback."""
+    import django
+    try:
+        submission = Submission.objects.select_related("assignment").get(id=submission_id)
+    except Submission.DoesNotExist:
+        return
+
     assignment = submission.assignment
     service = get_grading_service()
 
     try:
         if assignment.is_pdf_upload() and submission.pdf_file:
-            pdf_bytes = submission.pdf_file.read()
-            result = service.grade_pdf_submission(
-                question=assignment.description,
-                rubric=assignment.rubric,
-                answer_key=assignment.answer_key,
-                pdf_bytes=pdf_bytes,
-                total_marks=assignment.total_marks,
-            )
+            try:
+                pdf_bytes = submission.pdf_file.read()
+            except Exception:
+                pdf_bytes = None
+            if pdf_bytes:
+                result = service.grade_pdf_submission(
+                    question=assignment.description,
+                    rubric=assignment.rubric,
+                    answer_key=assignment.answer_key,
+                    pdf_bytes=pdf_bytes,
+                    total_marks=assignment.total_marks,
+                )
+            else:
+                result = service._get_pending_response(assignment.total_marks)
         elif assignment.is_coding() and submission.code_text:
             result = service.grade_code_submission(
                 question=assignment.description,
@@ -197,15 +265,32 @@ def _run_ai_grading(submission: Submission):
         submission.status = "graded"
         submission.save()
 
-        # Send email report
         if assignment.show_results_immediately:
             _send_result_email(submission)
 
+        # Send notification
+        try:
+            student = submission.student
+            send_notification_to_user(
+                user=student,
+                title="Assignment Graded!",
+                message=f"Your submission for '{assignment.title}' has been graded! Score: {submission.ai_score or 0}/{assignment.total_marks}",
+                notification_type="result",
+                url=f"/examinator/submission/{submission.id}/result/",
+            )
+        except Exception as e:
+            print(f"[Notification] Error sending grading notice: {e}")
+
     except Exception as e:
-        print(f"[Examinator] Grading error: {e}")
-        submission.status = "manual_review"
-        submission.ai_feedback = "Automatic grading could not be completed. Your instructor will review shortly."
-        submission.save()
+        print(f"[Examinator] Grading error for submission {submission_id}: {e}")
+        # Fallback: mark for manual review, never leave in 'grading' limbo
+        try:
+            Submission.objects.filter(id=submission_id).update(
+                status="manual_review",
+                ai_feedback="Automatic grading could not be completed. Your instructor will review shortly."
+            )
+        except Exception:
+            pass
 
 
 def _send_result_email(submission: Submission):
@@ -254,10 +339,14 @@ Bluewave Academy
 
 @login_required
 def submission_result(request, submission_id):
-    """Show the student their grading result."""
+    """Show the student their grading result. Supports AJAX status polling."""
     submission = get_object_or_404(
         Submission, id=submission_id, student=request.user
     )
+    # AJAX polling — return only the status
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.GET.get("status_check"):
+        return JsonResponse({"status": submission.status})
+
     context = {"submission": submission, "assignment": submission.assignment}
     return render(request, "siteapp/examinator/submission_result.html", context)
 
@@ -383,8 +472,19 @@ def admin_grade_submission(request, submission_id):
             submission.graded_at = timezone.now()
             submission.save()
 
-            # Send updated email
+            # Send updated email and notification
             _send_result_email(submission)
+            try:
+                send_notification_to_user(
+                    user=submission.student,
+                    title="Assignment Graded!",
+                    message=f"Your submission for '{submission.assignment.title}' has been graded! Score: {submission.final_score}/{submission.assignment.total_marks}",
+                    notification_type="result",
+                    url=f"/examinator/submission/{submission.id}/result/",
+                )
+            except Exception as e:
+                print(f"[Notification] Error sending manual grading notice: {e}")
+
             messages.success(request, "Submission graded and student notified.")
             return redirect("siteapp:admin_submissions", assignment_id=submission.assignment.id)
     context = {"submission": submission}
@@ -417,8 +517,13 @@ def special_paper_download(request, paper_id):
         messages.warning(request, "Please log in to download this paper.")
         return redirect(f"{request.build_absolute_uri('/login/')}?next={request.path}")
 
-    # Generate Supabase signed URL
-    signed_url = _get_supabase_url(paper.supabase_path)
+    # Generate a short-lived signed URL via the centralised storage helper.
+    from siteproject.storage_backends import get_signed_url
+    signed_url = get_signed_url(
+        bucket_name=settings.SUPABASE_PAPERS_BUCKET,
+        path=paper.supabase_path,
+        expiry_seconds=300,
+    )
 
     if signed_url:
         paper.download_count += 1
@@ -429,20 +534,66 @@ def special_paper_download(request, paper_id):
         return redirect("siteapp:downloads")
 
 
-def _get_supabase_url(path: str, expiry_seconds: int = 300) -> str:
-    """Generate a signed Supabase URL. Returns None if Supabase not configured."""
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
-    bucket = os.environ.get("SUPABASE_BUCKET", "papers")
+# ====================================================
+# ADMIN — Material & Enrollment Fee Management
+# ====================================================
 
-    if not supabase_url or not supabase_key:
-        return None
+@staff_required
+def admin_upload_material(request, slug):
+    """Admin: upload a note, video, or link to a classroom."""
+    classroom = get_object_or_404(Classroom, slug=slug)
+    if request.method == "POST":
+        material_type = request.POST.get("material_type", "note")
+        title = request.POST.get("title", "").strip()
+        if not title:
+            messages.error(request, "Title is required.")
+            return redirect("siteapp:admin_classroom_detail", slug=slug)
+        Material.objects.create(
+            classroom=classroom,
+            title=title,
+            description=request.POST.get("description", ""),
+            material_type=material_type,
+            file=request.FILES.get("file") if material_type == "note" else None,
+            video_url=request.POST.get("video_url", "") if material_type == "video" else "",
+            external_url=request.POST.get("external_url", "") if material_type == "link" else "",
+            order=int(request.POST.get("order", 0)),
+            uploaded_by=request.user,
+        )
+        messages.success(request, f'Material "{title}" added.')
+    return redirect("siteapp:admin_classroom_detail", slug=slug)
 
-    try:
-        from supabase import create_client
-        client = create_client(supabase_url, supabase_key)
-        response = client.storage.from_(bucket).create_signed_url(path, expiry_seconds)
-        return response.get("signedURL") or response.get("signedUrl")
-    except Exception as e:
-        print(f"[Supabase] URL generation error: {e}")
-        return None
+
+@staff_required
+def admin_delete_material(request, material_id):
+    """Admin: delete a classroom material."""
+    material = get_object_or_404(Material, id=material_id)
+    slug = material.classroom.slug
+    material.delete()
+    messages.success(request, "Material deleted.")
+    return redirect("siteapp:admin_classroom_detail", slug=slug)
+
+
+@staff_required
+def admin_set_enrollment_fee(request, enrollment_id):
+    """Admin: set or update the enrollment fee and due date for a student."""
+    enrollment = get_object_or_404(Enrollment, id=enrollment_id)
+    if request.method == "POST":
+        fee = request.POST.get("enrollment_fee")
+        due_date = request.POST.get("payment_due_date")
+        status = request.POST.get("payment_status", enrollment.payment_status)
+
+        enrollment.enrollment_fee = fee if fee else None
+        enrollment.payment_due_date = due_date if due_date else None
+        enrollment.payment_status = status
+
+        # Reset notification flag if fee changes (so the email fires again)
+        if fee and enrollment.enrollment_fee != fee:
+            enrollment.fee_notification_sent = False
+
+        enrollment.save()
+        messages.success(
+            request,
+            f"Fee updated for {enrollment.student.get_full_name()}. "
+            f"Notification email will be sent."
+        )
+    return redirect("siteapp:admin_classroom_detail", slug=enrollment.classroom.slug)

@@ -3,44 +3,80 @@
 
 {% block title %}Dashboard — Bluewave Academy{% endblock %}
 {% block nav_dashboard %}active{% endblock %}
-{% block page_title %}Welcome, {{ request.user.first_name }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block page_subtitle %}{{ current_date|date:"l, F j, Y" }}{% endblock %}
 
 {% block content %}
 
-<!-- Stats Row -->
-<div class="stats-row">
-  <div class="stat-card">
-    <div class="stat-icon blue"><i class="fa-solid fa-file-pen"></i></div>
-    <div>
-      <div class="stat-value">{{ available_exams }}</div>
-      <div class="stat-label">Exams Available</div>
-    </div>
+<!-- KPI Strip -->
+<div class="kpi-strip" style="margin-bottom:28px;">
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-file-pen"></i></div>
+    <div class="kpi-value">{{ available_exams }}</div>
+    <div class="kpi-label">Available Exams</div>
+    <div class="kpi-trend neutral"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active now</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
-    <div>
-      <div class="stat-value">{{ completed_exams }}</div>
-      <div class="stat-label">Completed</div>
-    </div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+    <div class="kpi-value">{{ completed_exams }}</div>
+    <div class="kpi-label">Completed</div>
+    <div class="kpi-trend up"><i class="fa-solid fa-arrow-up" style="font-size:9px;"></i> Total taken</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon amber"><i class="fa-solid fa-star"></i></div>
-    <div>
-      <div class="stat-value">{% if avg_score %}{{ avg_score|floatformat:0 }}%{% else %}—{% endif %}</div>
-      <div class="stat-label">Average Score</div>
-    </div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
+    <div class="kpi-value">{% if avg_score %}{{ avg_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+    <div class="kpi-label">Average Score</div>
+    {% if avg_score %}
+      <div class="kpi-trend {% if avg_score >= 70 %}up{% else %}warn{% endif %}">
+        <i class="fa-solid fa-{% if avg_score >= 70 %}arrow-up{% else %}minus{% endif %}" style="font-size:9px;"></i>
+        {% if avg_score >= 70 %}Above average{% else %}Keep practising{% endif %}
+      </div>
+    {% else %}<div class="kpi-trend neutral">No data yet</div>{% endif %}
   </div>
-  <div class="stat-card">
-    <div class="stat-icon cyan"><i class="fa-solid fa-trophy"></i></div>
-    <div>
-      <div class="stat-value">{% if best_score %}{{ best_score|floatformat:0 }}%{% else %}—{% endif %}</div>
-      <div class="stat-label">Best Score</div>
+  <div class="kpi-item">
+    <div class="kpi-icon-wrap"><i class="fa-solid fa-trophy"></i></div>
+    <div class="kpi-value">{% if best_score %}{{ best_score|floatformat:0 }}%{% else %}—{% endif %}</div>
+    <div class="kpi-label">Best Score</div>
+    <div class="kpi-trend neutral"><i class="fa-solid fa-star" style="font-size:9px;"></i> Personal best</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header">
+    <h3><i class="fa-solid fa-bolt" style="color:var(--warning);margin-right:8px;"></i>Quick Actions</h3>
+  </div>
+  <div class="card-body">
+    <div class="action-grid">
+      <a href="{% url 'siteapp:exam_list' %}" class="action-tile action-tile-blue">
+        <i class="fa-solid fa-file-pen"></i>
+        <span>Take Exam</span>
+      </a>
+      <a href="{% url 'siteapp:student_results' %}" class="action-tile action-tile-green">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span>My Results</span>
+      </a>
+      <a href="{% url 'siteapp:downloads' %}" class="action-tile action-tile-cyan">
+        <i class="fa-solid fa-download"></i>
+        <span>Resources</span>
+      </a>
+      <a href="{% url 'siteapp:tutorial_list' %}" class="action-tile action-tile-purple">
+        <i class="fa-solid fa-play-circle"></i>
+        <span>Tutorials</span>
+      </a>
+      <a href="{% url 'siteapp:student_announcements' %}" class="action-tile action-tile-amber">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>Notices</span>
+      </a>
+      <a href="{% url 'siteapp:edit_profile' %}" class="action-tile action-tile-rose">
+        <i class="fa-solid fa-user-pen"></i>
+        <span>Profile</span>
+      </a>
     </div>
   </div>
 </div>
 
-<!-- Main Grid -->
+<!-- Main Content Grid -->
 <div class="content-grid">
   <!-- Left Column -->
   <div>
@@ -50,33 +86,33 @@
       <div class="card-header">
         <div>
           <h3><i class="fa-solid fa-file-pen" style="color:var(--primary);margin-right:8px;"></i>Available Exams</h3>
-          <div class="card-subtitle">Exams currently open for you</div>
+          <div class="card-subtitle">Currently open for you to attempt</div>
         </div>
-        <a href="{% url 'siteapp:exam_list' %}" class="btn btn-sm btn-outline">View All</a>
+        <a href="{% url 'siteapp:exam_list' %}" class="btn btn-sm btn-outline">View All <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
       </div>
       <div class="card-body-flush">
         {% if active_exams %}
           {% for exam in active_exams %}
-          <div class="exam-card" style="border-radius:0;border:none;border-bottom:1px solid var(--gray-100);box-shadow:none;">
-            <div style="padding:16px;display:flex;align-items:flex-start;gap:14px;">
-              <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fa-solid fa-file-alt" style="color:var(--primary);font-size:18px;"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:700;color:var(--dark);font-size:14px;margin-bottom:4px;">{{ exam.title }}</div>
-                <div style="font-size:12px;color:var(--gray-400);display:flex;gap:12px;flex-wrap:wrap;">
-                  <span><i class="fa-regular fa-clock"></i> {{ exam.duration_minutes }} min</span>
-                  <span><i class="fa-solid fa-layer-group"></i> {{ exam.get_level_display }}</span>
-                  <span><i class="fa-solid fa-tag"></i> {{ exam.get_category_display }}</span>
-                </div>
-              </div>
-              <a href="{% url 'siteapp:exam_detail' exam.id %}" class="btn btn-sm btn-primary">Start</a>
+          <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--gray-100);transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <div style="width:46px;height:46px;border-radius:12px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fa-solid fa-file-alt" style="color:var(--primary);font-size:18px;"></i>
             </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;color:var(--dark);font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ exam.title }}</div>
+              <div style="font-size:11px;color:var(--gray-400);display:flex;gap:14px;flex-wrap:wrap;">
+                <span><i class="fa-regular fa-clock"></i> {{ exam.duration_minutes }} min</span>
+                <span><i class="fa-solid fa-signal"></i> {{ exam.get_level_display }}</span>
+                <span><i class="fa-solid fa-tag"></i> {{ exam.get_category_display }}</span>
+              </div>
+            </div>
+            <a href="{% url 'siteapp:exam_detail' exam.id %}" class="btn btn-sm btn-primary" style="flex-shrink:0;">
+              Start <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+            </a>
           </div>
           {% endfor %}
         {% else %}
-          <div class="empty-state" style="padding:32px;">
-            <i class="fa-solid fa-file-circle-check" style="color:var(--gray-300);font-size:36px;"></i>
+          <div class="empty-state" style="padding:40px 20px;">
+            <i class="fa-solid fa-file-circle-check" style="color:var(--gray-200);"></i>
             <h3>No exams available right now</h3>
             <p>Check back later — your instructor will publish exams soon.</p>
           </div>
@@ -88,44 +124,43 @@
     <div class="card">
       <div class="card-header">
         <div>
-          <h3><i class="fa-solid fa-chart-bar" style="color:var(--success);margin-right:8px;"></i>Recent Results</h3>
+          <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--success);margin-right:8px;"></i>Recent Activity</h3>
           <div class="card-subtitle">Your latest exam attempts</div>
         </div>
-        <a href="{% url 'siteapp:student_results' %}" class="btn btn-sm btn-outline">All Results</a>
+        <a href="{% url 'siteapp:student_results' %}" class="btn btn-sm btn-outline">All Results <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
       </div>
       <div class="card-body-flush">
         {% if recent_attempts %}
           {% for attempt in recent_attempts %}
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--gray-100);">
-            <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;
-              {% if attempt.percentage >= 70 %}background:var(--success-light);color:var(--success);
-              {% elif attempt.percentage >= 50 %}background:var(--warning-light);color:var(--warning);
-              {% else %}background:var(--danger-light);color:var(--danger);{% endif %}">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--gray-100);">
+            <!-- Score ring -->
+            <div style="width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;
+              {% if attempt.percentage >= 70 %}background:var(--success-light);color:var(--success);border:2px solid var(--success);
+              {% elif attempt.percentage >= 50 %}background:var(--warning-light);color:var(--warning);border:2px solid var(--warning);
+              {% else %}background:var(--danger-light);color:var(--danger);border:2px solid var(--danger);{% endif %}">
               {% if attempt.percentage %}{{ attempt.percentage|floatformat:0 }}%{% else %}—{% endif %}
             </div>
-            <div style="flex:1;">
-              <div style="font-weight:600;font-size:13px;color:var(--dark);">{{ attempt.exam.title }}</div>
-              <div style="font-size:11px;color:var(--gray-400);">{{ attempt.created_at|date:"M d, Y" }} &bull; {{ attempt.exam.get_category_display }}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:13px;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ attempt.exam.title }}</div>
+              <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">{{ attempt.created_at|date:"M d, Y" }} &bull; {{ attempt.exam.get_category_display }}</div>
             </div>
-            <div style="text-align:right;">
+            <div style="flex-shrink:0;text-align:right;">
               {% if attempt.status == 'graded' %}
-                <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}">
-                  {% if attempt.is_passed %}Pass{% else %}Fail{% endif %}
+                <span class="badge {% if attempt.is_passed %}badge-green{% else %}badge-red{% endif %}" style="display:block;margin-bottom:6px;">
+                  {% if attempt.is_passed %}<i class="fa-solid fa-check"></i> Pass{% else %}<i class="fa-solid fa-xmark"></i> Fail{% endif %}
                 </span>
-                <div style="margin-top:4px;">
-                  <a href="{% url 'siteapp:exam_results' attempt.id %}" style="font-size:11px;color:var(--primary);">View Report</a>
-                </div>
+                <a href="{% url 'siteapp:exam_results' attempt.id %}" style="font-size:11px;color:var(--primary);font-weight:600;text-decoration:none;">View Report</a>
               {% elif attempt.status == 'submitted' %}
-                <span class="badge badge-amber">Grading</span>
+                <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Grading</span>
               {% else %}
-                <span class="badge badge-gray">In Progress</span>
+                <span class="badge badge-gray"><i class="fa-solid fa-play"></i> In Progress</span>
               {% endif %}
             </div>
           </div>
           {% endfor %}
         {% else %}
-          <div class="empty-state" style="padding:32px;">
-            <i class="fa-solid fa-clock-rotate-left" style="color:var(--gray-300);font-size:36px;"></i>
+          <div class="empty-state" style="padding:40px 20px;">
+            <i class="fa-solid fa-clock-rotate-left" style="color:var(--gray-200);"></i>
             <h3>No results yet</h3>
             <p>Complete your first exam to see results here.</p>
           </div>
@@ -138,70 +173,76 @@
   <!-- Right Column -->
   <div>
 
+    <!-- Profile Card -->
+    <div class="card" style="margin-bottom:20px;overflow:hidden;padding:0;">
+      <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#0369a1 100%);padding:24px 20px 20px;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 30%,rgba(6,182,212,.2) 0%,transparent 60%);pointer-events:none;"></div>
+        <div style="position:relative;z-index:1;display:flex;align-items:center;gap:16px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;border:3px solid rgba(255,255,255,.2);flex-shrink:0;">
+            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+          </div>
+          <div>
+            <div style="font-weight:800;font-size:15px;color:#fff;">{{ request.user.get_full_name }}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;">{{ request.user.email }}</div>
+            <span style="display:inline-block;margin-top:6px;font-size:10px;font-weight:700;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:2px 10px;border-radius:20px;">{{ request.user.student_id }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-school" style="color:var(--accent);width:14px;"></i>School</span>
+          <span style="font-weight:600;color:var(--dark);max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ request.user.school|default:"Not set" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--gray-100);font-size:13px;">
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-signal" style="color:var(--primary);width:14px;"></i>Level</span>
+          <span class="badge badge-blue">{{ request.user.get_current_level_display }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;font-size:13px;">
+          <span style="color:var(--gray-500);display:flex;align-items:center;gap:8px;"><i class="fa-regular fa-calendar" style="color:var(--success);width:14px;"></i>Enrolled</span>
+          <span style="font-weight:600;color:var(--dark);">{{ request.user.enrollment_date|date:"M Y" }}</span>
+        </div>
+      </div>
+      <div style="padding:12px 20px;border-top:1px solid var(--gray-100);">
+        <a href="{% url 'siteapp:edit_profile' %}" class="btn btn-sm btn-outline" style="width:100%;justify-content:center;">
+          <i class="fa-solid fa-user-pen"></i> Edit Profile
+        </a>
+      </div>
+    </div>
+
     <!-- Announcements -->
     <div class="card">
       <div class="card-header">
         <h3><i class="fa-solid fa-bullhorn" style="color:var(--warning);margin-right:8px;"></i>Announcements</h3>
         <a href="{% url 'siteapp:student_announcements' %}" class="btn btn-sm btn-outline">All</a>
       </div>
-      <div class="card-body" style="padding:12px;">
+      <div class="card-body" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
         {% if announcements %}
           {% for ann in announcements %}
-          <div class="announcement-card {% if ann.priority == 2 %}urgent{% elif ann.priority == 1 %}important{% endif %}" style="margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="border-left:4px solid {% if ann.priority == 2 %}var(--danger){% elif ann.priority == 1 %}var(--warning){% else %}var(--primary){% endif %};padding:12px 14px;border-radius:0 8px 8px 0;background:{% if ann.priority == 2 %}var(--danger-light){% elif ann.priority == 1 %}var(--warning-light){% else %}var(--primary-light){% endif %};">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
               {% if ann.priority == 2 %}
-                <span class="badge badge-red"><i class="fa-solid fa-circle-exclamation"></i> Urgent</span>
+                <span class="badge badge-red" style="font-size:10px;"><i class="fa-solid fa-circle-exclamation"></i> Urgent</span>
               {% elif ann.priority == 1 %}
-                <span class="badge badge-amber"><i class="fa-solid fa-triangle-exclamation"></i> Important</span>
+                <span class="badge badge-amber" style="font-size:10px;"><i class="fa-solid fa-triangle-exclamation"></i> Important</span>
               {% else %}
-                <span class="badge badge-blue"><i class="fa-solid fa-circle-info"></i> Notice</span>
+                <span class="badge badge-blue" style="font-size:10px;"><i class="fa-solid fa-circle-info"></i> Notice</span>
               {% endif %}
             </div>
-            <div class="ann-title">{{ ann.title }}</div>
-            <div class="ann-body">{{ ann.content|truncatechars:120 }}</div>
-            <div class="ann-meta"><i class="fa-regular fa-calendar"></i> {{ ann.created_at|date:"M d, Y" }}</div>
+            <div style="font-weight:700;font-size:13px;color:var(--dark);margin-bottom:4px;">{{ ann.title }}</div>
+            <div style="font-size:12px;color:var(--gray-600);line-height:1.5;">{{ ann.content|truncatechars:100 }}</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:8px;"><i class="fa-regular fa-calendar"></i> {{ ann.created_at|date:"M d, Y" }}</div>
           </div>
           {% endfor %}
         {% else %}
-          <div class="empty-state" style="padding:20px;">
-            <i class="fa-solid fa-bullhorn" style="color:var(--gray-300);font-size:28px;"></i>
-            <p style="margin-top:8px;">No announcements yet</p>
+          <div style="text-align:center;padding:24px;color:var(--gray-400);">
+            <i class="fa-solid fa-bullhorn" style="font-size:28px;margin-bottom:8px;display:block;color:var(--gray-200);"></i>
+            <div style="font-size:13px;">No announcements yet</div>
           </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- Student Info Card -->
-    <div class="card">
-      <div class="card-header">
-        <h3><i class="fa-solid fa-id-card" style="color:var(--accent);margin-right:8px;"></i>My Profile</h3>
-        <a href="{% url 'siteapp:edit_profile' %}" class="btn btn-sm btn-gray"><i class="fa-solid fa-pen"></i></a>
-      </div>
-      <div class="card-body">
-        <div style="text-align:center;margin-bottom:20px;">
-          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:white;margin:0 auto 12px;">
-            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
-          </div>
-          <div style="font-weight:700;font-size:15px;color:var(--dark);">{{ request.user.get_full_name }}</div>
-          <div style="font-size:12px;color:var(--gray-400);">{{ request.user.student_id }}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
-            <span style="color:var(--gray-400);">School</span>
-            <span style="font-weight:600;color:var(--dark);">{{ request.user.school|default:"—" }}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
-            <span style="color:var(--gray-400);">Level</span>
-            <span class="badge badge-blue">{{ request.user.get_current_level_display }}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;padding:8px 0;">
-            <span style="color:var(--gray-400);">Enrolled</span>
-            <span style="font-weight:600;color:var(--dark);">{{ request.user.enrollment_date|date:"M Y" }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
+
 {% endblock %}

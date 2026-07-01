@@ -236,12 +236,33 @@ body { background: #f1f5f9; }
       <button type="button" class="btn btn-gray" style="flex:1;" onclick="closeModal()">
         <i class="fa-solid fa-arrow-left"></i> Continue
       </button>
-      <button type="button" class="btn btn-success" style="flex:1;" onclick="submitExam()">
+      <button type="button" class="btn btn-success" style="flex:1;" id="submitNowBtn" onclick="submitExam()">
         <i class="fa-solid fa-paper-plane"></i> Submit Now
       </button>
     </div>
   </div>
 </div>
+
+<!-- Grading Overlay -->
+<div id="gradingOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.92);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="text-align:center;color:#fff;">
+    <div id="gradingSpinner" style="width:72px;height:72px;border-radius:50%;border:5px solid rgba(255,255,255,.15);border-top-color:#2563eb;animation:spin .7s linear infinite;margin:0 auto 28px;"></div>
+    <div id="gradingMsg" style="font-size:22px;font-weight:800;margin-bottom:10px;">Examinator is Grading…</div>
+    <div id="gradingSub" style="font-size:14px;color:rgba(255,255,255,.55);">Analysing your answers</div>
+    <!-- Ready state (hidden initially) -->
+    <div id="gradingReady" style="display:none;">
+      <div style="width:72px;height:72px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+        <i class="fa-solid fa-circle-check" style="font-size:36px;color:#10b981;"></i>
+      </div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:#34d399;">Report Ready!</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:20px;">Your results are ready for download</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);">Redirecting to your report…</div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 {% endblock %}
 
@@ -303,8 +324,52 @@ function closeModal() {
 }
 
 function submitExam() {
-  document.getElementById('submitFlag').value = 'true';
-  document.getElementById('examForm').submit();
+  // Disable button to prevent double submit
+  const btn = document.getElementById('submitNowBtn');
+  if (btn) btn.disabled = true;
+
+  // Close confirm modal, show grading overlay
+  document.getElementById('submitModal').style.display = 'none';
+  const overlay = document.getElementById('gradingOverlay');
+  overlay.style.display = 'flex';
+
+  // Collect form data
+  const form = document.getElementById('examForm');
+  const formData = new FormData(form);
+  formData.set('submit', 'true');
+
+  fetch(form.action || window.location.href, {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    redirect: 'follow'
+  })
+  .then(res => {
+    // Whether JSON or redirect, show ready state after brief grading animation
+    showReady(res);
+  })
+  .catch(() => {
+    // Fallback: plain submit
+    form.submit();
+  });
+}
+
+function showReady(res) {
+  // Hide spinner, show ready badge
+  document.getElementById('gradingSpinner').style.display = 'none';
+  document.getElementById('gradingMsg').style.display = 'none';
+  document.getElementById('gradingSub').style.display = 'none';
+  document.getElementById('gradingReady').style.display = 'block';
+
+  // After short delay redirect — try JSON redirect_url first
+  res.json()
+    .then(data => {
+      setTimeout(() => { window.location.href = data.redirect_url || '/student/results/'; }, 800);
+    })
+    .catch(() => {
+      // The form POST returned HTML (redirected page) — go to results
+      setTimeout(() => { window.location.href = '/student/results/'; }, 800);
+    });
 }
 
 // Timer

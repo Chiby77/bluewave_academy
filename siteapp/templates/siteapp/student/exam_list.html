@@ -1,26 +1,24 @@
 {% extends "siteapp/student/base_student.html" %}
 {% load static %}
 
-{% block title %}My Exams — Bluewave Academy{% endblock %}
+{% block title %}Exam Centre — Bluewave Academy{% endblock %}
 {% block nav_exams %}active{% endblock %}
 {% block page_title %}Exam Centre{% endblock %}
 {% block page_subtitle %}Browse and take your assigned exams{% endblock %}
 
 {% block content %}
 
-<!-- Exam Centre Hero -->
+<!-- Hero Banner -->
 <div class="exam-hero" style="margin-bottom:24px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative;z-index:1;">
-    <div>
-      <div class="exam-hero-badge"><i class="fa-solid fa-graduation-cap"></i> Exam Centre</div>
-      <div class="exam-hero-title">Your Exams</div>
-      <div class="exam-hero-meta">
-        <div class="exam-hero-meta-item"><i class="fa-solid fa-file-alt"></i> {{ exams|length }} exam{% if exams|length != 1 %}s{% endif %} available</div>
-        <div class="exam-hero-meta-item"><i class="fa-solid fa-robot"></i> AI-powered grading</div>
-        <div class="exam-hero-meta-item"><i class="fa-solid fa-clock"></i> Timed assessments</div>
-      </div>
+  <div style="position:relative;z-index:1;">
+    <div class="exam-hero-badge"><i class="fa-solid fa-graduation-cap"></i> Bluewave Academy</div>
+    <h2 class="exam-hero-title">Exam Centre</h2>
+    <div class="exam-hero-meta">
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-file-alt"></i> {{ exams|length }} exam{% if exams|length != 1 %}s{% endif %} available</div>
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-robot"></i> AI-powered grading</div>
+      <div class="exam-hero-meta-item"><i class="fa-solid fa-shield-halved"></i> Secure assessments</div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div class="exam-hero-cta">
       <a href="{% url 'siteapp:student_results' %}" class="btn-hero-outline">
         <i class="fa-solid fa-chart-bar"></i> My Results
       </a>
@@ -30,66 +28,58 @@
 
 <!-- Filter Bar -->
 <div class="card" style="margin-bottom:24px;">
-  <div class="card-body" style="padding:14px 20px;">
-    <form method="get" id="filterForm">
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-        <div style="font-size:12px;font-weight:700;color:var(--gray-600);white-space:nowrap;">
-          <i class="fa-solid fa-filter" style="margin-right:4px;"></i> Filter by:
-        </div>
+  <div class="card-body" style="padding:16px 20px;">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
 
-        <!-- Category chips -->
+      <!-- Category -->
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:11px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Category</div>
         <div class="filter-chips">
-          <a href="?" class="filter-chip {% if not request.GET.category %}active{% endif %}">All Categories</a>
+          <a href="?{% if request.GET.status %}status={{ request.GET.status }}{% endif %}" class="filter-chip {% if not request.GET.category %}active{% endif %}">All</a>
           {% for v,l in categories %}
           <a href="?category={{ v }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="filter-chip {% if request.GET.category == v %}active{% endif %}">{{ l }}</a>
           {% endfor %}
         </div>
+      </div>
 
-        <!-- Status chips -->
-        <div class="filter-chips" style="border-left:1px solid var(--gray-200);padding-left:16px;">
+      <!-- Status -->
+      <div style="border-left:1px solid var(--gray-200);padding-left:20px;min-width:160px;">
+        <div style="font-size:11px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Status</div>
+        <div class="filter-chips">
           <a href="?{% if request.GET.category %}category={{ request.GET.category }}{% endif %}" class="filter-chip {% if not request.GET.status %}active{% endif %}">All</a>
-          <a href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}status=available" class="filter-chip {% if request.GET.status == 'available' %}active{% endif %}">Available</a>
-          <a href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}status=completed" class="filter-chip {% if request.GET.status == 'completed' %}active{% endif %}">Completed</a>
+          <a href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}status=available" class="filter-chip {% if request.GET.status == 'available' %}active{% endif %}"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Available</a>
+          <a href="?{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}status=completed" class="filter-chip {% if request.GET.status == 'completed' %}active{% endif %}"><i class="fa-solid fa-check" style="font-size:9px;"></i> Completed</a>
         </div>
       </div>
-    </form>
+
+    </div>
   </div>
 </div>
 
-<!-- Exam Grid -->
+<!-- Exam Cards -->
 {% if exams %}
 <div class="exams-grid">
   {% for item in exams %}
   <div class="exam-card-ng">
 
-    <!-- Gradient Header -->
+    <!-- Header -->
     <div class="exam-card-ng-header">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;position:relative;z-index:1;">
-        <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;">{{ item.exam.get_category_display }}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;position:relative;z-index:1;">
+        <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.5px;">{{ item.exam.get_category_display }}</span>
         {% if item.attempt %}
           {% if item.attempt.status == 'graded' %}
             {% if item.attempt.is_passed %}
-              <span class="badge" style="background:rgba(52,211,153,.25);color:#6ee7b7;border:1px solid rgba(52,211,153,.3);font-size:10px;">
-                <i class="fa-solid fa-circle-check"></i> Passed
-              </span>
+              <span class="badge" style="background:rgba(52,211,153,.2);color:#6ee7b7;border:1px solid rgba(52,211,153,.3);font-size:10px;"><i class="fa-solid fa-circle-check"></i> Passed</span>
             {% else %}
-              <span class="badge" style="background:rgba(248,113,113,.25);color:#fca5a5;border:1px solid rgba(248,113,113,.3);font-size:10px;">
-                <i class="fa-solid fa-circle-xmark"></i> Not Passed
-              </span>
+              <span class="badge" style="background:rgba(248,113,113,.2);color:#fca5a5;border:1px solid rgba(248,113,113,.3);font-size:10px;"><i class="fa-solid fa-circle-xmark"></i> Not Passed</span>
             {% endif %}
           {% elif item.attempt.status == 'submitted' %}
-            <span class="badge" style="background:rgba(251,191,36,.25);color:#fde68a;border:1px solid rgba(251,191,36,.3);font-size:10px;">
-              <i class="fa-solid fa-hourglass-half"></i> Grading
-            </span>
+            <span class="badge" style="background:rgba(251,191,36,.2);color:#fde68a;border:1px solid rgba(251,191,36,.3);font-size:10px;"><i class="fa-solid fa-hourglass-half"></i> Grading</span>
           {% else %}
-            <span class="badge" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:10px;">
-              <i class="fa-solid fa-play"></i> In Progress
-            </span>
+            <span class="badge" style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:10px;"><i class="fa-solid fa-play"></i> In Progress</span>
           {% endif %}
         {% else %}
-          <span class="badge" style="background:rgba(6,182,212,.2);color:#67e8f9;border:1px solid rgba(6,182,212,.3);font-size:10px;">
-            <i class="fa-solid fa-circle"></i> Available
-          </span>
+          <span class="badge" style="background:rgba(6,182,212,.18);color:#67e8f9;border:1px solid rgba(6,182,212,.28);font-size:10px;"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Open</span>
         {% endif %}
       </div>
       <div class="exam-card-ng-title">{{ item.exam.title }}</div>
@@ -114,9 +104,7 @@
         </div>
         {% if item.attempt and item.attempt.status == 'graded' %}
         <div class="exam-card-ng-stat">
-          <strong style="color:{% if item.attempt.is_passed %}var(--success){% else %}var(--danger){% endif %};">
-            {{ item.attempt.percentage|floatformat:0 }}%
-          </strong>
+          <strong style="color:{% if item.attempt.is_passed %}var(--success){% else %}var(--danger){% endif %};">{{ item.attempt.percentage|floatformat:0 }}%</strong>
           <span>Your Score</span>
         </div>
         {% else %}
@@ -130,20 +118,29 @@
 
     <!-- Footer -->
     <div class="exam-card-ng-footer">
-      <div style="font-size:11px;color:var(--gray-400);">
+      <div style="font-size:11px;color:var(--gray-400);display:flex;align-items:center;gap:5px;">
         <i class="fa-regular fa-calendar"></i> Ends {{ item.exam.end_date|date:"M d, Y" }}
+        {% if item.attempt_count > 0 %}
+        &nbsp;&bull;&nbsp;<i class="fa-solid fa-rotate-right"></i> {{ item.attempt_count }}/2 attempts
+        {% endif %}
       </div>
-      {% if item.attempt and item.attempt.status in 'submitted,graded' %}
-        <a href="{% url 'siteapp:exam_results' item.attempt.id %}" class="btn btn-sm btn-outline">
-          <i class="fa-solid fa-chart-bar"></i> Results
-        </a>
-      {% elif item.attempt and item.attempt.status == 'in_progress' %}
+      {% if item.in_progress %}
         <a href="{% url 'siteapp:take_exam' item.exam.id %}" class="btn btn-sm btn-warning">
           <i class="fa-solid fa-play"></i> Continue
         </a>
+      {% elif item.attempt and item.attempt.status in 'submitted,graded' %}
+        {% if item.can_retake %}
+          <a href="{% url 'siteapp:exam_detail' item.exam.id %}" class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-rotate-right"></i> Retake
+          </a>
+        {% else %}
+          <a href="{% url 'siteapp:exam_results' item.attempt.id %}" class="btn btn-sm btn-outline">
+            <i class="fa-solid fa-chart-bar"></i> Results
+          </a>
+        {% endif %}
       {% else %}
         <a href="{% url 'siteapp:exam_detail' item.exam.id %}" class="btn btn-sm btn-primary">
-          <i class="fa-solid fa-arrow-right"></i> Start
+          Start <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
         </a>
       {% endif %}
     </div>
@@ -156,8 +153,10 @@
   <div class="empty-state">
     <i class="fa-solid fa-file-circle-xmark"></i>
     <h3>No exams found</h3>
-    <p>No exams match your filters, or no exams have been published yet.</p>
-    <a href="{% url 'siteapp:exam_list' %}" class="btn btn-primary" style="margin-top:16px;">Clear Filters</a>
+    <p>No exams match your current filters, or none have been published yet.</p>
+    <a href="{% url 'siteapp:exam_list' %}" class="btn btn-primary" style="margin-top:16px;">
+      <i class="fa-solid fa-rotate-left"></i> Clear Filters
+    </a>
   </div>
 </div>
 {% endif %}

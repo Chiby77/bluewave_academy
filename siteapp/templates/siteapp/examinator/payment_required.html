@@ -1,0 +1,307 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}Access Suspended — {{ classroom.name }} | Bluewave Academy{% endblock %}
+
+{% block nav_classrooms %}active{% endblock %}
+
+{% block page_title %}Access Suspended{% endblock %}
+{% block page_subtitle %}{{ classroom.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Payment Required — Scoped Styles ── */
+
+/* Centering shell */
+.pr-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 0 40px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* Warning icon circle */
+.pr-icon-ring {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(245,158,11,.12);
+  border: 2px solid rgba(245,158,11,.4);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.pr-icon-ring svg {
+  width: 34px; height: 34px;
+  color: #f59e0b;
+}
+
+/* Main alert card */
+.pr-alert-card {
+  width: 100%;
+  background: #1e293b;
+  border: 1px solid rgba(245,158,11,.25);
+  border-top: 4px solid #f59e0b;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.pr-alert-header {
+  padding: 24px 28px 0;
+}
+.pr-alert-headline {
+  font-size: 20px; font-weight: 800; color: #f1f5f9;
+  margin: 0 0 8px; line-height: 1.3;
+}
+.pr-alert-sub {
+  font-size: 14px; color: #94a3b8; line-height: 1.6; margin: 0;
+}
+.pr-alert-sub strong { color: #fbbf24; }
+
+/* Breakdown table */
+.pr-breakdown {
+  margin: 24px 0 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.pr-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: 14px;
+}
+.pr-row:last-child { border-bottom: none; }
+.pr-row-label {
+  display: flex; align-items: center; gap: 10px;
+  color: #94a3b8;
+}
+.pr-row-label svg { width: 16px; height: 16px; color: #475569; flex-shrink: 0; }
+.pr-row-value { font-weight: 700; color: #e2e8f0; }
+.pr-row-value.amount { color: #fbbf24; font-size: 18px; }
+.pr-row-value.overdue { color: #f87171; }
+
+/* How to pay instructions card */
+.pr-info-card {
+  width: 100%;
+  background: rgba(37,99,235,.08);
+  border: 1px solid rgba(37,99,235,.2);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.pr-info-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: #93c5fd;
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 14px;
+}
+.pr-info-title svg { width: 14px; height: 14px; }
+.pr-steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.pr-steps li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 13px; color: #94a3b8; line-height: 1.5;
+}
+.pr-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(37,99,235,.2); border: 1px solid rgba(37,99,235,.35);
+  color: #93c5fd; font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+/* Action buttons */
+.pr-actions {
+  width: 100%;
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+}
+.pr-btn-dashboard {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  background: #1e293b; color: #94a3b8;
+  border: 1px solid rgba(255,255,255,.1);
+  text-decoration: none; transition: border-color .2s, color .2s;
+}
+.pr-btn-dashboard:hover { border-color: rgba(255,255,255,.25); color: #e2e8f0; }
+.pr-btn-classrooms {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  background: #2563eb; color: #fff;
+  text-decoration: none; transition: background .2s;
+}
+.pr-btn-classrooms:hover { background: #1d4ed8; }
+
+/* Classroom reference pill */
+.pr-classroom-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #0f172a; border: 1px solid rgba(255,255,255,.08);
+  border-left: 3px solid #2563eb;
+  border-radius: 8px; padding: 8px 16px;
+  font-size: 13px; color: #e2e8f0; font-weight: 600;
+  margin-bottom: 24px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pr-shell">
+
+  {# Classroom reference #}
+  <div class="pr-classroom-pill">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+    </svg>
+    {{ classroom.name }}
+  </div>
+
+  {# Warning icon #}
+  <div class="pr-icon-ring">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </div>
+
+  {# ── Main Alert Card ── #}
+  <div class="pr-alert-card">
+    <div class="pr-alert-header">
+      <h1 class="pr-alert-headline">Classroom Access Temporarily Suspended</h1>
+      <p class="pr-alert-sub">
+        Your access to <strong>{{ classroom.name }}</strong> has been paused due to an
+        outstanding enrollment balance. All materials, assignments, and videos are on hold
+        until payment is confirmed by your instructor.
+      </p>
+    </div>
+
+    {# ── Payment Breakdown ── #}
+    <div class="pr-breakdown">
+      {% if enrollment and enrollment.enrollment_fee %}
+      <div class="pr-row">
+        <div class="pr-row-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+          Amount Due
+        </div>
+        <div class="pr-row-value amount">${{ enrollment.enrollment_fee }}</div>
+      </div>
+      {% endif %}
+
+      {% if enrollment and enrollment.payment_due_date %}
+      <div class="pr-row">
+        <div class="pr-row-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Original Due Date
+        </div>
+        <div class="pr-row-value overdue">{{ enrollment.payment_due_date|date:"F j, Y" }}</div>
+      </div>
+      {% endif %}
+
+      {% if enrollment %}
+      <div class="pr-row">
+        <div class="pr-row-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Payment Status
+        </div>
+        <div class="pr-row-value" style="color:#f87171;">Unpaid — Overdue</div>
+      </div>
+      {% endif %}
+
+      <div class="pr-row">
+        <div class="pr-row-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Instructor
+        </div>
+        <div class="pr-row-value">{{ classroom.instructor.get_full_name }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── How to Restore Access ── #}
+  <div class="pr-info-card">
+    <h3 class="pr-info-title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      How to Restore Your Access
+    </h3>
+    <ol class="pr-steps">
+      <li>
+        <div class="pr-step-num">1</div>
+        <span>
+          Arrange payment of
+          {% if enrollment and enrollment.enrollment_fee %}
+            <strong style="color:#fbbf24;">${{ enrollment.enrollment_fee }}</strong>
+          {% else %}
+            the outstanding balance
+          {% endif %}
+          directly to your instructor or via the academy's preferred payment channel.
+        </span>
+      </li>
+      <li>
+        <div class="pr-step-num">2</div>
+        <span>
+          Contact your instructor <strong style="color:#e2e8f0;">{{ classroom.instructor.get_full_name }}</strong>
+          to confirm your payment and request that your enrollment status is updated.
+        </span>
+      </li>
+      <li>
+        <div class="pr-step-num">3</div>
+        <span>
+          Once your instructor marks your payment as confirmed, your access to all
+          classroom materials and assignments will be restored automatically.
+        </span>
+      </li>
+      <li>
+        <div class="pr-step-num">4</div>
+        <span>
+          If you believe this suspension is an error, contact Bluewave Academy support
+          with your student ID (<strong style="color:#e2e8f0;">{{ request.user.student_id }}</strong>)
+          for assistance.
+        </span>
+      </li>
+    </ol>
+  </div>
+
+  {# ── Action Buttons ── #}
+  <div class="pr-actions">
+    <a href="{% url 'siteapp:dashboard' %}" class="pr-btn-dashboard">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 5l-7 7 7 7"/>
+      </svg>
+      Back to Dashboard
+    </a>
+    <a href="{% url 'siteapp:examinator_home' %}" class="pr-btn-classrooms">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+      </svg>
+      My Classrooms
+    </a>
+  </div>
+
+</div>
+{% endblock %}

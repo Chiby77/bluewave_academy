@@ -223,11 +223,15 @@ class ExamAttempt(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    attempt_number = models.PositiveSmallIntegerField(
+        default=1, help_text="1 = first attempt, 2 = second attempt"
+    )
+
     class Meta:
         ordering = ["-created_at"]
         verbose_name = "Exam Attempt"
         verbose_name_plural = "Exam Attempts"
-        unique_together = ["student", "exam"]  # One attempt per student per exam
+        unique_together = ["student", "exam", "attempt_number"]
 
     def __str__(self):
         return f"{self.student.get_full_name()} - {self.exam.title}"
@@ -544,6 +548,57 @@ class SpecialPaper(models.Model):
 
 
 # =============================================
+# CLASSROOM MATERIALS
+# =============================================
+
+class Material(models.Model):
+    TYPE_CHOICES = [
+        ("note", "Notes / Document"),
+        ("video", "Video"),
+        ("link", "External Link"),
+    ]
+
+    classroom = models.ForeignKey(
+        "Classroom", on_delete=models.CASCADE, related_name="materials"
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    material_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="note")
+
+    # For uploaded files (notes/PDFs)
+    file = models.FileField(upload_to="classroom/materials/", blank=True, null=True)
+    # For videos — can be a local file or an external URL
+    video_url = models.URLField(blank=True, help_text="YouTube or direct video URL")
+    # For external links
+    external_url = models.URLField(blank=True)
+
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0, help_text="Sort order within classroom")
+    uploaded_by = models.ForeignKey(
+        "CustomUser", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="uploaded_materials"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+        verbose_name = "Material"
+        verbose_name_plural = "Materials"
+
+    def __str__(self):
+        return f"{self.classroom.name} — {self.title}"
+
+    def get_embed_url(self):
+        """Convert YouTube watch URL to embed URL."""
+        import re
+        url = self.video_url or ""
+        match = re.search(r"(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{11})", url)
+        if match:
+            return f"https://www.youtube-nocookie.com/embed/{match.group(1)}?rel=0&modestbranding=1"
+        return url
+
+
+# =============================================
 # THE EXAMINATOR — Digital Assessment Engine
 # =============================================
 
@@ -588,10 +643,33 @@ class Classroom(models.Model):
 
 
 class Enrollment(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ("unpaid", "Unpaid"),
+        ("paid", "Paid"),
+        ("waived", "Waived"),
+    ]
+
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="enrollments")
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="enrollments")
     enrolled_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+
+    # Financial gating
+    enrollment_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Fee amount in USD. Leave blank if free."
+    )
+    payment_due_date = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Deadline by which student must pay to retain access."
+    )
+    payment_status = models.CharField(
+        max_length=10, choices=PAYMENT_STATUS_CHOICES, default="unpaid"
+    )
+    fee_notification_sent = models.BooleanField(
+        default=False,
+        help_text="True after the fee-assignment email has been sent."
+    )
 
     class Meta:
         unique_together = ["student", "classroom"]
@@ -601,6 +679,19 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} in {self.classroom.name}"
+
+    def is_payment_overdue(self):
+        """Return True when unpaid AND past the due date."""
+        from django.utils import timezone
+        if self.payment_status == "paid" or self.payment_status == "waived":
+            return False
+        if self.payment_due_date and timezone.now() > self.payment_due_date:
+            return True
+        return False
+
+    def requires_fee(self):
+        """True when a non-zero fee has been set by admin."""
+        return self.enrollment_fee is not None and self.enrollment_fee > 0
 
 
 class Assignment(models.Model):
@@ -801,3 +892,97 @@ class VideoProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} — {self.tutorial.title} ({self.progress_pct:.0f}%)"
+
+
+# =============================================
+# REAL-TIME NOTIFICATIONS & CHAT
+# =============================================
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ("exam", "Exam"),
+        ("assignment", "Assignment"),
+        ("announcement", "Announcement"),
+        ("chat", "Chat"),
+        ("grading", "Grading"),
+        ("system", "System"),
+    ]
+
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="notifications"
+    )
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="system")
+    url = models.URLField(blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.title}"
+
+
+class ChatMessage(models.Model):
+    classroom = models.ForeignKey(
+        Classroom, on_delete=models.CASCADE, related_name="chat_messages"
+    )
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="chat_messages"
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "Chat Message"
+        verbose_name_plural = "Chat Messages"
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} in {self.classroom.name}"
+
+
+# =============================================
+# AI TUTOR
+# =============================================
+
+class TutorConversation(models.Model):
+    """Model to store AI tutor conversation history."""
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="tutor_conversations")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Tutor Conversation"
+        verbose_name_plural = "Tutor Conversations"
+
+    def __str__(self):
+        return f"Conversation with {self.user.get_full_name()} - {self.created_at}"
+
+
+class TutorMessage(models.Model):
+    """Individual message in a tutor conversation."""
+
+    ROLE_CHOICES = [
+        ("user", "User"),
+        ("assistant", "Assistant"),
+    ]
+
+    conversation = models.ForeignKey(TutorConversation, on_delete=models.CASCADE, related_name="messages")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["timestamp"]
+        verbose_name = "Tutor Message"
+        verbose_name_plural = "Tutor Messages"
+
+    def __str__(self):
+        return f"{self.role}: {self.content[:50]}..."

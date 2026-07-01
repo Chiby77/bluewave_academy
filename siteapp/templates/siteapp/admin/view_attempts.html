@@ -149,7 +149,7 @@
                 </a>
                 {% if attempt.exam.enable_instant_grading %}
                 <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}" class="btn btn-sm btn-accent" title="AI Grade"
-                   onclick="return confirm('Auto-grade with Gemini AI?');">
+                   onclick="return confirm('Auto-grade with Groq AI?');">
                   <i class="fa-solid fa-robot"></i>
                 </a>
                 {% endif %}

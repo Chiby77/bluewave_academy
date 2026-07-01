@@ -1,158 +1,108 @@
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tutorials — Admin — Bluewave Academy</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/portal.css' %}">
-</head>
-<body>
-<div class="portal-shell">
 
-  <aside class="portal-sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon"><i class="fa-solid fa-wave-square"></i></div>
-      <div class="brand-text">
-        <strong>Bluewave Academy</strong>
-        <span>ADMIN PORTAL</span>
-      </div>
+{% block title %}Video Tutorials — Bluewave Academy Admin{% endblock %}
+{% block nav_tutorials %}active{% endblock %}
+{% block page_title %}Video Tutorials{% endblock %}
+{% block page_subtitle %}Upload, manage and publish tutorial videos{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+    <div class="card" style="padding:20px;">
+        <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Total</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--gray-900);">{{ stats.total }}</div>
     </div>
-    <nav class="sidebar-nav" style="margin-top:16px;">
-      <div class="sidebar-section-label">Dashboard</div>
-      <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-house"></i> Dashboard</a>
-      <div class="sidebar-section-label">Content</div>
-      <a href="{% url 'siteapp:admin_blog_list' %}" class="sidebar-link"><i class="fa-solid fa-newspaper"></i> Blog Posts</a>
-      <a href="{% url 'siteapp:admin_tutorial_list' %}" class="sidebar-link active"><i class="fa-solid fa-film"></i> Tutorials</a>
-      <div class="sidebar-section-label">Exams</div>
-      <a href="{% url 'siteapp:exam_list_admin' %}" class="sidebar-link"><i class="fa-solid fa-file-pen"></i> Exams</a>
-      <a href="{% url 'siteapp:admin_students' %}" class="sidebar-link"><i class="fa-solid fa-users"></i> Students</a>
-    </nav>
-  </aside>
-
-  <div class="portal-main">
-    <header class="portal-topbar">
-      <div class="topbar-title">
-        <h1>Video Tutorials</h1>
-        <p>Upload, manage and publish tutorial videos</p>
-      </div>
-      <div class="topbar-actions">
-        <a href="{% url 'siteapp:admin_tutorial_create' %}" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;padding:9px 18px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:600;text-decoration:none;">
-          <i class="fa-solid fa-plus"></i> Add Tutorial
-        </a>
-      </div>
-    </header>
-
-    <main class="portal-content">
-      {% if messages %}
-      <div class="alerts-wrap">
-        {% for msg in messages %}
-        <div class="alert alert-{{ msg.tags }}">
-          <i class="fa-solid fa-circle-info"></i><span>{{ msg }}</span>
-          <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <!-- Stats row -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
-        <div class="stat-card" style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;">
-          <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Total</div>
-          <div style="font-size:2rem;font-weight:700;color:var(--gray-900);">{{ stats.total }}</div>
-        </div>
-        <div class="stat-card" style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;">
-          <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Published</div>
-          <div style="font-size:2rem;font-weight:700;color:var(--success);">{{ stats.published }}</div>
-        </div>
-        <div class="stat-card" style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;">
-          <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Drafts</div>
-          <div style="font-size:2rem;font-weight:700;color:var(--warning);">{{ stats.drafts }}</div>
-        </div>
-      </div>
-
-      <!-- Table -->
-      <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;">
-        <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
-          <thead>
-            <tr style="background:var(--gray-100);border-bottom:1px solid var(--gray-200);">
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Title</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Category</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Type</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Status</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Views</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Created</th>
-              <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for t in tutorials %}
-            <tr style="border-bottom:1px solid var(--gray-200);">
-              <td style="padding:14px 16px;font-weight:600;color:var(--gray-900);">
-                {% if t.thumbnail %}
-                  <img src="{{ t.thumbnail.url }}" style="width:40px;height:28px;object-fit:cover;border-radius:4px;margin-right:10px;vertical-align:middle;">
-                {% endif %}
-                {{ t.title }}
-              </td>
-              <td style="padding:14px 16px;color:var(--gray-600);">{{ t.category }}</td>
-              <td style="padding:14px 16px;color:var(--gray-600);">
-                {% if t.video_type == "file" %}
-                  <span style="background:#eff6ff;color:var(--primary);padding:3px 9px;border-radius:50px;font-size:.74rem;font-weight:600;">
-                    <i class="fa-solid fa-file-video"></i> File
-                  </span>
-                {% else %}
-                  <span style="background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:50px;font-size:.74rem;font-weight:600;">
-                    <i class="fa-brands fa-youtube"></i> URL
-                  </span>
-                {% endif %}
-              </td>
-              <td style="padding:14px 16px;">
-                {% if t.status == "published" %}
-                  <span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:50px;font-size:.75rem;font-weight:600;">Published</span>
-                {% else %}
-                  <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:50px;font-size:.75rem;font-weight:600;">Draft</span>
-                {% endif %}
-              </td>
-              <td style="padding:14px 16px;color:var(--gray-600);">{{ t.view_count }}</td>
-              <td style="padding:14px 16px;color:var(--gray-600);">{{ t.created_at|date:"M d, Y" }}</td>
-              <td style="padding:14px 16px;">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <a href="{% url 'siteapp:admin_tutorial_edit' t.id %}"
-                     style="display:inline-flex;align-items:center;gap:5px;background:#eff6ff;color:var(--primary);padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;text-decoration:none;">
-                    <i class="fa-solid fa-pen"></i> Edit
-                  </a>
-                  <form method="POST" action="{% url 'siteapp:admin_tutorial_toggle' t.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit"
-                      style="display:inline-flex;align-items:center;gap:5px;background:{% if t.status == 'published' %}#fef3c7{% else %}#d1fae5{% endif %};color:{% if t.status == 'published' %}#92400e{% else %}#065f46{% endif %};padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;border:none;cursor:pointer;">
-                      <i class="fa-solid {% if t.status == 'published' %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
-                      {% if t.status == 'published' %}Unpublish{% else %}Publish{% endif %}
-                    </button>
-                  </form>
-                  <form method="POST" action="{% url 'siteapp:admin_tutorial_delete' t.id %}" style="display:inline;" onsubmit="return confirm('Delete this tutorial?');">
-                    {% csrf_token %}
-                    <button type="submit"
-                      style="display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#b91c1c;padding:5px 11px;border-radius:6px;font-size:.78rem;font-weight:600;border:none;cursor:pointer;">
-                      <i class="fa-solid fa-trash"></i> Delete
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="7" style="padding:60px 20px;text-align:center;color:var(--gray-600);">
-                <i class="fa-solid fa-film" style="font-size:2.5rem;color:var(--gray-200);display:block;margin-bottom:12px;"></i>
-                No tutorials yet. <a href="{% url 'siteapp:admin_tutorial_create' %}" style="color:var(--primary);font-weight:600;">Add your first tutorial</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </main>
-  </div>
+    <div class="card" style="padding:20px;">
+        <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Published</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--success);">{{ stats.published }}</div>
+    </div>
+    <div class="card" style="padding:20px;">
+        <div style="font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Drafts</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--warning);">{{ stats.drafts }}</div>
+    </div>
 </div>
-</body>
-</html>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;"><i class="fa-solid fa-film" style="color:var(--primary);margin-right:8px;"></i>All Tutorials</h3>
+        <a href="{% url 'siteapp:admin_tutorial_create' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Tutorial
+        </a>
+    </div>
+    <div class="card-body" style="padding:0;">
+        {% if tutorials %}
+        <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+            <thead>
+                <tr style="background:var(--gray-100);border-bottom:1px solid var(--gray-200);">
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Title</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Category</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Type</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Status</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Views</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Created</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--gray-600);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tutorials %}
+                <tr style="border-bottom:1px solid var(--gray-200);">
+                    <td style="padding:14px 16px;font-weight:600;color:var(--gray-900);">
+                        {% if t.thumbnail %}
+                            <img src="{{ t.thumbnail.url }}" style="width:40px;height:28px;object-fit:cover;border-radius:4px;margin-right:10px;vertical-align:middle;">
+                        {% endif %}
+                        {{ t.title }}
+                    </td>
+                    <td style="padding:14px 16px;color:var(--gray-600);">{{ t.category }}</td>
+                    <td style="padding:14px 16px;">
+                        {% if t.video_type == "file" %}
+                            <span class="badge badge-primary"><i class="fa-solid fa-file-video"></i> File</span>
+                        {% else %}
+                            <span class="badge badge-warning"><i class="fa-brands fa-youtube"></i> URL</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 16px;">
+                        {% if t.status == "published" %}
+                            <span class="badge badge-success">Published</span>
+                        {% else %}
+                            <span class="badge badge-warning">Draft</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 16px;color:var(--gray-600);">{{ t.view_count }}</td>
+                    <td style="padding:14px 16px;color:var(--gray-600);">{{ t.created_at|date:"M d, Y" }}</td>
+                    <td style="padding:14px 16px;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <a href="{% url 'siteapp:admin_tutorial_edit' t.id %}" class="btn btn-sm btn-outline">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </a>
+                            <form method="POST" action="{% url 'siteapp:admin_tutorial_toggle' t.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if t.status == 'published' %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                                    <i class="fa-solid {% if t.status == 'published' %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    {% if t.status == 'published' %}Unpublish{% else %}Publish{% endif %}
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'siteapp:admin_tutorial_delete' t.id %}" style="display:inline;" onsubmit="return confirm('Delete this tutorial?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fa-solid fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding:60px 20px;text-align:center;color:var(--gray-600);">
+            <i class="fa-solid fa-film" style="font-size:2.5rem;color:var(--gray-200);display:block;margin-bottom:12px;"></i>
+            No tutorials yet. <a href="{% url 'siteapp:admin_tutorial_create' %}" style="color:var(--primary);font-weight:600;">Add your first tutorial</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
