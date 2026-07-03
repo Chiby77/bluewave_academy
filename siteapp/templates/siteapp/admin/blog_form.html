@@ -38,10 +38,24 @@
             <div class="form-hint">Used in the URL: /blog/your-slug-here/</div>
           </div>
           <div class="form-group">
-            <label class="form-label">Content <span class="required">*</span></label>
-            <textarea name="content" class="form-control" rows="16" required
-                      placeholder="Write your blog post here. You can use HTML for formatting.">{% if post %}{{ post.content }}{% endif %}</textarea>
-            <div class="form-hint">HTML tags are supported for formatting: &lt;b&gt;, &lt;i&gt;, &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;, &lt;li&gt;, etc.</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <label class="form-label" style="margin-bottom:0;">Content <span class="required">*</span></label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span style="font-size:12px;color:var(--gray-500);">Mode:</span>
+                <button type="button" id="btnVisual" onclick="setMode('visual')"
+                  style="padding:4px 12px;border-radius:6px;border:1px solid var(--primary);background:var(--primary);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">&#9998; Visual</button>
+                <button type="button" id="btnHtml" onclick="setMode('html')"
+                  style="padding:4px 12px;border-radius:6px;border:1px solid var(--gray-300);background:#fff;color:var(--gray-700);font-size:12px;font-weight:600;cursor:pointer;">&lt;/&gt; HTML</button>
+              </div>
+            </div>
+            <!-- Raw HTML textarea (shown in HTML mode) -->
+            <textarea name="content" id="contentRaw" class="form-control" rows="18" required
+                      placeholder="Paste your HTML here..."
+                      style="font-family:monospace;font-size:13px;display:none;">{% if post %}{{ post.content }}{% endif %}</textarea>
+            <!-- TinyMCE visual editor -->
+            <textarea id="contentEditor" class="form-control" rows="18"
+                      style="display:block;">{% if post %}{{ post.content }}{% endif %}</textarea>
+            <div class="form-hint" id="modeHint">Rich visual editor — or switch to <strong>HTML</strong> mode to paste raw HTML code.</div>
           </div>
         </div>
       </div>
@@ -106,7 +120,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
+// ── Slug auto-generate ──────────────────────────────────────────
 const titleInput = document.querySelector('[name="title"]');
 const slugField  = document.getElementById('slugField');
 const isEdit     = {% if post %}true{% else %}false{% endif %};
@@ -121,5 +137,77 @@ if (!isEdit) {
       .trim();
   });
 }
+
+// ── TinyMCE Init ────────────────────────────────────────────────
+let editorMode = 'visual';
+
+tinymce.init({
+  selector: '#contentEditor',
+  plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code',
+  toolbar: 'undo redo | blocks fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code',
+  height: 500,
+  menubar: true,
+  promotion: false,
+  branding: false,
+  setup: function(editor) {
+    editor.on('init', function() {
+      // Populate editor with existing content
+      const raw = document.getElementById('contentRaw').value;
+      if (raw) editor.setContent(raw);
+    });
+  }
+});
+
+// ── Mode Toggle ─────────────────────────────────────────────────
+function setMode(mode) {
+  const rawArea    = document.getElementById('contentRaw');
+  const editorWrap = document.getElementById('contentEditor').closest('.tox-tinymce') || document.getElementById('contentEditor');
+  const btnVisual  = document.getElementById('btnVisual');
+  const btnHtml    = document.getElementById('btnHtml');
+  const hint       = document.getElementById('modeHint');
+  const editor     = tinymce.get('contentEditor');
+
+  if (mode === 'html') {
+    // Sync visual → raw
+    if (editor) rawArea.value = editor.getContent();
+    rawArea.style.display = 'block';
+    rawArea.name = 'content';   // submit this field
+    if (editorWrap) editorWrap.style.display = 'none';
+    document.getElementById('contentEditor').name = '';
+    btnHtml.style.background   = 'var(--primary)';
+    btnHtml.style.color        = '#fff';
+    btnHtml.style.borderColor  = 'var(--primary)';
+    btnVisual.style.background = '#fff';
+    btnVisual.style.color      = 'var(--gray-700)';
+    btnVisual.style.borderColor= 'var(--gray-300)';
+    hint.innerHTML = 'Paste or write raw <strong>HTML</strong> — switch back to Visual to use the editor.';
+    editorMode = 'html';
+  } else {
+    // Sync raw → visual
+    if (editor) editor.setContent(rawArea.value);
+    rawArea.style.display = 'none';
+    rawArea.name = '';
+    if (editorWrap) editorWrap.style.display = 'block';
+    document.getElementById('contentEditor').name = 'content';
+    btnVisual.style.background = 'var(--primary)';
+    btnVisual.style.color      = '#fff';
+    btnVisual.style.borderColor= 'var(--primary)';
+    btnHtml.style.background   = '#fff';
+    btnHtml.style.color        = 'var(--gray-700)';
+    btnHtml.style.borderColor  = 'var(--gray-300)';
+    hint.innerHTML = 'Rich visual editor — or switch to <strong>HTML</strong> mode to paste raw HTML code.';
+    editorMode = 'visual';
+  }
+}
+
+// ── Sync editor content before form submit ───────────────────────
+document.querySelector('form').addEventListener('submit', function() {
+  if (editorMode === 'visual') {
+    const editor = tinymce.get('contentEditor');
+    if (editor) {
+      document.getElementById('contentEditor').value = editor.getContent();
+    }
+  }
+});
 </script>
 {% endblock %}

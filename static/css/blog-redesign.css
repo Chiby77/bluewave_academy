@@ -340,6 +340,20 @@ a { text-decoration: none; color: inherit; }
 }
 .article-content ul, .article-content ol { padding-left: 1.5em; margin-bottom: 1.2em; }
 .article-content li { margin-bottom: 0.5em; }
+/* Images & figures */
+.article-content img {
+    max-width: 100%; height: auto; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1); display: block; margin: 0 auto;
+}
+.article-content figure { margin: 24px 0; text-align: center; }
+.article-content figcaption { font-size: 0.85em; color: #666; margin-top: 8px; font-style: italic; }
+/* Tables */
+.article-content table { width: 100%; border-collapse: collapse; margin: 1.4em 0; font-size: 0.95em; }
+.article-content th { background: var(--navy); color: #fff; padding: 10px 14px; text-align: left; }
+.article-content td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.article-content tr:nth-child(even) td { background: var(--light-blue); }
+/* Links */
+.article-content a { color: var(--primary); text-decoration: underline; }
 
 /* Interaction */
 .interaction-section {
