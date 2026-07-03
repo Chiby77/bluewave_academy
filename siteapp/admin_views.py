@@ -1172,6 +1172,9 @@ def add_question(request, exam_id):
                 question.save()
 
             messages.success(request, "Question added successfully!")
+            action = request.POST.get("action", "save")
+            if action == "save_add":
+                return redirect("siteapp:add_question", exam_id=exam.id)
             return redirect("siteapp:edit_exam", exam_id=exam.id)
 
         except Exception as e:

@@ -167,14 +167,12 @@ class Question(models.Model):
     marks = models.IntegerField(default=1)
     order = models.IntegerField(default=0, help_text="Question order in exam")
 
-    # For MCQ questions
-    option_a = models.CharField(max_length=500, blank=True)
-    option_b = models.CharField(max_length=500, blank=True)
-    option_c = models.CharField(max_length=500, blank=True)
-    option_d = models.CharField(max_length=500, blank=True)
-    correct_answer = models.CharField(
-        max_length=500, help_text="Correct answer or answer key"
-    )
+    # For MCQ questions — TextField so options can hold lengthy technical content
+    option_a = models.TextField(blank=True)
+    option_b = models.TextField(blank=True)
+    option_c = models.TextField(blank=True)
+    option_d = models.TextField(blank=True)
+    correct_answer = models.TextField(help_text="Correct answer or answer key")
 
     explanation = models.TextField(blank=True, help_text="Explanation for the answer")
     created_at = models.DateTimeField(auto_now_add=True)
