@@ -225,15 +225,15 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 SUPABASE_ANON_KEY   = os.environ.get("SUPABASE_ANON_KEY", "")
 
 # Supabase S3-compatible credentials
-# Found in: Supabase Dashboard → Project Settings → Storage → S3 Connection
-SUPABASE_S3_ENDPOINT   = os.environ.get("SUPABASE_S3_ENDPOINT", "")    # e.g. https://<ref>.supabase.co/storage/v1/s3
-SUPABASE_S3_REGION     = os.environ.get("SUPABASE_S3_REGION", "auto")
-SUPABASE_S3_ACCESS_KEY = os.environ.get("SUPABASE_S3_ACCESS_KEY", "")  # S3 Access Key ID
-SUPABASE_S3_SECRET_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY", "")  # S3 Secret Access Key
+# Supabase S3-compatible credentials (supports Railway generic S3 vars)
+SUPABASE_S3_ENDPOINT   = os.environ.get("ENDPOINT") or os.environ.get("SUPABASE_S3_ENDPOINT", "")
+SUPABASE_S3_REGION     = os.environ.get("REGION") or os.environ.get("SUPABASE_S3_REGION", "auto")
+SUPABASE_S3_ACCESS_KEY = os.environ.get("ACCESS_KEY_ID") or os.environ.get("SUPABASE_S3_ACCESS_KEY", "")
+SUPABASE_S3_SECRET_KEY = os.environ.get("SECRET_ACCESS_KEY") or os.environ.get("SUPABASE_S3_SECRET_KEY", "")
 
-# Bucket names (create these in the Supabase dashboard)
-SUPABASE_MEDIA_BUCKET  = os.environ.get("SUPABASE_MEDIA_BUCKET", "media")
-SUPABASE_PAPERS_BUCKET = os.environ.get("SUPABASE_PAPERS_BUCKET", "papers")
+# Bucket names
+SUPABASE_MEDIA_BUCKET  = os.environ.get("BUCKET") or os.environ.get("SUPABASE_MEDIA_BUCKET", "media")
+SUPABASE_PAPERS_BUCKET = os.environ.get("BUCKET") or os.environ.get("SUPABASE_PAPERS_BUCKET", "papers")
 
 _supabase_configured = all([
     SUPABASE_S3_ENDPOINT,
