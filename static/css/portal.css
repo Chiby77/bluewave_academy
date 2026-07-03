@@ -562,7 +562,7 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
 .report-score-circle .pct { font-size: 22px; font-weight: 800; }
 .report-score-circle .pct-label { font-size: 10px; letter-spacing: 1px; color: rgba(255,255,255,.7); }
 .report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
-.report-meta-item { }
+.report-meta-item { display: flex; flex-direction: column; }
 .report-meta-item .label { font-size: 11px; color: rgba(255,255,255,.6); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
 .report-meta-item .value { font-size: 15px; font-weight: 700; }
 .report-verdict {
