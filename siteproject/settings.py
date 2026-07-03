@@ -40,7 +40,7 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip()
     for o in os.environ.get(
         "CSRF_TRUSTED_ORIGINS",
-        "http://localhost:5000,http://127.0.0.1:8000,http://localhost:8000",
+        "http://localhost:5000,http://127.0.0.1:8000,http://localhost:8000,https://bluewaveacademy-production.up.railway.app,https://*.up.railway.app",
     ).split(",")
     if o.strip()
 ]
