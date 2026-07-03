@@ -16,7 +16,7 @@
   </div>
 </div>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" id="blogForm" data-is-edit="{% if post %}1{% else %}0{% endif %}">
   {% csrf_token %}
   <div class="two-col">
     <!-- Main Content -->
@@ -125,7 +125,7 @@
 // ── Slug auto-generate ──────────────────────────────────────────
 const titleInput = document.querySelector('[name="title"]');
 const slugField  = document.getElementById('slugField');
-const isEdit     = {% if post %}true{% else %}false{% endif %};
+const isEdit     = document.getElementById('blogForm').dataset.isEdit === '1';
 
 if (!isEdit) {
   titleInput.addEventListener('input', function() {

@@ -158,9 +158,9 @@
             <span style="color:var(--gray-400);">{{ stat.count }} exam{% if stat.count != 1 %}s{% endif %}{% if stat.avg_score %} &bull; avg {{ stat.avg_score|floatformat:0 }}%{% endif %}</span>
           </div>
           {% if total_exams > 0 %}
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:{% widthratio stat.count total_exams 100 %}%;"></div>
-          </div>
+            <div class="progress-bar">
+              <div class="progress-fill" data-width="{% widthratio stat.count total_exams 100 %}%"></div>
+            </div>
           {% endif %}
         </div>
         {% empty %}
@@ -223,6 +223,11 @@ document.querySelectorAll('.kpi-value').forEach(el => {
     el.textContent = count + suffix;
     if (count >= target) clearInterval(timer);
   }, 30);
+});
+
+// Apply data-width to progress bars (avoids Django tags inside CSS style attributes)
+document.querySelectorAll('.progress-fill[data-width]').forEach(function(el) {
+  el.style.width = el.getAttribute('data-width');
 });
 </script>
 {% endblock %}
