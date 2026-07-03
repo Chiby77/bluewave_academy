@@ -1228,6 +1228,7 @@ def edit_question(request, exam_id, question_id):
         "exam": exam,
         "question": question,
         "question_types": Question.QUESTION_TYPE_CHOICES,
+        "open_answer_types": ["short_answer", "essay", "code"],
     }
 
     return render(request, "siteapp/admin/edit_question.html", context)

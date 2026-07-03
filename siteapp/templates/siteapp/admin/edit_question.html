@@ -59,7 +59,6 @@
           <h3><i class="fa-solid fa-list-ul" style="color:var(--accent);margin-right:8px;"></i>MCQ Options</h3>
         </div>
         <div class="card-body">
-          {% for letter, val in "A,B,C,D"|ljust:7|slice:":7"|cut:" " %}{% endfor %}
           {% with opts="ABCD" %}
           {% for letter in opts %}
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
@@ -105,7 +104,7 @@
         </div>
         <div class="card-body">
           <div class="form-group" id="correct-answer-field"
-               {% if question.question_type not in 'short_answer essay code' %}style="display:none;"{% endif %}>
+               {% if question.question_type not in open_answer_types %}style="display:none;"{% endif %}>
             <label class="form-label">Model Answer</label>
             <textarea name="correct_answer" class="form-control" rows="4">{{ question.correct_answer }}</textarea>
           </div>
