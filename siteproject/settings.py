@@ -99,7 +99,7 @@ ASGI_APPLICATION = "siteproject.asgi.application"
 # ---------------------------------------------------------------------------
 # DATABASE — Railway PostgreSQL via DATABASE_URL (preferred) or explicit vars
 # ---------------------------------------------------------------------------
-_DATABASE_URL = os.environ.get("DATABASE_URL", "")
+_DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("DATABASE_PUBLIC_URL", "")
 
 if _DATABASE_URL:
     # Railway injects DATABASE_URL automatically when you add a Postgres plugin.
@@ -113,15 +113,15 @@ if _DATABASE_URL:
     }
     # Force psycopg3 driver (psycopg[binary] installed)
     DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
-elif os.environ.get("DATABASE_ENGINE", "sqlite3") == "postgresql":
+elif os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST") or os.environ.get("DATABASE_ENGINE", "sqlite3") == "postgresql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_NAME", "bluewave"),
-            "USER": os.environ.get("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "NAME": os.environ.get("PGDATABASE", os.environ.get("POSTGRES_DB", os.environ.get("POSTGRES_NAME", "bluewave"))),
+            "USER": os.environ.get("PGUSER", os.environ.get("POSTGRES_USER", "postgres")),
+            "PASSWORD": os.environ.get("PGPASSWORD", os.environ.get("POSTGRES_PASSWORD", "")),
+            "HOST": os.environ.get("PGHOST", os.environ.get("POSTGRES_HOST", "localhost")),
+            "PORT": os.environ.get("PGPORT", os.environ.get("POSTGRES_PORT", "5432")),
             "CONN_MAX_AGE": 600,
             "CONN_HEALTH_CHECKS": True,
             "OPTIONS": {
@@ -148,7 +148,14 @@ else:
 # ---------------------------------------------------------------------------
 # CHANNELS — WebSocket layer
 # ---------------------------------------------------------------------------
-REDIS_URL = os.environ.get("REDIS_URL", "")
+REDIS_URL = os.environ.get("REDIS_URL") or os.environ.get("REDIS_PUBLIC_URL", "")
+
+if not REDIS_URL and os.environ.get("REDISHOST"):
+    _r_host = os.environ.get("REDISHOST")
+    _r_port = os.environ.get("REDISPORT", "6379")
+    _r_user = os.environ.get("REDISUSER", "default")
+    _r_pass = os.environ.get("REDISPASSWORD", os.environ.get("REDIS_PASSWORD", ""))
+    REDIS_URL = f"redis://{_r_user}:{_r_pass}@{_r_host}:{_r_port}/0" if _r_pass else f"redis://{_r_host}:{_r_port}/0"
 
 if REDIS_URL:
     CHANNEL_LAYERS = {
@@ -265,7 +272,7 @@ FILE_UPLOAD_HANDLERS = [
 # ---------------------------------------------------------------------------
 # CACHE — Redis (production) / LocMem (dev)
 # ---------------------------------------------------------------------------
-_REDIS_CACHE_URL = os.environ.get("REDIS_URL", "") or os.environ.get("CACHE_URL", "")
+_REDIS_CACHE_URL = REDIS_URL or os.environ.get("CACHE_URL", "")
 
 if _REDIS_CACHE_URL:
     CACHES = {
