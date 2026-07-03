@@ -754,7 +754,17 @@ def announcements_management(request):
 @require_http_methods(["POST"])
 @transaction.atomic()
 def create_announcement(request):
-    """Create new announcement"""
+    """Create new announcement.
+
+    Supports both browser form posts (redirects on success) and
+    AJAX/fetch calls (returns JSON). Detection is via the
+    X-Requested-With header that fetch sends when we add it, or
+    the Accept header for pure API callers.
+    """
+    is_ajax = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("Accept", "")
+    )
 
     try:
         title = request.POST.get("title", "").strip()
@@ -763,13 +773,12 @@ def create_announcement(request):
         priority = int(request.POST.get("priority", 0))
         is_active = request.POST.get("is_active", "on") == "on"
 
-        # Validate
         if not title or not content:
-            return JsonResponse(
-                {"success": False, "error": "Title and content are required"}
-            )
+            if is_ajax:
+                return JsonResponse({"success": False, "error": "Title and content are required"}, status=400)
+            messages.error(request, "Title and content are required.")
+            return redirect(f"{request.build_absolute_uri('/administration/announcements/')}?create=1")
 
-        # Create announcement
         announcement = Announcement.objects.create(
             title=title,
             content=content,
@@ -779,25 +788,32 @@ def create_announcement(request):
             created_by=request.user,
         )
 
-        return JsonResponse(
-            {
-                "success": True,
-                "message": "Announcement created successfully",
-                "announcement": {
-                    "id": announcement.id,
-                    "title": announcement.title,
-                    "content": announcement.content,
-                    "target_audience": announcement.get_target_audience_display(),
-                    "priority": announcement.get_priority_display(),
-                    "is_active": announcement.is_active,
-                    "created_at": announcement.created_at.strftime("%Y-%m-%d %H:%M"),
-                    "created_by": announcement.created_by.get_full_name(),
-                },
-            }
-        )
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Announcement created successfully",
+                    "announcement": {
+                        "id": announcement.id,
+                        "title": announcement.title,
+                        "content": announcement.content,
+                        "target_audience": announcement.get_target_audience_display(),
+                        "priority": announcement.get_priority_display(),
+                        "is_active": announcement.is_active,
+                        "created_at": announcement.created_at.strftime("%Y-%m-%d %H:%M"),
+                        "created_by": announcement.created_by.get_full_name(),
+                    },
+                }
+            )
+
+        messages.success(request, f'Announcement "{announcement.title}" published successfully!')
+        return redirect("siteapp:announcements_management")
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        if is_ajax:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+        messages.error(request, f"Error creating announcement: {str(e)}")
+        return redirect(f"{request.build_absolute_uri('/administration/announcements/')}?create=1")
 
 
 @admin_required
@@ -805,18 +821,27 @@ def create_announcement(request):
 @transaction.atomic()
 def delete_announcement(request, announcement_id):
     """Delete announcement"""
+    is_ajax = (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("Accept", "")
+    )
 
     try:
         announcement = get_object_or_404(Announcement, id=announcement_id)
         title = announcement.title
         announcement.delete()
 
-        return JsonResponse(
-            {"success": True, "message": f'Announcement "{title}" deleted successfully'}
-        )
+        if is_ajax:
+            return JsonResponse({"success": True, "message": f'Announcement "{title}" deleted successfully'})
+
+        messages.success(request, f'Announcement "{title}" deleted successfully.')
+        return redirect("siteapp:announcements_management")
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        if is_ajax:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+        messages.error(request, f"Error deleting announcement: {str(e)}")
+        return redirect("siteapp:announcements_management")
 
 
 @admin_required
@@ -1445,3 +1470,25 @@ def admin_students(request):
     return render(request, "siteapp/admin/students.html", {"students": students})
 
     return redirect("siteapp:edit_exam", exam_id=exam.id)
+
+
+@admin_required
+def tinymce_image_upload(request):
+    """Handle image uploads from TinyMCE editor. Returns JSON with image location."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    upload = request.FILES.get("file")
+    if not upload:
+        return JsonResponse({"error": "No file uploaded"}, status=400)
+
+    # Reuse blog_pics upload path via a temporary BlogPost image field trick
+    import uuid
+    from django.core.files.storage import default_storage
+    ext = os.path.splitext(upload.name)[1].lower()
+    filename = f"blog_pics/inline/{uuid.uuid4().hex}{ext}"
+    saved_path = default_storage.save(filename, upload)
+    url = default_storage.url(saved_path)
+
+    # TinyMCE expects {"location": "<url>"} in the response
+    return JsonResponse({"location": url})

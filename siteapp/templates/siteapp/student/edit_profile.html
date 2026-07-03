@@ -18,9 +18,15 @@
       <div class="profile-cover"></div>
       <div style="position:relative;">
         <div class="profile-avatar-outer">
-          <div class="profile-avatar-xl">
-            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
-          </div>
+          {% if request.user.profile_picture %}
+            <img src="{{ request.user.profile_picture.url }}"
+                 alt="Profile picture"
+                 style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+          {% else %}
+            <div class="profile-avatar-xl">
+              {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+          {% endif %}
         </div>
       </div>
 
@@ -86,6 +92,37 @@
                 <input type="text" name="school" value="{{ form.school.value|default:'' }}" class="form-control" placeholder="Your school name">
                 {% if form.school.errors %}<div class="form-error">{{ form.school.errors.0 }}</div>{% endif %}
               </div>
+            </div>
+          </div>
+
+          <!-- Profile Picture -->
+          <div class="form-section">
+            <div class="form-section-title"><i class="fa-solid fa-camera"></i> Profile Picture</div>
+            <div class="form-group">
+              {% if request.user.profile_picture %}
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                <img src="{{ request.user.profile_picture.url }}"
+                     alt="Current profile picture"
+                     style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gray-200);">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--dark);">Current photo</div>
+                  <div style="font-size:11px;color:var(--gray-400);">Upload a new one to replace it</div>
+                </div>
+              </div>
+              {% endif %}
+              <label for="id_profile_picture" class="form-label">
+                {% if request.user.profile_picture %}Replace photo{% else %}Upload a photo{% endif %}
+              </label>
+              <input type="file"
+                     name="profile_picture"
+                     id="id_profile_picture"
+                     accept="image/*"
+                     class="form-control"
+                     style="padding:6px 10px;">
+              <div class="form-hint"><i class="fa-solid fa-circle-info" style="font-size:10px;"></i> JPG, PNG or WEBP — max 5 MB. Your photo is visible only to you.</div>
+              {% if form.profile_picture.errors %}
+              <div class="form-error">{{ form.profile_picture.errors.0 }}</div>
+              {% endif %}
             </div>
           </div>
 

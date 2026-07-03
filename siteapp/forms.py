@@ -208,7 +208,7 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ["first_name", "last_name", "email", "phone", "school", "student_id"]
+        fields = ["first_name", "last_name", "email", "phone", "school", "student_id", "profile_picture"]
         widgets = {
             "first_name": forms.TextInput(attrs={"class": "form-control"}),
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
@@ -218,20 +218,27 @@ class ProfileUpdateForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "school": forms.TextInput(attrs={"class": "form-control"}),
             "student_id": forms.TextInput(attrs={"class": "form-control"}),
+            "profile_picture": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
         }
 
-        def clean_phone(self):
-            """Validate phone number"""
-            phone = self.cleaned_data.get("phone")
+    def clean_phone(self):
+        """Validate phone number"""
+        phone = self.cleaned_data.get("phone")
+        if phone and (
+            CustomUser.objects.filter(phone=phone)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise ValidationError("This phone number is already in use.")
+        return phone
 
-            # Check if phone is unique (excluding current user)
-            if (
-                CustomUser.objects.filter(phone=phone)
-                .exclude(pk=self.instance.pk)
-                .exists()
-            ):
-                raise ValidationError("This phone number is already in use.")
-            return phone
+    def clean_profile_picture(self):
+        """Validate uploaded profile picture size and type."""
+        picture = self.cleaned_data.get("profile_picture")
+        if picture and hasattr(picture, "size"):
+            if picture.size > 5 * 1024 * 1024:  # 5 MB limit
+                raise ValidationError("Profile picture must be smaller than 5 MB.")
+        return picture
 
 
 class ExamAnswerForm(forms.ModelForm):
