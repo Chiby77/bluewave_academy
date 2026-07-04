@@ -1,101 +1,227 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
 {% block title %}{{ classroom.name }} — Admin{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
-{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}{{ classroom.name }}{% endblock %}
+{% block page_subtitle %}Manage assignments, materials, and students{% endblock %}
 
 {% block content %}
-<div class="examinator-layout">
-    <aside class="exam-sidebar">
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
-            <div><span class="sidebar-brand-name">Examinator Admin</span><span class="sidebar-brand-sub">Instructor Panel</span></div>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
-            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
-        </nav>
-    </aside>
-    <main class="exam-main">
-        <a href="{% url 'siteapp:admin_classrooms' %}" class="back-crumb"><i class="fa-solid fa-arrow-left"></i> All Classrooms</a>
-        <div class="classroom-detail-header" style="border-left: 5px solid {{ classroom.cover_color }}; margin-top:16px;">
-            <h1 class="exam-page-title">{{ classroom.name }}</h1>
-            <p class="exam-page-sub">{{ classroom.description }}</p>
-            <div class="classroom-detail-meta">
-                <span><i class="fa-solid fa-users"></i> {{ classroom.enrolled_count }} enrolled</span>
-                <span><i class="fa-solid fa-clipboard-list"></i> {{ assignments.count }} assignments</span>
-            </div>
-        </div>
-
-        {% if messages %}{% for message in messages %}<div class="exam-alert exam-alert-{{ message.tags }}"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>{% endfor %}{% endif %}
-
-        <div class="admin-tabs">
-            <button class="admin-tab active" onclick="showTab('assignments')">Assignments</button>
-            <button class="admin-tab" onclick="showTab('students')">Students ({{ enrollments|length }})</button>
-        </div>
-
-        <div id="tab-assignments">
-            <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
-                <a href="{% url 'siteapp:admin_create_assignment' classroom.slug %}" class="btn-exam-primary"><i class="fa-solid fa-plus"></i> Add Assignment</a>
-            </div>
-            {% if assignments %}
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead><tr><th>Title</th><th>Type</th><th>Marks</th><th>Deadline</th><th>Submissions</th><th>Actions</th></tr></thead>
-                    <tbody>
-                        {% for assignment in assignments %}
-                        <tr>
-                            <td>{{ assignment.title }}</td>
-                            <td><span class="assignment-type-badge assignment-type-{{ assignment.assignment_type }}">{{ assignment.get_assignment_type_display }}</span></td>
-                            <td>{{ assignment.total_marks }}</td>
-                            <td>{{ assignment.deadline|date:"M d, Y" }}</td>
-                            <td>{{ assignment.submissions.count }}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <a href="{% url 'siteapp:admin_submissions' assignment.id %}" class="action-btn"><i class="fa-solid fa-eye"></i></a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <div class="exam-empty-state"><div class="empty-icon"><i class="fa-solid fa-clipboard"></i></div><h3>No assignments yet</h3></div>
-            {% endif %}
-        </div>
-
-        <div id="tab-students" style="display:none;">
-            {% if enrollments %}
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead><tr><th>Student</th><th>Email</th><th>Enrolled</th></tr></thead>
-                    <tbody>
-                        {% for enrollment in enrollments %}
-                        <tr>
-                            <td>{{ enrollment.student.get_full_name }}</td>
-                            <td>{{ enrollment.student.email }}</td>
-                            <td>{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <div class="exam-empty-state"><div class="empty-icon"><i class="fa-solid fa-users"></i></div><h3>No students enrolled</h3></div>
-            {% endif %}
-        </div>
-    </main>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ classroom.name }}</h2>
+    <p>{{ classroom.description }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:admin_classrooms' %}" class="btn btn-gray"><i class="fa-solid fa-arrow-left"></i> All Classrooms</a>
+    <a href="{% url 'siteapp:admin_create_assignment' classroom.slug %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Assignment</a>
+  </div>
 </div>
+
+{% if messages %}{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-3"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>
+{% endfor %}{% endif %}
+
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+      <span><i class="fa-solid fa-users" style="color:var(--primary);margin-right:6px;"></i><strong>{{ classroom.enrolled_count }}</strong> enrolled</span>
+      <span><i class="fa-solid fa-clipboard-list" style="color:var(--accent);margin-right:6px;"></i><strong>{{ assignments.count }}</strong> assignments</span>
+      <span><i class="fa-solid fa-user-tie" style="color:var(--success);margin-right:6px;"></i>{{ classroom.instructor.get_full_name }}</span>
+      <span style="margin-left:auto;">
+        <span style="border-left:4px solid {{ classroom.cover_color }};padding-left:8px;font-weight:700;">{{ classroom.name }}</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:20px;">
+  <button class="btn btn-primary" onclick="showTab('assignments', this)">Assignments</button>
+  <button class="btn btn-gray" onclick="showTab('students', this)">Students ({{ enrollments|length }})</button>
+  <button class="btn btn-gray" onclick="showTab('materials', this)">Materials</button>
+</div>
+
+{# ── Assignments Tab ── #}
+<div id="tab-assignments">
+  <div class="card">
+    <div class="card-body-flush">
+      {% if assignments %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Type</th><th>Marks</th><th>Deadline</th><th>Submissions</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for assignment in assignments %}
+            <tr>
+              <td><div class="td-main">{{ assignment.title }}</div></td>
+              <td><span class="badge badge-blue">{{ assignment.get_assignment_type_display }}</span></td>
+              <td><strong>{{ assignment.total_marks }}</strong></td>
+              <td>{{ assignment.deadline|date:"M d, Y H:i" }}
+                {% if assignment.is_past_deadline %}<span class="badge badge-red" style="margin-left:6px;">Closed</span>{% endif %}
+              </td>
+              <td>{{ assignment.submissions.count }}</td>
+              <td>
+                <a href="{% url 'siteapp:admin_submissions' assignment.id %}" class="btn btn-sm btn-outline">
+                  <i class="fa-solid fa-eye"></i> Submissions
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="fa-solid fa-clipboard"></i><h3>No assignments yet</h3><p>Add the first assignment using the button above.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Students Tab ── #}
+<div id="tab-students" style="display:none;">
+  <div class="card">
+    <div class="card-body-flush">
+      {% if enrollments %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Student</th><th>Email</th><th>Enrolled</th><th>Payment</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+              <td><div class="td-main">{{ enrollment.student.get_full_name }}</div><div class="td-sub">{{ enrollment.student.student_id }}</div></td>
+              <td>{{ enrollment.student.email }}</td>
+              <td>{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+              <td>
+                {% if enrollment.payment_status == 'paid' %}<span class="badge badge-green">Paid</span>
+                {% elif enrollment.payment_status == 'waived' %}<span class="badge badge-blue">Waived</span>
+                {% else %}
+                  <span class="badge badge-amber">Unpaid{% if enrollment.enrollment_fee %} — ${{ enrollment.enrollment_fee }}{% endif %}</span>
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="{% url 'siteapp:admin_set_enrollment_fee' enrollment.id %}" style="display:inline-flex;gap:6px;align-items:center;">
+                  {% csrf_token %}
+                  <input type="number" name="enrollment_fee" step="0.01" min="0"
+                         value="{{ enrollment.enrollment_fee|default:'' }}"
+                         placeholder="Fee $" class="form-control" style="width:90px;padding:5px 8px;font-size:12px;">
+                  <select name="payment_status" class="form-control" style="width:90px;padding:5px 8px;font-size:12px;">
+                    <option value="unpaid" {% if enrollment.payment_status == 'unpaid' %}selected{% endif %}>Unpaid</option>
+                    <option value="paid"   {% if enrollment.payment_status == 'paid'   %}selected{% endif %}>Paid</option>
+                    <option value="waived" {% if enrollment.payment_status == 'waived' %}selected{% endif %}>Waived</option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="fa-solid fa-users"></i><h3>No students enrolled</h3></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Materials Tab ── #}
+<div id="tab-materials" style="display:none;">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3><i class="fa-solid fa-folder-open" style="color:var(--primary);margin-right:8px;"></i>Classroom Materials</h3>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{% url 'siteapp:admin_upload_material' classroom.slug %}" enctype="multipart/form-data"
+            style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:20px;margin-bottom:20px;">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">Title <span class="required">*</span></label>
+            <input type="text" name="title" class="form-control" required placeholder="Material title">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select name="material_type" class="form-control" id="matType" onchange="toggleMaterialFields()">
+              <option value="note">Notes / Document</option>
+              <option value="video">Video</option>
+              <option value="link">External Link</option>
+            </select>
+          </div>
+          <div class="form-group" id="matFileField">
+            <label class="form-label">File (PDF / Doc)</label>
+            <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx">
+          </div>
+          <div class="form-group" id="matVideoField" style="display:none;">
+            <label class="form-label">Video URL (YouTube or direct)</label>
+            <input type="url" name="video_url" class="form-control" placeholder="https://youtube.com/watch?v=...">
+          </div>
+          <div class="form-group" id="matLinkField" style="display:none;">
+            <label class="form-label">External URL</label>
+            <input type="url" name="external_url" class="form-control" placeholder="https://...">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Description</label>
+            <input type="text" name="description" class="form-control" placeholder="Short description (optional)">
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:8px;">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Upload Material</button>
+        </div>
+      </form>
+
+      {% with materials=classroom.materials.all %}
+      {% if materials %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Type</th><th>Added</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for mat in materials %}
+            <tr>
+              <td><div class="td-main">{{ mat.title }}</div>{% if mat.description %}<div class="td-sub">{{ mat.description|truncatechars:60 }}</div>{% endif %}</td>
+              <td><span class="badge badge-blue">{{ mat.get_material_type_display }}</span></td>
+              <td>{{ mat.created_at|date:"M d, Y" }}</td>
+              <td>
+                <form method="post" action="{% url 'siteapp:admin_delete_material' mat.id %}"
+                      onsubmit="return confirm('Delete this material?');" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>No materials yet</h3></div>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
-function showTab(tab) {
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-assignments').style.display = tab === 'assignments' ? '' : 'none';
-    document.getElementById('tab-students').style.display = tab === 'students' ? '' : 'none';
-    event.target.classList.add('active');
+function showTab(tab, btn) {
+  ['assignments','students','materials'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.page-header-actions ~ div .btn, .page-header + div + div .btn').forEach(b => b.classList.add('btn-gray'));
+  if (btn) {
+    document.querySelectorAll('[onclick^="showTab"]').forEach(b => {
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-gray');
+    });
+    btn.classList.remove('btn-gray');
+    btn.classList.add('btn-primary');
+  }
+}
+function toggleMaterialFields() {
+  var t = document.getElementById('matType').value;
+  document.getElementById('matFileField').style.display  = t === 'note'  ? '' : 'none';
+  document.getElementById('matVideoField').style.display = t === 'video' ? '' : 'none';
+  document.getElementById('matLinkField').style.display  = t === 'link'  ? '' : 'none';
 }
 </script>
 {% endblock %}

@@ -1,3 +1,5 @@
+import threading
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -35,6 +37,7 @@ from .forms import (
     CustomSetPasswordForm,
 )
 from .pdf_generator import generate_student_report
+from .notifications import send_notification_to_user
 
 # ============= PUBLIC VIEWS =============
 
@@ -626,36 +629,176 @@ def take_exam(request, exam_id):
 
 
 @login_required(login_url="siteapp:login")
-def submit_exam(request, exam_id):
-    """Submit exam (AJAX)"""
-    if request.method == "POST":
-        exam = get_object_or_404(Exam, id=exam_id)
-        student = request.user
+def _grade_subjective_answers(attempt_id: int):
+    """
+    Background thread: AI-grade all essay/short_answer/code answers in an attempt,
+    then re-calculate the total score and mark the attempt as graded.
 
-        attempt = ExamAttempt.objects.filter(
-            student=student, exam=exam, status="in_progress"
-        ).first()
+    Called only when the exam has at least one subjective question AND
+    enable_instant_grading is True.
+    """
+    from .examinator_service import get_grading_service
 
-        if not attempt:
-            return JsonResponse({"error": "No active attempt found"}, status=400)
+    try:
+        attempt = ExamAttempt.objects.select_related("exam").get(id=attempt_id)
+    except ExamAttempt.DoesNotExist:
+        return
 
-        attempt.end_time = timezone.now()
-        time_diff = attempt.end_time - attempt.start_time
-        attempt.time_taken_minutes = int(time_diff.total_seconds() / 60)
-        attempt.status = "submitted"
-        attempt.save()
+    exam = attempt.exam
+    service = get_grading_service()
 
-        attempt.calculate_score()
+    try:
+        answers_to_grade = attempt.answers.filter(
+            question__question_type__in=["essay", "short_answer", "code"]
+        ).select_related("question")
 
-        return JsonResponse(
-            {
-                "success": True,
-                "attempt_id": attempt.id,
-                "redirect_url": f"/student/exam/results/{attempt.id}/",
-            }
+        with transaction.atomic():
+            for answer in answers_to_grade:
+                question = answer.question
+
+                if question.question_type == "code":
+                    result = service.grade_code_submission(
+                        question=question.question_text,
+                        rubric=getattr(question, "rubric", "") or "",
+                        expected_output=question.correct_answer or "",
+                        student_code=answer.answer_text or "",
+                        language=getattr(question, "code_language", "python") or "python",
+                        total_marks=int(question.marks),
+                    )
+                else:
+                    result = service.grade_text_submission(
+                        question=question.question_text,
+                        rubric=getattr(question, "rubric", "") or "",
+                        answer_key=question.correct_answer or "",
+                        student_answer=answer.answer_text or "",
+                        total_marks=int(question.marks),
+                    )
+
+                answer.marks_obtained = result["score"]
+                answer.is_correct = result.get("is_correct", False)
+                answer.ai_graded = True
+                answer.ai_feedback = result.get("feedback", "")
+                answer.save()
+
+                ExamGrading.objects.update_or_create(
+                    attempt=attempt,
+                    question=question,
+                    defaults={
+                        "student_answer": answer.answer_text,
+                        "groq_score": result["score"],
+                        "groq_feedback": result.get("feedback", ""),
+                        "groq_reasoning": result.get("reasoning", ""),
+                    },
+                )
+
+            attempt.calculate_score()
+            attempt.status = "graded"
+            attempt.ai_graded = True
+            attempt.save(update_fields=["score", "percentage", "status", "ai_graded"])
+
+        # Notify student — grading is done
+        try:
+            send_notification_to_user(
+                user=attempt.student,
+                title="Exam Graded!",
+                message=(
+                    f"Your '{exam.title}' exam has been graded. "
+                    f"Score: {attempt.score}/{exam.total_marks}"
+                ),
+                notification_type="result",
+                url=f"/student/exam/results/{attempt.id}/",
+            )
+        except Exception as e:
+            print(f"[Notification] _grade_subjective_answers notify error: {e}")
+
+    except Exception as exc:
+        print(f"[Examinator] _grade_subjective_answers error for attempt {attempt_id}: {exc}")
+        # Never leave the attempt stuck in 'submitted' — fall back to manual review
+        ExamAttempt.objects.filter(id=attempt_id, status="submitted").update(
+            status="graded",
+            ai_graded=False,
         )
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
+
+@login_required(login_url="siteapp:login")
+def submit_exam(request, exam_id):
+    """Submit exam — instant grading for MCQ/TF, async AI only for subjective questions."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+    exam = get_object_or_404(Exam, id=exam_id)
+    student = request.user
+
+    attempt = ExamAttempt.objects.filter(
+        student=student, exam=exam, status="in_progress"
+    ).first()
+
+    if not attempt:
+        return JsonResponse({"error": "No active attempt found"}, status=400)
+
+    # ── 1. Close the attempt timer ──────────────────────────────────────────
+    attempt.end_time = timezone.now()
+    time_diff = attempt.end_time - attempt.start_time
+    attempt.time_taken_minutes = int(time_diff.total_seconds() / 60)
+    attempt.status = "submitted"
+    attempt.save()
+
+    # ── 2. Instantly grade MCQ / True-False answers ─────────────────────────
+    # check_answer() sets is_correct and marks_obtained on each Answer row.
+    # This is pure Python — zero latency.
+    with transaction.atomic():
+        for answer in attempt.answers.filter(
+            question__question_type__in=["mcq", "true_false"]
+        ).select_related("question"):
+            answer.check_answer()
+
+    # ── 3. Calculate total score from all marked answers ────────────────────
+    attempt.calculate_score()
+
+    # ── 4. Decide if any subjective questions need AI grading ───────────────
+    subjective_types = ["essay", "short_answer", "code"]
+    has_subjective = attempt.answers.filter(
+        question__question_type__in=subjective_types
+    ).exists()
+
+    if has_subjective and exam.enable_instant_grading:
+        # Has subjective questions + AI grading enabled →
+        # run AI in a background thread so the HTTP response returns immediately.
+        # Status stays "submitted" until the thread upgrades it to "graded".
+        t = threading.Thread(
+            target=_grade_subjective_answers,
+            args=(attempt.id,),
+            daemon=True,
+        )
+        t.start()
+    else:
+        # Pure MCQ / TF exam, or instant grading disabled → already fully graded.
+        attempt.status = "graded"
+        attempt.ai_graded = True
+        attempt.save(update_fields=["status", "ai_graded"])
+
+        # Notify student immediately
+        try:
+            send_notification_to_user(
+                user=student,
+                title="Exam Graded!",
+                message=(
+                    f"Your '{exam.title}' exam has been graded. "
+                    f"Score: {attempt.score}/{exam.total_marks}"
+                ),
+                notification_type="result",
+                url=f"/student/exam/results/{attempt.id}/",
+            )
+        except Exception as e:
+            print(f"[Notification] submit_exam notify error: {e}")
+
+    return JsonResponse(
+        {
+            "success": True,
+            "attempt_id": attempt.id,
+            "redirect_url": f"/student/exam/results/{attempt.id}/",
+        }
+    )
 
 
 @login_required(login_url="siteapp:login")

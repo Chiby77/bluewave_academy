@@ -1,106 +1,90 @@
-{% extends "siteapp/base.html" %}
+{% extends "siteapp/admin/base_admin.html" %}
 {% load static %}
 
 {% block title %}Examinator — Manage Classrooms{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/examinator.css' %}">
-{% endblock %}
+{% block nav_exams %}active{% endblock %}
+{% block page_title %}Classrooms{% endblock %}
+{% block page_subtitle %}Create and manage your digital classrooms{% endblock %}
 
 {% block content %}
-<div class="examinator-layout">
-    <aside class="exam-sidebar">
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="fa-solid fa-flask"></i></div>
-            <div>
-                <span class="sidebar-brand-name">Examinator Admin</span>
-                <span class="sidebar-brand-sub">Instructor Panel</span>
-            </div>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="{% url 'siteapp:admin_classrooms' %}" class="sidebar-link active"><i class="fa-solid fa-chalkboard"></i> Classrooms</a>
-            <a href="{% url 'siteapp:admin_dashboard' %}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Admin Dashboard</a>
-            <a href="{% url 'siteapp:view_attempts' %}" class="sidebar-link"><i class="fa-solid fa-file-lines"></i> All Attempts</a>
-            <a href="{% url 'siteapp:student_submissions' %}" class="sidebar-link"><i class="fa-solid fa-inbox"></i> Submissions</a>
-        </nav>
-    </aside>
-
-    <main class="exam-main">
-        <div class="exam-topbar">
-            <div>
-                <h1 class="exam-page-title">Classrooms</h1>
-                <p class="exam-page-sub">Create and manage your digital classrooms</p>
-            </div>
-            <a href="{% url 'siteapp:admin_create_classroom' %}" class="btn-exam-primary">
-                <i class="fa-solid fa-plus"></i> New Classroom
-            </a>
-        </div>
-
-        {% if messages %}
-            {% for message in messages %}
-            <div class="exam-alert exam-alert-{{ message.tags }}">
-                <i class="fa-solid fa-circle-info"></i> {{ message }}
-            </div>
-            {% endfor %}
-        {% endif %}
-
-        {% if classrooms %}
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Classroom</th>
-                        <th>Instructor</th>
-                        <th>Students</th>
-                        <th>Assignments</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for classroom in classrooms %}
-                    <tr>
-                        <td>
-                            <div class="table-classroom-name">
-                                <span class="color-dot" style="background:{{ classroom.cover_color }};"></span>
-                                {{ classroom.name }}
-                            </div>
-                        </td>
-                        <td>{{ classroom.instructor.get_full_name }}</td>
-                        <td>{{ classroom.enrolled_count }}</td>
-                        <td>{{ classroom.assignments.count }}</td>
-                        <td>
-                            {% if classroom.is_active %}
-                                <span class="status-chip status-active"><i class="fa-solid fa-circle"></i> Active</span>
-                            {% else %}
-                                <span class="status-chip status-inactive"><i class="fa-solid fa-circle"></i> Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="table-actions">
-                                <a href="{% url 'siteapp:admin_classroom_detail' classroom.slug %}" class="action-btn">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <a href="{% url 'siteapp:admin_create_assignment' classroom.slug %}" class="action-btn action-btn-blue">
-                                    <i class="fa-solid fa-plus"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-            <div class="exam-empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-chalkboard"></i></div>
-                <h3>No classrooms yet</h3>
-                <p>Create your first classroom to start assigning work to students.</p>
-                <a href="{% url 'siteapp:admin_create_classroom' %}" class="btn-exam-primary">
-                    <i class="fa-solid fa-plus"></i> Create Classroom
-                </a>
-            </div>
-        {% endif %}
-    </main>
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>All Classrooms</h2>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'siteapp:admin_create_classroom' %}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> New Classroom
+    </a>
+  </div>
 </div>
+
+{% if messages %}{% for message in messages %}
+<div class="alert alert-{{ message.tags }} mb-3"><i class="fa-solid fa-circle-info"></i> {{ message }}</div>
+{% endfor %}{% endif %}
+
+{% if classrooms %}
+<div class="card">
+  <div class="card-body-flush">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Classroom</th>
+            <th>Instructor</th>
+            <th>Students</th>
+            <th>Assignments</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for classroom in classrooms %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="width:12px;height:12px;border-radius:50%;background:{{ classroom.cover_color }};flex-shrink:0;display:inline-block;"></span>
+                <div class="td-main">{{ classroom.name }}</div>
+              </div>
+            </td>
+            <td>{{ classroom.instructor.get_full_name }}</td>
+            <td><strong>{{ classroom.enrolled_count }}</strong></td>
+            <td>{{ classroom.assignments.count }}</td>
+            <td>
+              {% if classroom.is_active %}
+                <span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Active</span>
+              {% else %}
+                <span class="badge badge-gray">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'siteapp:admin_classroom_detail' classroom.slug %}" class="btn btn-sm btn-outline">
+                  <i class="fa-solid fa-eye"></i> Manage
+                </a>
+                <a href="{% url 'siteapp:admin_create_assignment' classroom.slug %}" class="btn btn-sm btn-primary">
+                  <i class="fa-solid fa-plus"></i> Assignment
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <i class="fa-solid fa-chalkboard"></i>
+      <h3>No classrooms yet</h3>
+      <p>Create your first classroom to start assigning work to students.</p>
+      <a href="{% url 'siteapp:admin_create_classroom' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Create Classroom
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

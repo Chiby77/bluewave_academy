@@ -190,9 +190,17 @@ def _handle_submission(request, assignment):
         messages.error(request, "Submission failed. Please try again.")
         return redirect("siteapp:take_assignment", assignment_id=assignment.id)
 
-    # Run AI grading in background thread — main request returns immediately
-    t = threading.Thread(target=_run_ai_grading, args=(submission.id,), daemon=True)
-    t.start()
+    # Run AI grading:
+    # - PDF uploads → background thread (file read can be slow)
+    # - Text / code  → run synchronously so result is ready when student
+    #                  lands on the result page (no "Grading..." spinner)
+    if assignment.is_pdf_upload():
+        t = threading.Thread(target=_run_ai_grading, args=(submission.id,), daemon=True)
+        t.start()
+        status_msg = "Assignment submitted! Grading is in progress."
+    else:
+        _run_ai_grading(submission.id)   # instant — returns before redirect
+        status_msg = "Assignment submitted and graded!"
 
     # Send notification
     try:
@@ -206,7 +214,7 @@ def _handle_submission(request, assignment):
     except Exception as e:
         print(f"[Notification] Error sending submission notice: {e}")
 
-    messages.success(request, "Assignment submitted! Grading is in progress.")
+    messages.success(request, status_msg)
     return redirect("siteapp:submission_result", submission_id=submission.id)
 
 
@@ -496,8 +504,8 @@ def admin_regrade_submission(request, submission_id):
     """Admin: re-run AI grading on a submission."""
     submission = get_object_or_404(Submission, id=submission_id)
     submission.status = "grading"
-    submission.save()
-    _run_ai_grading(submission)
+    submission.save(update_fields=["status"])
+    _run_ai_grading(submission.id)   # pass the int ID, not the object
     messages.success(request, "Re-grading complete.")
     return redirect("siteapp:admin_submissions", assignment_id=submission.assignment.id)
 

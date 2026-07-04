@@ -959,27 +959,57 @@ def student_submissions(request):
 
 @admin_required
 def exam_analytics(request):
-    """View pass rates and performance analytics by exam"""
-    exams = Exam.objects.annotate(
-        total_attempts=Count("attempts", distinct=True),
+    """View pass rates and performance analytics by exam.
+
+    Counts ALL graded attempts (status='graded') as well as submitted
+    attempts so data appears even before manual re-grade runs.
+    """
+    from django.db.models import Sum
+
+    exam_stats = Exam.objects.annotate(
+        attempt_count=Count("attempts", distinct=True),
         avg_score=Avg("attempts__percentage"),
         passed_count=Count(
-            "attempts", filter=Q(attempts__score__gte=F("passing_marks")), distinct=True
+            "attempts",
+            filter=Q(attempts__score__gte=F("passing_marks")),
+            distinct=True,
         ),
-    ).order_by("-total_attempts")
+    ).order_by("-attempt_count")
 
-    # Calculate pass rates
-    for exam in exams:
-        if exam.total_attempts > 0:
-            exam.pass_rate = round((exam.passed_count / exam.total_attempts) * 100, 2)
-            exam.avg_score = round(exam.avg_score or 0, 2)
+    # Compute per-exam pass_rate as a plain attribute (not a queryset annotation
+    # so the template can render it without extra filters)
+    for exam in exam_stats:
+        exam.avg_score = round(exam.avg_score or 0, 1)
+        if exam.attempt_count > 0:
+            exam.pass_rate = round(
+                (exam.passed_count / exam.attempt_count) * 100, 1
+            )
         else:
             exam.pass_rate = 0
-            exam.avg_score = 0
+
+    # Aggregate totals for the summary stat cards
+    total_attempts = ExamAttempt.objects.count()
+    graded_attempts = ExamAttempt.objects.filter(status="graded").count()
+
+    # Overall average score across all graded attempts
+    overall_avg_result = ExamAttempt.objects.filter(
+        status="graded"
+    ).aggregate(a=Avg("percentage"))
+    overall_avg = round(overall_avg_result["a"] or 0, 1)
+
+    # Overall pass rate: graded attempts where score >= exam passing_marks
+    passed_total = ExamAttempt.objects.filter(
+        status="graded",
+        score__gte=F("exam__passing_marks"),
+    ).count()
+    pass_rate = round((passed_total / graded_attempts * 100), 1) if graded_attempts > 0 else 0
 
     context = {
-        "exams": exams,
-        "total_exams": exams.count(),
+        "exam_stats": exam_stats,
+        "total_exams": exam_stats.count(),
+        "total_attempts": total_attempts,
+        "overall_avg": overall_avg,
+        "pass_rate": pass_rate,
     }
 
     return render(request, "siteapp/admin/exam_analytics.html", context)

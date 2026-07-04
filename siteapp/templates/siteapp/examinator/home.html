@@ -33,7 +33,7 @@
                     <p>{{ enrollment.classroom.description|truncatewords:18 }}</p>
                     <div class="classroom-meta">
                         <span><i class="fa-solid fa-user-tie"></i> {{ enrollment.classroom.instructor.get_full_name }}</span>
-                        <span><i class="fa-solid fa-clipboard-list"></i> {{ enrollment.classroom.assignments.filter.is_active|default:0 }} assignments</span>
+                        <span><i class="fa-solid fa-clipboard-list"></i> {{ enrollment.classroom.active_assignments.count }} assignments</span>
                     </div>
                 </a>
                 {% endfor %}
