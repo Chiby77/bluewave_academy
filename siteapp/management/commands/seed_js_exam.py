@@ -126,7 +126,7 @@ class Command(BaseCommand):
             {
                 "type": "short_answer",
                 "text": "What does the browser console function `console.log()` do? Give one practical use case for it during development.",
-                "marks": 3,
+                "marks": 2,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -197,7 +197,7 @@ class Command(BaseCommand):
                     "    let score = null;\n\n"
                     "State the data type of each variable and explain what `null` represents."
                 ),
-                "marks": 4,
+                "marks": 3,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -218,7 +218,7 @@ class Command(BaseCommand):
                     "3. Uses `console.log` to print the message: 'Hello, [firstName]! Welcome to [SCHOOL].'\n\n"
                     "Use a template literal (backtick string) for the final console.log statement."
                 ),
-                "marks": 4,
+                "marks": 3,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -360,7 +360,7 @@ class Command(BaseCommand):
                     "- Prints 'Fail' otherwise\n\n"
                     "Then explain why the order of the conditions matters."
                 ),
-                "marks": 4,
+                "marks": 3,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -384,7 +384,7 @@ class Command(BaseCommand):
                     "If the number is outside 1–7, return 'Invalid day'.\n\n"
                     "Call the function with the value 3 and log the result."
                 ),
-                "marks": 5,
+                "marks": 4,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -419,7 +419,7 @@ class Command(BaseCommand):
                     "3. Stores the classification in a variable `weather`.\n"
                     "4. Logs: 'The weather is: [weather]' using a template literal."
                 ),
-                "marks": 5,
+                "marks": 4,
                 "option_a": "",
                 "option_b": "",
                 "option_c": "",
@@ -464,7 +464,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f'\n✓ Created exam: "{exam.title}"\n'
-            f'  Questions : {len(questions)} (MCQ: 9 · Short Answer: 5 · Coding: 6 does not match — recalc below)\n'
+            f'  Questions : {len(questions)}\n'
             f'  Total marks: {total}\n'
             f'  Passing mark: {exam.passing_marks}\n'
             f'  Active from: {start_date.strftime("%d %b %Y %H:%M")} '
