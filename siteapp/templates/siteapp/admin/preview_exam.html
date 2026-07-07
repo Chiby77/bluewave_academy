@@ -74,23 +74,12 @@
   <div class="card-body">
     {% if question.question_type == 'mcq' %}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      {% for letter, text in "A,B,C,D"|ljust:7|slice:":7"|cut:" " %}{% endfor %}
-      {% if question.option_a %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'A' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'A' %}border:1px solid var(--success);{% endif %}">
-        <strong style="color:var(--primary);">A.</strong> {{ question.option_a }}
-        {% if question.correct_answer == 'A' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
-      </div>{% endif %}
-      {% if question.option_b %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'B' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'B' %}border:1px solid var(--success);{% endif %}">
-        <strong style="color:var(--primary);">B.</strong> {{ question.option_b }}
-        {% if question.correct_answer == 'B' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
-      </div>{% endif %}
-      {% if question.option_c %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'C' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'C' %}border:1px solid var(--success);{% endif %}">
-        <strong style="color:var(--primary);">C.</strong> {{ question.option_c }}
-        {% if question.correct_answer == 'C' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
-      </div>{% endif %}
-      {% if question.option_d %}<div style="padding:8px 12px;background:{% if question.correct_answer == 'D' %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == 'D' %}border:1px solid var(--success);{% endif %}">
-        <strong style="color:var(--primary);">D.</strong> {{ question.option_d }}
-        {% if question.correct_answer == 'D' %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
-      </div>{% endif %}
+      {% for letter, text in question.get_choices %}
+      <div style="padding:8px 12px;background:{% if question.correct_answer == letter %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == letter %}border:1px solid var(--success);{% endif %}">
+        <strong style="color:var(--primary);">{{ letter }}.</strong> {{ text }}
+        {% if question.correct_answer == letter %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
+      </div>
+      {% endfor %}
     </div>
     {% elif question.question_type == 'true_false' %}
     <div style="display:flex;gap:12px;">

@@ -186,6 +186,20 @@ class Question(models.Model):
     def __str__(self):
         return f"{self.exam.title} - Q{self.order}"
 
+    @property
+    def get_choices(self):
+        """Return list of (letter, text) tuples for non-empty MCQ options."""
+        return [
+            (letter, text)
+            for letter, text in [
+                ("A", self.option_a),
+                ("B", self.option_b),
+                ("C", self.option_c),
+                ("D", self.option_d),
+            ]
+            if text
+        ]
+
 
 class ExamAttempt(models.Model):
     """Model for tracking student exam attempts"""
