@@ -10,44 +10,92 @@
 <div class="page-header">
   <div class="page-header-left">
     <h2>Submissions</h2>
-    <p>{{ submissions.count }} submission{{ submissions.count|pluralize }}</p>
+    <p>{{ attempts.count }} submission{{ attempts.count|pluralize }}</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="padding:14px 20px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:2;min-width:180px;">
+        <label class="form-label">Exam</label>
+        <select name="exam" class="form-control">
+          <option value="">All Exams</option>
+          {% for exam in exams %}
+          <option value="{{ exam.id }}" {% if exam_filter == exam.id|stringformat:"s" %}selected{% endif %}>{{ exam.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:130px;">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-control">
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+          <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+          <option value="graded" {% if status_filter == 'graded' %}selected{% endif %}>Graded</option>
+          <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+        <a href="{% url 'siteapp:student_submissions' %}" class="btn btn-gray">Reset</a>
+      </div>
+    </form>
   </div>
 </div>
 
 <div class="card">
   <div class="card-body-flush">
-    {% if submissions %}
+    {% if attempts %}
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
             <th>Student</th>
-            <th>Assignment</th>
+            <th>Exam</th>
             <th>Submitted</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Score</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for sub in submissions %}
+          {% for attempt in attempts %}
           <tr>
             <td>
-              <div class="td-main">{{ sub.student.get_full_name }}</div>
-              <div class="td-sub">{{ sub.student.student_id }}</div>
+              <div class="td-main">{{ attempt.student.get_full_name }}</div>
+              <div class="td-sub">{{ attempt.student.student_id }}</div>
             </td>
-            <td>{{ sub.assignment.title }}</td>
-            <td style="font-size:12px;color:var(--gray-600);">{{ sub.submitted_at|date:"M d, Y H:i" }}</td>
+            <td style="font-size:13px;">{{ attempt.exam.title|truncatechars:35 }}</td>
+            <td style="font-size:12px;color:var(--gray-600);">{{ attempt.created_at|date:"M d, Y H:i" }}</td>
             <td>
-              {% if sub.is_graded %}
+              {% if attempt.status == 'graded' %}
                 <span class="badge badge-green"><i class="fa-solid fa-check"></i> Graded</span>
+              {% elif attempt.status == 'submitted' %}
+                <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Submitted</span>
               {% else %}
-                <span class="badge badge-amber"><i class="fa-solid fa-hourglass-half"></i> Pending</span>
+                <span class="badge badge-gray"><i class="fa-solid fa-spinner"></i> In Progress</span>
               {% endif %}
             </td>
             <td>
-              <a href="{% url 'siteapp:admin_grade_submission' sub.id %}" class="btn btn-sm btn-primary">
-                <i class="fa-solid fa-pen"></i> Grade
-              </a>
+              {% if attempt.score is not None %}
+                <strong>{{ attempt.score|floatformat:0 }}</strong>/{{ attempt.exam.total_marks }}
+                {% if attempt.percentage %}<span style="font-size:11px;color:var(--gray-400);"> ({{ attempt.percentage|floatformat:0 }}%)</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <a href="{% url 'siteapp:submission_detail' attempt.id %}" class="btn btn-sm btn-outline" title="View">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                <a href="{% url 'siteapp:auto_grade_attempt' attempt.id %}" class="btn btn-sm btn-accent" title="AI Grade"
+                   onclick="return confirm('Auto-grade with Groq AI?');">
+                  <i class="fa-solid fa-robot"></i>
+                </a>
+                <a href="{% url 'siteapp:download_report' attempt.id %}" class="btn btn-sm btn-gray" title="PDF">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -57,8 +105,8 @@
     {% else %}
     <div class="empty-state">
       <i class="fa-solid fa-inbox"></i>
-      <h3>No submissions yet</h3>
-      <p>Student assignment submissions will appear here.</p>
+      <h3>No submissions found</h3>
+      <p>{% if status_filter != 'all' or exam_filter %}No submissions match your filters.{% else %}Students haven't submitted any exams yet.{% endif %}</p>
     </div>
     {% endif %}
   </div>

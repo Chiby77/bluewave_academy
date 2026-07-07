@@ -45,12 +45,14 @@ body {
   line-height: 1.6;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* ---- PORTAL SHELL ---- */
 .portal-shell {
   display: flex;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ---- SIDEBAR ---- */
@@ -707,13 +709,37 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .topbar-hamburger { display: flex; }
   .topbar-title h1 { font-size: 16px; }
 
-  .portal-content { padding: 16px; }
+  .portal-content { padding: 12px; }
   .stats-row { grid-template-columns: 1fr 1fr; }
   .three-col { grid-template-columns: 1fr; }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
 
-  .report-header { padding: 24px; }
+  /* Tables — always scrollable, never overflow viewport */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .data-table { min-width: 600px; }
+
+  /* Exam layout */
+  .exam-layout { grid-template-columns: 1fr; padding: 12px; }
+  .exam-panel  { position: static; max-height: none; }
+  .exam-chrome-title { max-width: 120px; font-size: 12px; }
+
+  /* Hero CTA buttons stack vertically */
+  .exam-hero-cta { flex-direction: column; align-items: stretch; }
+  .btn-hero-start, .btn-hero-outline { text-align: center; justify-content: center; }
+
+  /* Hero padding */
+  .exam-hero { padding: 20px 16px; }
+  .exam-hero-title { font-size: 20px; }
+  .exam-hero-meta { gap: 10px; }
+
+  /* Report */
+  .report-hero { padding: 20px 16px; flex-direction: column; }
+  .report-hero-title { font-size: 18px; }
+  .report-score-donut { width: 100px !important; height: 100px !important; }
+
+  /* Cards */
+  .report-header { padding: 20px; }
   .report-header-top { flex-direction: column; }
   .report-score-circle { width: 80px; height: 80px; }
   .report-score-circle .pct { font-size: 18px; }
@@ -723,6 +749,27 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .page-header { flex-direction: column; }
   .page-header-actions { width: 100%; }
   .page-header-actions .btn { flex: 1; justify-content: center; }
+
+  /* Filter chips wrap properly */
+  .filter-chips { flex-wrap: wrap; }
+  .filter-chip { font-size: 11px; padding: 5px 10px; }
+
+  /* KPI strip */
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
+
+  /* Action grid */
+  .action-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Question card body */
+  .question-card-body { padding: 16px; }
+  .question-text-ng { font-size: 14px; }
+  .opt-text { font-size: 13px; }
+
+  /* Stat cards */
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 22px; }
 }
 
 @media (max-width: 480px) {
@@ -730,6 +777,18 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .question-block { padding: 20px 16px; }
   .exam-topbar { padding: 12px 16px; }
   .report-meta { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
+  .kpi-value { font-size: 24px; }
+  .action-grid { grid-template-columns: repeat(3, 1fr); }
+  .action-tile { padding: 14px 8px; font-size: 10px; min-height: 72px; }
+  .action-tile i { font-size: 18px; }
+  /* Topbar: hide username on very small screens */
+  .topbar-user-name { display: none; }
+  .portal-content { padding: 10px; }
+  .exam-hero { padding: 16px 12px; }
+  .exam-hero-title { font-size: 17px; }
+  .card-body { padding: 14px; }
 }
 
 /* ══════════════════════════════════════════════
@@ -1194,7 +1253,7 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
 }
 
-/* KPI strip mobile — 2 columns */
+/* KPI strip mobile — handled in main 768px breakpoint above */
 @media (max-width: 640px) {
   .kpi-strip { grid-template-columns: 1fr 1fr; }
   .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
@@ -1204,6 +1263,7 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
 @media (max-width: 380px) {
   .kpi-strip { grid-template-columns: 1fr; }
   .kpi-item:nth-child(odd) { border-right: none; }
+  .kpi-value { font-size: 22px; }
 }
 
 /* Action grid — 3 cols on small screens */

@@ -93,9 +93,15 @@
             </td>
             <td style="font-size:12px;color:var(--gray-600);">{{ s.date_joined|date:"M d, Y" }}</td>
             <td>
-              <a href="{% url 'siteapp:view_attempts' %}?student={{ s.id }}" class="btn btn-sm btn-outline" title="View attempts">
-                <i class="fa-solid fa-chart-bar"></i>
-              </a>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <a href="{% url 'siteapp:view_attempts' %}?student={{ s.id }}" class="btn btn-sm btn-outline" title="View attempts">
+                  <i class="fa-solid fa-chart-bar"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-primary" title="Enrol in exam"
+                  onclick="openEnrol('{{ s.id }}','{{ s.get_full_name|escapejs }}')">
+                  <i class="fa-solid fa-user-plus"></i> Enrol
+                </button>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -118,5 +124,39 @@
       el.style.width = el.getAttribute('data-width');
     });
   });
+
+  function openEnrol(studentId, studentName) {
+    document.getElementById('enrolStudentId').value = studentId;
+    document.getElementById('enrolStudentName').textContent = studentName;
+    document.getElementById('enrolModal').style.display = 'flex';
+  }
+  function closeEnrol() {
+    document.getElementById('enrolModal').style.display = 'none';
+  }
 </script>
+
+<!-- Enrol Modal -->
+<div id="enrolModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+    <h3 style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:6px;"><i class="fa-solid fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>Enrol Student</h3>
+    <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Enrolling: <strong id="enrolStudentName"></strong></p>
+    <form method="post" action="{% url 'siteapp:admin_enrol_student' %}">
+      {% csrf_token %}
+      <input type="hidden" name="student_id" id="enrolStudentId">
+      <div class="form-group">
+        <label class="form-label">Select Exam <span class="required">*</span></label>
+        <select name="exam_id" class="form-control" required>
+          <option value="">— Choose an exam —</option>
+          {% for exam in exams %}
+          <option value="{{ exam.id }}">{{ exam.title }} ({{ exam.get_category_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-gray" style="flex:1;" onclick="closeEnrol()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+        <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-user-plus"></i> Enrol Now</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

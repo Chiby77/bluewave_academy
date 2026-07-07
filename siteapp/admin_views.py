@@ -1481,7 +1481,7 @@ def admin_tutorial_toggle_status(request, tutorial_id):
 
 @admin_required
 def admin_students(request):
-    """View and search all students"""
+    """View and search all students, with ability to enrol into exams."""
     students = CustomUser.objects.filter(is_staff=False).annotate(
         attempt_count=Count("exam_attempts"),
         avg_score=Avg("exam_attempts__percentage"),
@@ -1501,9 +1501,43 @@ def admin_students(request):
     if level:
         students = students.filter(current_level=level)
 
-    return render(request, "siteapp/admin/students.html", {"students": students})
+    exams = Exam.objects.filter(is_active=True).order_by("-created_at")
+    return render(request, "siteapp/admin/students.html", {"students": students, "exams": exams})
 
-    return redirect("siteapp:edit_exam", exam_id=exam.id)
+
+@admin_required
+@require_http_methods(["POST"])
+def admin_enrol_student(request):
+    """Admin manually enrols a student into an exam by creating an in_progress attempt."""
+    student_id = request.POST.get("student_id")
+    exam_id = request.POST.get("exam_id")
+
+    student = get_object_or_404(CustomUser, id=student_id)
+    exam = get_object_or_404(Exam, id=exam_id)
+
+    # Count existing finished attempts
+    finished = ExamAttempt.objects.filter(
+        student=student, exam=exam, status__in=["submitted", "graded"]
+    ).count()
+
+    if finished >= 2:
+        messages.error(request, f"{student.get_full_name()} has already used both attempts for '{exam.title}'.")
+        return redirect("siteapp:admin_students")
+
+    next_number = finished + 1
+    attempt, created = ExamAttempt.objects.get_or_create(
+        student=student,
+        exam=exam,
+        attempt_number=next_number,
+        defaults={"status": "in_progress"},
+    )
+
+    if created:
+        messages.success(request, f"{student.get_full_name()} enrolled in '{exam.title}' (attempt {next_number}).")
+    else:
+        messages.warning(request, f"{student.get_full_name()} already has an active attempt for '{exam.title}'.")
+
+    return redirect("siteapp:admin_students")
 
 
 @admin_required

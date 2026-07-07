@@ -146,6 +146,7 @@ urlpatterns = [
     path("administration/tutorials/<int:tutorial_id>/toggle/", admin_views.admin_tutorial_toggle_status, name="admin_tutorial_toggle"),
     # Student Management
     path("administration/students/", admin_views.admin_students, name="admin_students"),
+    path("administration/students/enrol/", admin_views.admin_enrol_student, name="admin_enrol_student"),
     # Hidden Admin Login
     path("administration/login/", admin_views.admin_login, name="admin_login"),
     # Admin Dashboard
