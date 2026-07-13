@@ -56,8 +56,9 @@ ENV/
 db.sqlite3
 db.sqlite3-journal
 
-# Migrations — run makemigrations + migrate against the live Railway DB
-# Keep only the __init__.py so Django recognises the migrations package
+# Migrations — excluded. Run makemigrations + migrate directly on Railway
+# using the DATABASE_URL env var. Keep only __init__.py so Django recognises
+# the package.
 */migrations/*.py
 !*/migrations/__init__.py
 */migrations/__pycache__/

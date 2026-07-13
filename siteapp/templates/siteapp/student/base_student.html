@@ -3,49 +3,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
   <title>{% block title %}Student Portal — Bluewave Academy{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'css/portal.css' %}">
   {% block extra_css %}{% endblock %}
   <style>
-  #bw-toast-container{
-    position:fixed;top:20px;right:20px;z-index:99999;
-    display:flex;flex-direction:column;gap:10px;pointer-events:none;
+  /* ── Toast notifications ─────────────────────────────────── */
+  #bw-toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 99999;
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none;
   }
-  .bw-toast{
-    min-width:280px;max-width:380px;padding:14px 18px;border-radius:10px;
-    display:flex;align-items:flex-start;gap:12px;
-    font-size:13px;font-weight:500;
-    box-shadow:0 8px 32px rgba(0,0,0,.18);
-    pointer-events:all;
-    animation:bwToastIn .35s cubic-bezier(.4,0,.2,1);
-    position:relative;overflow:hidden;
+  @media (max-width: 480px) {
+    #bw-toast-container { top: 12px; right: 10px; left: 10px; }
   }
-  .bw-toast::after{
-    content:'';position:absolute;bottom:0;left:0;height:3px;
-    background:rgba(255,255,255,.4);
-    animation:bwToastBar 5s linear forwards;
+  .bw-toast {
+    min-width: 280px; max-width: 380px;
+    padding: 14px 18px; border-radius: 10px;
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    pointer-events: all;
+    animation: bwToastIn .35s cubic-bezier(.4,0,.2,1);
+    position: relative; overflow: hidden;
   }
-  .bw-toast.success{background:#065f46;color:#d1fae5;border:1px solid #10b981;}
-  .bw-toast.error,.bw-toast.danger{background:#7f1d1d;color:#fee2e2;border:1px solid #ef4444;}
-  .bw-toast.warning{background:#78350f;color:#fef3c7;border:1px solid #f59e0b;}
-  .bw-toast.info{background:#1e3a5f;color:#bfdbfe;border:1px solid #3b82f6;}
-  .bw-toast-icon{font-size:16px;margin-top:1px;flex-shrink:0;}
-  .bw-toast-close{
-    margin-left:auto;background:none;border:none;
-    color:inherit;opacity:.6;cursor:pointer;font-size:14px;
-    padding:0;flex-shrink:0;
+  @media (max-width: 480px) {
+    .bw-toast { min-width: 0; max-width: 100%; width: 100%; }
   }
-  .bw-toast-close:hover{opacity:1;}
-  @keyframes bwToastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
-  @keyframes bwToastOut{from{opacity:1;transform:translateX(0);max-height:100px}to{opacity:0;transform:translateX(40px);max-height:0;padding:0}}
-  @keyframes bwToastBar{from{width:100%}to{width:0%}}
+  .bw-toast::after {
+    content: ''; position: absolute; bottom: 0; left: 0; height: 3px;
+    background: rgba(255,255,255,.4);
+    animation: bwToastBar 5s linear forwards;
+  }
+  .bw-toast.success { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
+  .bw-toast.error,
+  .bw-toast.danger  { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
+  .bw-toast.warning { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
+  .bw-toast.info    { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; }
+  .bw-toast-icon  { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+  .bw-toast-close {
+    margin-left: auto; background: none; border: none;
+    color: inherit; opacity: .6; cursor: pointer; font-size: 14px;
+    padding: 0; flex-shrink: 0;
+  }
+  .bw-toast-close:hover { opacity: 1; }
+  @keyframes bwToastIn  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes bwToastOut { from { opacity:1; transform:translateX(0); max-height:100px; } to { opacity:0; transform:translateX(40px); max-height:0; padding:0; } }
+  @keyframes bwToastBar { from { width:100%; } to { width:0%; } }
   </style>
 </head>
 <body>
 <div id="bw-toast-container"></div>
+
 <div class="portal-shell">
 
   <!-- ── SIDEBAR ── -->
@@ -59,7 +70,9 @@
     </div>
 
     <div class="sidebar-user">
-      <div class="sidebar-avatar">{{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}</div>
+      <div class="sidebar-avatar">
+        {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+      </div>
       <div class="sidebar-user-info">
         <strong>{{ request.user.get_full_name }}</strong>
         <span>{{ request.user.student_id }}</span>
@@ -112,9 +125,10 @@
 
   <!-- ── MAIN ── -->
   <div class="portal-main">
+
     <!-- Topbar -->
     <header class="portal-topbar">
-      <button class="topbar-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+      <button class="topbar-hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu">
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="topbar-title">
@@ -122,67 +136,153 @@
         <p>{% block page_subtitle %}{{ current_date|date:"l, F j, Y" }}{% endblock %}</p>
       </div>
       <div class="topbar-actions">
-        <div class="topbar-user" id="userMenuTrigger">
+        <div class="topbar-user" id="userMenuTrigger" role="button" aria-haspopup="true" aria-expanded="false">
           <div class="topbar-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
+          <!-- d-none-xs hides the name on screens ≤ 480px via portal.css -->
           <span class="topbar-user-name d-none-xs">{{ request.user.first_name }}</span>
-          <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--gray-400);"></i>
-          <div class="topbar-dropdown" id="userDropdown">
-            <a href="{% url 'siteapp:edit_profile' %}"><i class="fa-solid fa-user-pen"></i> Edit Profile</a>
-            <a href="{% url 'siteapp:password_reset' %}"><i class="fa-solid fa-key"></i> Change Password</a>
+          <i class="fa-solid fa-chevron-down d-none-xs" style="font-size:11px;color:var(--gray-400);"></i>
+          <div class="topbar-dropdown" id="userDropdown" role="menu">
+            <a href="{% url 'siteapp:edit_profile' %}" role="menuitem">
+              <i class="fa-solid fa-user-pen"></i> Edit Profile
+            </a>
+            <a href="{% url 'siteapp:password_reset' %}" role="menuitem">
+              <i class="fa-solid fa-key"></i> Change Password
+            </a>
             <hr>
-            <a href="{% url 'siteapp:logout' %}" class="danger"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+            <a href="{% url 'siteapp:logout' %}" class="danger" role="menuitem">
+              <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            </a>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Content -->
+    <!-- Page content -->
     <main class="portal-content">
-      {% comment %}Messages are shown as toasts via JS below{% endcomment %}
-
+      {% comment %}Django messages are rendered as toasts via JS below — no inline alert blocks needed here.{% endcomment %}
       {% block content %}{% endblock %}
     </main>
-  </div>
-</div>
 
+  </div><!-- /portal-main -->
+</div><!-- /portal-shell -->
+
+<!-- ── Sidebar / dropdown interaction script ────────────────── -->
 <script>
-const sidebar  = document.getElementById('portalSidebar');
-const overlay  = document.getElementById('sidebarOverlay');
-const hamburger = document.getElementById('hamburgerBtn');
-const userTrigger = document.getElementById('userMenuTrigger');
-const userDropdown = document.getElementById('userDropdown');
+(function () {
+  'use strict';
 
-hamburger.addEventListener('click', () => {
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('visible');
-});
-overlay.addEventListener('click', () => {
-  sidebar.classList.remove('open');
-  overlay.classList.remove('visible');
-});
-userTrigger.addEventListener('click', (e) => {
-  e.stopPropagation();
-  userDropdown.classList.toggle('open');
-});
-document.addEventListener('click', () => userDropdown.classList.remove('open'));
+  const sidebar      = document.getElementById('portalSidebar');
+  const overlay      = document.getElementById('sidebarOverlay');
+  const hamburger    = document.getElementById('hamburgerBtn');
+  const userTrigger  = document.getElementById('userMenuTrigger');
+  const userDropdown = document.getElementById('userDropdown');
+
+  // ── Sidebar helpers ───────────────────────────────────────────
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';   // prevent background scroll
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', function () {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  // Tap the dark overlay → close
+  overlay.addEventListener('click', closeSidebar);
+
+  // Tap any nav link on mobile → close drawer then navigate
+  sidebar.querySelectorAll('a.sidebar-link').forEach(function (link) {
+    link.addEventListener('click', function () {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+
+  // ── Swipe-left gesture to close ──────────────────────────────
+  var touchStartX = 0;
+  var touchStartY = 0;
+  sidebar.addEventListener('touchstart', function (e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  sidebar.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    // Only treat as a horizontal swipe (not a vertical scroll)
+    if (dx < -60 && dy < 40) closeSidebar();
+  }, { passive: true });
+
+  // ── Auto-close on resize to desktop ──────────────────────────
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+
+  // ── User dropdown ─────────────────────────────────────────────
+  userTrigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var isOpen = userDropdown.classList.toggle('open');
+    userTrigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+  // Close dropdown when clicking / tapping anywhere outside it
+  document.addEventListener('click', function () {
+    userDropdown.classList.remove('open');
+    userTrigger.setAttribute('aria-expanded', 'false');
+  });
+  document.addEventListener('touchstart', function (e) {
+    if (!userTrigger.contains(e.target)) {
+      userDropdown.classList.remove('open');
+      userTrigger.setAttribute('aria-expanded', 'false');
+    }
+  }, { passive: true });
+
+  // ── Keyboard: Escape closes both sidebar and dropdown ─────────
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeSidebar();
+      userDropdown.classList.remove('open');
+    }
+  });
+})();
 </script>
 
+<!-- ── Toast renderer for Django messages ───────────────────── -->
 {% if messages %}
 <script>
-(function(){
-  const icons={success:'fa-circle-check',error:'fa-circle-xmark',danger:'fa-circle-xmark',warning:'fa-triangle-exclamation',info:'fa-circle-info'};
-  const msgs=[{% for m in messages %}{"tag":"{{ m.tags }}","text":"{{ m.message|escapejs }}"},{% endfor %}];
-  const container=document.getElementById('bw-toast-container');
-  msgs.forEach(m=>{
-    const tag=m.tag||'info';
-    const toast=document.createElement('div');
-    toast.className='bw-toast '+tag;
-    toast.innerHTML=`<i class="fa-solid ${icons[tag]||'fa-circle-info'} bw-toast-icon"></i><span style="flex:1">${m.text}</span><button class="bw-toast-close" onclick="this.closest('.bw-toast').remove()"><i class="fa-solid fa-xmark"></i></button>`;
+(function () {
+  var icons = {
+    success: 'fa-circle-check',
+    error:   'fa-circle-xmark',
+    danger:  'fa-circle-xmark',
+    warning: 'fa-triangle-exclamation',
+    info:    'fa-circle-info'
+  };
+  var msgs = [{% for m in messages %}{"tag":"{{ m.tags }}","text":"{{ m.message|escapejs }}"},{% endfor %}];
+  var container = document.getElementById('bw-toast-container');
+
+  msgs.forEach(function (m) {
+    var tag   = m.tag || 'info';
+    var toast = document.createElement('div');
+    toast.className = 'bw-toast ' + tag;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML =
+      '<i class="fa-solid ' + (icons[tag] || 'fa-circle-info') + ' bw-toast-icon"></i>' +
+      '<span style="flex:1">' + m.text + '</span>' +
+      '<button class="bw-toast-close" aria-label="Dismiss" onclick="this.closest(\'.bw-toast\').remove()">' +
+        '<i class="fa-solid fa-xmark"></i>' +
+      '</button>';
     container.appendChild(toast);
-    setTimeout(()=>{
-      toast.style.animation='bwToastOut .4s forwards';
-      setTimeout(()=>toast.remove(),400);
-    },5000);
+
+    setTimeout(function () {
+      toast.style.animation = 'bwToastOut .4s forwards';
+      setTimeout(function () { toast.remove(); }, 400);
+    }, 5000);
   });
 })();
 </script>

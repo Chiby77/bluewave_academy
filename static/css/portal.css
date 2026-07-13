@@ -689,10 +689,236 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
    RESPONSIVE — Mobile-first breakpoints
    ================================================ */
 
+/* ── 1024px — tablet landscape ── */
 @media (max-width: 1024px) {
-  .two-col { grid-template-columns: 1fr; }
-  .content-grid { grid-template-columns: 1fr; }
-  .three-col { grid-template-columns: 1fr 1fr; }
+  .two-col         { grid-template-columns: 1fr; }
+  .content-grid    { grid-template-columns: 1fr; }
+  .three-col       { grid-template-columns: 1fr 1fr; }
+  .exam-shell      { grid-template-columns: 1fr; }
+  .exam-sidebar-panel { position: static; }
+  .exam-layout     { grid-template-columns: 1fr; }
+  .exam-panel      { position: static; max-height: none; }
+  .kpi-strip       { grid-template-columns: repeat(2, 1fr); }
+  .kpi-item        { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
+}
+
+/* ── 768px — tablet portrait / large phone ── */
+@media (max-width: 768px) {
+  /* Kill sidebar width so portal-main fills screen */
+  :root { --sidebar-w: 0px; }
+
+  /* Sidebar slides in from left as a drawer */
+  .portal-sidebar {
+    width: 260px;
+    transform: translateX(-110%);   /* off-screen */
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .portal-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0,0,0,.35);
+  }
+
+  /* Main content fills the full viewport width */
+  .portal-main    { margin-left: 0; width: 100%; min-width: 0; }
+  .portal-content { padding: 12px; overflow-x: hidden; }
+
+  /* Show hamburger button */
+  .topbar-hamburger { display: flex; }
+
+  /* Topbar: keep everything on one row, shrink title */
+  .portal-topbar   { padding: 0 12px; gap: 10px; }
+  .topbar-title h1 { font-size: 15px; }
+  .topbar-title p  { display: none; }   /* hide subtitle — saves space */
+
+  /* Prevent any child from blowing the viewport */
+  .portal-content * { max-width: 100%; }
+
+  /* Grids collapse to single column */
+  .stats-row       { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three-col       { grid-template-columns: 1fr; }
+  .two-col         { grid-template-columns: 1fr; }
+  .content-grid    { grid-template-columns: 1fr; }
+  .form-row,
+  .form-row-3      { grid-template-columns: 1fr; }
+  .exams-grid      { grid-template-columns: 1fr; }
+
+  /* Tables — horizontal scroll inside a contained wrapper */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+  .data-table { min-width: 560px; }
+
+  /* Page header stacks */
+  .page-header         { flex-direction: column; gap: 10px; }
+  .page-header-actions { width: 100%; flex-wrap: wrap; }
+  .page-header-actions .btn { flex: 1; min-width: 0; justify-content: center; }
+
+  /* Cards */
+  .card-body   { padding: 14px; }
+  .card-header { padding: 14px; flex-wrap: wrap; gap: 8px; }
+
+  /* Report */
+  .report-header        { padding: 20px; }
+  .report-header-top    { flex-direction: column; gap: 14px; }
+  .report-score-circle  { width: 80px; height: 80px; }
+  .report-score-circle .pct { font-size: 18px; }
+  .report-meta          { grid-template-columns: 1fr 1fr; }
+  .report-hero          { padding: 20px 16px; flex-direction: column; }
+  .report-hero-title    { font-size: 18px; }
+  .report-score-donut   { width: 100px !important; height: 100px !important; }
+
+  /* Exam focus chrome */
+  .exam-chrome        { padding: 0 12px; }
+  .exam-chrome-title  { max-width: 130px; font-size: 12px; }
+  .exam-layout        { grid-template-columns: 1fr; padding: 12px; }
+  .exam-panel         { position: static; max-height: none; }
+  .exam-hero          { padding: 20px 16px; }
+  .exam-hero-title    { font-size: 20px; }
+  .exam-hero-meta     { gap: 10px; }
+  .exam-hero-cta      { flex-direction: column; align-items: stretch; }
+  .btn-hero-start,
+  .btn-hero-outline   { text-align: center; justify-content: center; }
+  .question-card-body { padding: 20px 16px; }
+  .question-text-ng   { font-size: 14px; }
+
+  /* KPI strip — 2 cols */
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-item  { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
+
+  /* Action grid */
+  .action-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  /* Filter chips */
+  .filter-chips { flex-wrap: wrap; }
+  .filter-chip  { font-size: 11px; padding: 5px 10px; }
+
+  /* Stat cards */
+  .stat-card  { padding: 14px; }
+  .stat-value { font-size: 22px; }
+
+  /* Classroom detail layout */
+  .cr-layout { grid-template-columns: 1fr !important; }
+
+  /* Blog list items */
+  .blog-list-item { flex-wrap: wrap; }
+  .blog-thumb     { width: 100%; height: 120px; }
+  .blog-actions   { flex-direction: row; }
+}
+
+/* ── 480px — phone portrait ── */
+@media (max-width: 480px) {
+  .portal-content  { padding: 10px; }
+  .portal-topbar   { padding: 0 10px; height: 56px; }
+  .topbar-title h1 { font-size: 14px; }
+  .topbar-user-name { display: none; }   /* only show avatar on tiny screens */
+
+  /* Stat cards: single column */
+  .stats-row  { grid-template-columns: 1fr; gap: 8px; }
+  .stat-card  { padding: 12px; gap: 10px; }
+  .stat-icon  { width: 40px; height: 40px; font-size: 16px; }
+  .stat-value { font-size: 20px; }
+
+  /* Cards */
+  .card-body   { padding: 12px; }
+  .card-header { padding: 12px; }
+
+  /* Form */
+  .form-row,
+  .form-row-3 { grid-template-columns: 1fr; }
+  .check-group label { font-size: 12px; }
+
+  /* Buttons: full width stacked */
+  .form-actions-row { flex-direction: column; }
+  .form-actions-row .btn { width: 100%; justify-content: center; }
+
+  /* Tables */
+  .data-table { min-width: 480px; font-size: 12px; }
+  .data-table thead th { padding: 10px 10px; font-size: 10px; }
+  .data-table tbody td { padding: 10px 10px; }
+
+  /* Exam */
+  .question-block     { padding: 16px 12px; }
+  .question-card-body { padding: 16px 12px; }
+  .exam-topbar        { padding: 10px 12px; }
+  .exam-hero          { padding: 16px 12px; }
+  .exam-hero-title    { font-size: 17px; }
+  .exam-chrome-title  { max-width: 100px; font-size: 11px; }
+
+  /* Question navigation buttons */
+  .q-nav-btn  { width: 30px; height: 30px; font-size: 11px; }
+  .exam-qbtn  { font-size: 11px; }
+  .exam-qgrid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+
+  /* Report */
+  .report-header { padding: 16px; }
+  .report-meta   { grid-template-columns: 1fr; }
+  .report-meta-item .value { font-size: 14px; }
+
+  /* KPI strip — still 2 cols on phone */
+  .kpi-strip   { grid-template-columns: 1fr 1fr; }
+  .kpi-value   { font-size: 24px; }
+  .kpi-item    { padding: 18px 14px; }
+
+  /* Action tiles — 3 cols, compact */
+  .action-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .action-tile { padding: 14px 8px; font-size: 10px; min-height: 72px; gap: 6px; }
+  .action-tile i { font-size: 18px; }
+
+  /* Page header */
+  .page-header-left h2 { font-size: 18px; }
+  .page-header-actions .btn { font-size: 12px; padding: 8px 12px; }
+
+  /* Badges */
+  .badge { font-size: 10px; padding: 2px 8px; }
+
+  /* Topbar dropdown — full width on tiny screens */
+  .topbar-dropdown { right: -10px; min-width: 160px; }
+
+  /* Profile */
+  .profile-info-bar { padding: 48px 16px 16px; }
+  .profile-info-name { font-size: 17px; }
+
+  /* Announcement cards */
+  .announcement-card { padding: 12px; }
+  .ann-title { font-size: 13px; }
+
+  /* Classroom detail */
+  .cr-hero       { padding: 18px 16px; flex-direction: column; }
+  .cr-hero-title { font-size: 20px; }
+
+  /* Three col grid collapses fully */
+  .three-col { grid-template-columns: 1fr; }
+
+  /* Exam shell sidebar */
+  .exam-shell { grid-template-columns: 1fr; }
+  .exam-sidebar-panel { position: static; }
+}
+
+/* ── 380px — very small phones (SE, Galaxy A series) ── */
+@media (max-width: 380px) {
+  .portal-content  { padding: 8px; }
+  .portal-topbar   { padding: 0 8px; }
+  .topbar-title h1 { font-size: 13px; }
+
+  .kpi-strip  { grid-template-columns: 1fr; }
+  .kpi-item   { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .kpi-value  { font-size: 22px; }
+
+  .stat-value { font-size: 18px; }
+  .stats-row  { grid-template-columns: 1fr; }
+
+  .action-grid { grid-template-columns: repeat(3, 1fr); }
+  .action-tile { padding: 10px 6px; font-size: 9px; min-height: 64px; }
+  .action-tile i { font-size: 16px; }
+
+  .data-table { min-width: 420px; font-size: 11px; }
+  .exam-qgrid { grid-template-columns: repeat(4, 1fr); }
+}s: 1fr 1fr; }
   .exam-shell { grid-template-columns: 1fr; }
   .exam-sidebar-panel { position: static; }
 }
@@ -716,80 +942,6 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .two-col { grid-template-columns: 1fr; }
 
   /* Tables — always scrollable, never overflow viewport */
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-  .data-table { min-width: 600px; }
-
-  /* Exam layout */
-  .exam-layout { grid-template-columns: 1fr; padding: 12px; }
-  .exam-panel  { position: static; max-height: none; }
-  .exam-chrome-title { max-width: 120px; font-size: 12px; }
-
-  /* Hero CTA buttons stack vertically */
-  .exam-hero-cta { flex-direction: column; align-items: stretch; }
-  .btn-hero-start, .btn-hero-outline { text-align: center; justify-content: center; }
-
-  /* Hero padding */
-  .exam-hero { padding: 20px 16px; }
-  .exam-hero-title { font-size: 20px; }
-  .exam-hero-meta { gap: 10px; }
-
-  /* Report */
-  .report-hero { padding: 20px 16px; flex-direction: column; }
-  .report-hero-title { font-size: 18px; }
-  .report-score-donut { width: 100px !important; height: 100px !important; }
-
-  /* Cards */
-  .report-header { padding: 20px; }
-  .report-header-top { flex-direction: column; }
-  .report-score-circle { width: 80px; height: 80px; }
-  .report-score-circle .pct { font-size: 18px; }
-  .report-meta { grid-template-columns: 1fr 1fr; }
-
-  .exams-grid { grid-template-columns: 1fr; }
-  .page-header { flex-direction: column; }
-  .page-header-actions { width: 100%; }
-  .page-header-actions .btn { flex: 1; justify-content: center; }
-
-  /* Filter chips wrap properly */
-  .filter-chips { flex-wrap: wrap; }
-  .filter-chip { font-size: 11px; padding: 5px 10px; }
-
-  /* KPI strip */
-  .kpi-strip { grid-template-columns: 1fr 1fr; }
-  .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
-  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
-
-  /* Action grid */
-  .action-grid { grid-template-columns: repeat(3, 1fr); }
-
-  /* Question card body */
-  .question-card-body { padding: 16px; }
-  .question-text-ng { font-size: 14px; }
-  .opt-text { font-size: 13px; }
-
-  /* Stat cards */
-  .stat-card { padding: 14px; }
-  .stat-value { font-size: 22px; }
-}
-
-@media (max-width: 480px) {
-  .stats-row { grid-template-columns: 1fr; }
-  .question-block { padding: 20px 16px; }
-  .exam-topbar { padding: 12px 16px; }
-  .report-meta { grid-template-columns: 1fr; }
-  .kpi-strip { grid-template-columns: 1fr 1fr; }
-  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
-  .kpi-value { font-size: 24px; }
-  .action-grid { grid-template-columns: repeat(3, 1fr); }
-  .action-tile { padding: 14px 8px; font-size: 10px; min-height: 72px; }
-  .action-tile i { font-size: 18px; }
-  /* Topbar: hide username on very small screens */
-  .topbar-user-name { display: none; }
-  .portal-content { padding: 10px; }
-  .exam-hero { padding: 16px 12px; }
-  .exam-hero-title { font-size: 17px; }
-  .card-body { padding: 14px; }
-}
 
 /* ══════════════════════════════════════════════
    NEXT-GEN DESIGN SYSTEM — EXTENSIONS
@@ -1186,11 +1338,6 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   .kpi-strip   { grid-template-columns: repeat(2, 1fr); }
   .kpi-item    { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
 }
-@media (max-width: 600px) {
-  .kpi-strip    { grid-template-columns: 1fr 1fr; }
-  .action-grid  { grid-template-columns: repeat(3, 1fr); }
-  .exam-chrome-title { max-width: 140px; }
-}
 
 /* ══════════════════════════════════════════════
    PORTAL POLISH — UI refinements
@@ -1253,25 +1400,7 @@ textarea.exam-code { font-family: 'Courier New', monospace; font-size: 12px; bac
   background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
 }
 
-/* KPI strip mobile — handled in main 768px breakpoint above */
-@media (max-width: 640px) {
-  .kpi-strip { grid-template-columns: 1fr 1fr; }
-  .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
-  .kpi-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.07); }
-  .kpi-value { font-size: 26px; }
-}
-@media (max-width: 380px) {
-  .kpi-strip { grid-template-columns: 1fr; }
-  .kpi-item:nth-child(odd) { border-right: none; }
-  .kpi-value { font-size: 22px; }
-}
-
-/* Action grid — 3 cols on small screens */
-@media (max-width: 500px) {
-  .action-grid { grid-template-columns: repeat(3, 1fr); }
-  .action-tile { padding: 18px 10px; font-size: 11px; min-height: 80px; }
-  .action-tile i { font-size: 20px; }
-}
+/* KPI strip mobile — handled in main responsive section above */
 
 /* Announcement card body line-breaks */
 .ann-body p { margin-bottom: 8px; }
