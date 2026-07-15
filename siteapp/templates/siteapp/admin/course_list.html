@@ -92,7 +92,7 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <button class="dropdown-item text-danger" onclick="confirmDelete({{ c.id }}, '{{ c.title|escapejs }}')">
+                                    <button class="dropdown-item text-danger js-delete-btn" data-id="{{ c.id }}" data-title="{{ c.title }}">
                                         <i class="fa-solid fa-trash me-2 w-15px"></i> Delete
                                     </button>
                                 </li>
@@ -120,11 +120,15 @@
 </div>
 
 <script>
-function confirmDelete(id, title) {
-    if (confirm(`Are you sure you want to delete the course "${title}"?\nThis will remove all student progress for this specific course. Actual video tutorials will NOT be deleted.`)) {
-        document.getElementById(`delete-form-${id}`).submit();
-    }
-}
+document.querySelectorAll('.js-delete-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const title = this.getAttribute('data-title');
+        if (confirm(`Are you sure you want to delete the course "${title}"?\nThis will remove all student progress for this specific course. Actual video tutorials will NOT be deleted.`)) {
+            document.getElementById(`delete-form-${id}`).submit();
+        }
+    });
+});
 
 document.getElementById('courseSearch').addEventListener('keyup', function(e) {
     const term = e.target.value.toLowerCase();

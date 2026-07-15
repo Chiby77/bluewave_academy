@@ -68,12 +68,17 @@
 <div class="card">
   <div class="card-body-flush">
     {% if announcements %}
+    <style>
+      .ann-icon-box {
+        width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      .pri-2 { background: var(--danger-light); color: var(--danger); }
+      .pri-1 { background: var(--warning-light); color: var(--warning); }
+      .pri-0 { background: var(--primary-light); color: var(--primary); }
+    </style>
     {% for ann in announcements %}
     <div style="padding:18px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:16px;">
-      <div style="width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;
-        {% if ann.priority == 2 %}background:var(--danger-light);color:var(--danger);
-        {% elif ann.priority == 1 %}background:var(--warning-light);color:var(--warning);
-        {% else %}background:var(--primary-light);color:var(--primary);{% endif %}">
+      <div class="ann-icon-box {% if ann.priority == 2 %}pri-2{% elif ann.priority == 1 %}pri-1{% else %}pri-0{% endif %}">
         <i class="fa-solid {% if ann.priority == 2 %}fa-circle-exclamation{% elif ann.priority == 1 %}fa-triangle-exclamation{% else %}fa-bullhorn{% endif %}"></i>
       </div>
       <div style="flex:1;">

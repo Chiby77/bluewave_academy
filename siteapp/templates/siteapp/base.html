@@ -62,10 +62,19 @@
     <script src="{% static 'js/nav.js' %}"></script>
 
     {% if messages %}
+    <script id="django-messages" type="application/json">
+      [
+        {% for m in messages %}
+        {"tag": "{{ m.tags|escapejs }}", "text": "{{ m.message|escapejs }}"}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    </script>
     <script>
     (function(){
+        const dataNode = document.getElementById('django-messages');
+        if (!dataNode) return;
+        const msgs = JSON.parse(dataNode.textContent);
         const icons = { success:'fa-circle-check', error:'fa-circle-xmark', danger:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
-        const msgs = [{% for m in messages %}{"tag":"{{ m.tags }}","text":"{{ m.message|escapejs }}"},{% endfor %}];
         const container = document.getElementById('bw-toast-container');
         msgs.forEach(m => {
             const tag = m.tag || 'info';
