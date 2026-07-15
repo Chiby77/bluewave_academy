@@ -138,7 +138,7 @@
                 <div class="blog-content">
                     <div class="blog-meta">{{ post.created_at|date:"F d, Y" }}</div>
                     <h3>{{ post.title }}</h3>
-                    <p>{{ post.content|truncatewords:15 }}</p>
+                    <p>{{ post.content|striptags|truncatewords:15|safe }}</p>
                     <a href="{% url 'siteapp:blog_detail' post.slug %}" class="read-more">Read More <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
             </div>
