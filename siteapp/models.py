@@ -84,13 +84,13 @@ class Exam(models.Model):
     passing_marks = models.IntegerField(default=50)
 
     # Exam settings
-    is_active = models.BooleanField(default=True)
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True, db_index=True)
+    start_date = models.DateTimeField(db_index=True)
+    end_date = models.DateTimeField(db_index=True)
 
     # Admin controls
     is_held = models.BooleanField(
-        default=False, help_text="Hold exam from being taken by students"
+        default=False, db_index=True, help_text="Hold exam from being taken by students"
     )
     hold_reason = models.TextField(blank=True, help_text="Reason for holding the exam")
     enable_instant_grading = models.BooleanField(
@@ -119,7 +119,7 @@ class Exam(models.Model):
         ("os", "Operating Systems"),
         ("other", "Other"),
     ]
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, db_index=True)
 
     # difficulty level
     LEVEL_CHOICES = [
@@ -127,17 +127,21 @@ class Exam(models.Model):
         ("intermediate", "Intermediate"),
         ("advanced", "Advanced"),
     ]
-    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="beginner")
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="beginner", db_index=True)
     created_by = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="created_exams"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
         verbose_name = "Exam"
         verbose_name_plural = "Exams"
+        indexes = [
+            models.Index(fields=["is_active", "is_held", "start_date", "end_date"], name="exam_availability_idx"),
+            models.Index(fields=["category", "is_active"], name="exam_category_active_idx"),
+        ]
 
     def __str__(self):
         return self.title
@@ -221,7 +225,7 @@ class ExamAttempt(models.Model):
         ("graded", "Graded"),
     ]
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="in_progress"
+        max_length=20, choices=STATUS_CHOICES, default="in_progress", db_index=True
     )
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     percentage = models.DecimalField(
@@ -232,7 +236,7 @@ class ExamAttempt(models.Model):
     ai_graded = models.BooleanField(default=False)
     ai_feedback = models.TextField(blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     attempt_number = models.PositiveSmallIntegerField(
@@ -244,6 +248,11 @@ class ExamAttempt(models.Model):
         verbose_name = "Exam Attempt"
         verbose_name_plural = "Exam Attempts"
         unique_together = ["student", "exam", "attempt_number"]
+        indexes = [
+            models.Index(fields=["student", "status"], name="attempt_student_status_idx"),
+            models.Index(fields=["student", "exam"], name="attempt_student_exam_idx"),
+            models.Index(fields=["status", "created_at"], name="attempt_status_created_idx"),
+        ]
 
     def __str__(self):
         return f"{self.student.get_full_name()} - {self.exam.title}"
@@ -904,6 +913,114 @@ class VideoProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} — {self.tutorial.title} ({self.progress_pct:.0f}%)"
+
+
+# =============================================
+# COURSES (curated playlists of tutorials)
+# =============================================
+
+class Course(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("published", "Published"),
+    ]
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True)
+    thumbnail = models.ImageField(upload_to="courses/thumbnails/", blank=True, null=True)
+    category = models.CharField(
+        max_length=50,
+        choices=Tutorial.CATEGORY_CHOICES,
+        default="Other",
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
+    created_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="courses_created",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Course"
+        verbose_name_plural = "Courses"
+
+    def __str__(self):
+        return self.title
+
+    def lesson_count(self):
+        return self.lessons.count()
+
+    def enrollment_count(self):
+        return self.enrollments.count()
+
+
+class CourseLesson(models.Model):
+    """Ordered join table linking a Course to its Tutorial lessons."""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    tutorial = models.ForeignKey(Tutorial, on_delete=models.CASCADE, related_name="course_lessons")
+    order = models.PositiveIntegerField(default=1, help_text="Lesson sequence number")
+    title_override = models.CharField(
+        max_length=200, blank=True,
+        help_text="Optional lesson title that overrides the tutorial title"
+    )
+
+    class Meta:
+        unique_together = [("course", "tutorial")]
+        ordering = ["order"]
+        verbose_name = "Course Lesson"
+        verbose_name_plural = "Course Lessons"
+
+    def __str__(self):
+        return f"{self.course.title} — Lesson {self.order}: {self.display_title}"
+
+    @property
+    def display_title(self):
+        return self.title_override or self.tutorial.title
+
+
+class CourseEnrollment(models.Model):
+    """Tracks a student's overall enrollment and progress in a Course."""
+    student = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="course_enrollments"
+    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    progress_pct = models.FloatField(default=0, help_text="0-100 calculated from lesson completions")
+
+    class Meta:
+        unique_together = [("student", "course")]
+        verbose_name = "Course Enrollment"
+        verbose_name_plural = "Course Enrollments"
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} → {self.course.title} ({self.progress_pct:.0f}%)"
+
+    def recalculate_progress(self):
+        """Recompute progress_pct and mark completed when all lessons done."""
+        lesson_ids = self.course.lessons.values_list("tutorial_id", flat=True)
+        total = len(lesson_ids)
+        if total == 0:
+            self.progress_pct = 0
+            self.completed = False
+            self.save()
+            return
+
+        done = VideoProgress.objects.filter(
+            student=self.student,
+            tutorial_id__in=lesson_ids,
+            completed=True,
+        ).count()
+
+        self.progress_pct = round((done / total) * 100, 1)
+        if done >= total and not self.completed:
+            self.completed = True
+            self.completed_at = timezone.now()
+        self.save()
 
 
 # =============================================

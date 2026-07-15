@@ -1,0 +1,180 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}{{ course.title }} — Bluewave Academy{% endblock %}
+{% block nav_courses %}active{% endblock %}
+{% block page_title %}Course Details{% endblock %}
+{% block page_subtitle %}{{ course.category }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.course-hero {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: row;
+}
+@media (max-width: 768px) {
+  .course-hero { flex-direction: column; }
+}
+.course-hero-img {
+  flex: 0 0 45%;
+  background: linear-gradient(135deg,#0f172a,#1e40af);
+  position: relative;
+  min-height: 250px;
+}
+.course-hero-img img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+.course-hero-placeholder {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; color: rgba(255,255,255,.3);
+}
+.course-hero-content {
+  padding: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.course-title {
+  font-size: 1.8rem; font-weight: 800; color: var(--gray-900); margin-bottom: 12px;
+}
+.course-meta {
+  display: flex; gap: 15px; color: var(--gray-600); font-size: 0.9rem; margin-bottom: 20px;
+}
+.course-meta span { display: flex; align-items: center; gap: 5px; }
+.course-desc {
+  font-size: 1rem; line-height: 1.6; color: var(--gray-700); margin-bottom: 25px; flex: 1;
+}
+.course-actions {
+  display: flex; align-items: center; gap: 15px; margin-top: auto;
+}
+.btn-enrol {
+  background: var(--primary); color: #fff; padding: 12px 24px; border-radius: var(--radius);
+  font-weight: 600; text-decoration: none; border: none; font-size: 1rem;
+  transition: background 0.2s;
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.btn-enrol:hover { background: var(--primary-dark); color: #fff; }
+.btn-resume { background: var(--accent); }
+.btn-resume:hover { background: #0891b2; }
+
+/* Syllabus */
+.syllabus-section { margin-bottom: 40px; }
+.syllabus-title { font-size: 1.3rem; font-weight: 700; color: var(--gray-900); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+.syllabus-list {
+  background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray-200);
+}
+.lesson-item {
+  display: flex; align-items: center; gap: 15px; padding: 16px 20px;
+  border-bottom: 1px solid var(--gray-200);
+  text-decoration: none; color: inherit; transition: background 0.2s;
+}
+.lesson-item:last-child { border-bottom: none; }
+.lesson-item:hover { background: var(--gray-50); }
+.lesson-num {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); color: var(--gray-600);
+  display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.lesson-details { flex: 1; }
+.lesson-title { font-weight: 600; color: var(--gray-900); font-size: 1rem; margin-bottom: 3px; }
+.lesson-type { font-size: 0.8rem; color: var(--gray-500); display: flex; align-items: center; gap: 5px; }
+.lesson-status {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--gray-300);
+  display: flex; align-items: center; justify-content: center; color: transparent;
+  transition: all 0.2s;
+}
+.lesson-status.done {
+  background: var(--success); border-color: var(--success); color: #fff;
+}
+.lesson-status.done i { font-size: 0.75rem; }
+
+/* Progress bar inside hero */
+.enrollment-progress { margin-bottom: 20px; }
+.ep-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); }
+.ep-track { height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+.ep-fill { height: 100%; background: var(--success); transition: width 0.4s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'siteapp:course_list' %}" class="btn btn-sm btn-outline-secondary mb-3"><i class="fa-solid fa-arrow-left"></i> Back to Courses</a>
+
+<div class="course-hero">
+  <div class="course-hero-img">
+    {% if course.thumbnail %}
+      <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">
+    {% else %}
+      <div class="course-hero-placeholder"><i class="fa-solid fa-book-open"></i></div>
+    {% endif %}
+  </div>
+  <div class="course-hero-content">
+    <span class="badge bg-primary bg-opacity-10 text-primary mb-2" style="width: fit-content;">{{ course.category }}</span>
+    <h1 class="course-title">{{ course.title }}</h1>
+    
+    <div class="course-meta">
+      <span><i class="fa-solid fa-film"></i> {{ lesson_data|length }} Lessons</span>
+      <span><i class="fa-solid fa-users"></i> {{ course.enrollments.count }} Enrolled</span>
+    </div>
+
+    <p class="course-desc">{{ course.description }}</p>
+
+    {% if enrollment %}
+      <div class="enrollment-progress">
+        <div class="ep-header">
+          <span>Your Progress</span>
+          <span class="{% if enrollment.completed %}text-success{% endif %}">
+            {% if enrollment.completed %}Completed{% else %}{{ enrollment.progress_pct|floatformat:0 }}%{% endif %}
+          </span>
+        </div>
+        <div class="ep-track">
+          <div class="ep-fill" style="width: {{ enrollment.progress_pct }}%;"></div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="course-actions">
+      {% if enrollment %}
+        {% if enrollment.completed %}
+          <a href="{% url 'siteapp:course_watch' course.slug 1 %}" class="btn-enrol btn-resume"><i class="fa-solid fa-rotate-right"></i> Review Course</a>
+          <span class="text-success fw-bold ms-3"><i class="fa-solid fa-certificate"></i> Completed on {{ enrollment.completed_at|date:"M d, Y" }}</span>
+        {% else %}
+          <a href="{% url 'siteapp:course_watch' course.slug 1 %}" class="btn-enrol btn-resume"><i class="fa-solid fa-play"></i> Continue Learning</a>
+        {% endif %}
+      {% else %}
+        <form action="{% url 'siteapp:course_enrol' course.slug %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="btn-enrol"><i class="fa-solid fa-user-plus"></i> Enrol Now</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="syllabus-section">
+  <h2 class="syllabus-title"><i class="fa-solid fa-list-ul"></i> Course Syllabus</h2>
+  <div class="syllabus-list">
+    {% for item in lesson_data %}
+      {% with l=item.lesson done=item.completed %}
+      <div class="lesson-item">
+        <div class="lesson-num">{{ forloop.counter }}</div>
+        <div class="lesson-details">
+          <div class="lesson-title">{{ l.display_title }}</div>
+          <div class="lesson-type"><i class="fa-solid fa-video"></i> Video Lesson</div>
+        </div>
+        <div class="lesson-status {% if done %}done{% endif %}">
+          <i class="fa-solid fa-check"></i>
+        </div>
+      </div>
+      {% endwith %}
+    {% empty %}
+      <div class="p-4 text-center text-muted">No lessons have been added to this course yet.</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

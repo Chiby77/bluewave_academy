@@ -491,15 +491,28 @@ def exam_list(request):
     if category_filter:
         exams_qs = exams_qs.filter(category=category_filter)
 
-    # Build items with attempt info
+    exams_list = list(exams_qs)
+    exam_ids = [e.id for e in exams_list]
+
+    # Fetch ALL student attempts for these exams in ONE query, then group in Python
+    all_student_attempts = (
+        ExamAttempt.objects
+        .filter(student=student, exam_id__in=exam_ids)
+        .order_by("-attempt_number")
+    )
+    # Build a dict: exam_id → list of attempts
+    from collections import defaultdict
+    attempts_by_exam = defaultdict(list)
+    for a in all_student_attempts:
+        attempts_by_exam[a.exam_id].append(a)
+
     items = []
-    for exam in exams_qs:
-        finished = ExamAttempt.objects.filter(
-            student=student, exam=exam, status__in=["submitted", "graded"]
-        )
-        finished_count = finished.count()
-        latest_attempt = ExamAttempt.objects.filter(student=student, exam=exam).order_by("-attempt_number").first()
-        in_progress = ExamAttempt.objects.filter(student=student, exam=exam, status="in_progress").first()
+    for exam in exams_list:
+        exam_attempts = attempts_by_exam[exam.id]
+        finished = [a for a in exam_attempts if a.status in ("submitted", "graded")]
+        finished_count = len(finished)
+        latest_attempt = exam_attempts[0] if exam_attempts else None
+        in_progress = next((a for a in exam_attempts if a.status == "in_progress"), None)
         can_retake = finished_count < 2
 
         if status_filter == "available" and finished_count > 0 and not can_retake:

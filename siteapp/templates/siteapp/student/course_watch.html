@@ -1,0 +1,368 @@
+{% extends "siteapp/student/base_student.html" %}
+{% load static %}
+
+{% block title %}Watching: {{ current_lesson.display_title }} — Bluewave Academy{% endblock %}
+{% block nav_courses %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Hide the default page title in base layout for watch mode */
+.portal-topbar .topbar-title { display: none; }
+.portal-topbar { height: 60px; border-bottom: 1px solid var(--gray-200); }
+.portal-main { padding: 0 !important; background: var(--gray-50); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* Course Header inside main area */
+.watch-header {
+  background: var(--white); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--gray-200); flex-shrink: 0;
+}
+.wh-left { display: flex; align-items: center; gap: 15px; }
+.wh-back {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--gray-100); color: var(--gray-700);
+  display: flex; align-items: center; justify-content: center; text-decoration: none; transition: background 0.2s;
+}
+.wh-back:hover { background: var(--gray-200); color: var(--gray-900); }
+.wh-title { font-weight: 700; color: var(--gray-900); margin: 0; font-size: 1.1rem; }
+
+.wh-progress { display: flex; align-items: center; gap: 15px; }
+.wh-progress-text { font-size: 0.85rem; font-weight: 600; color: var(--gray-600); }
+.wh-progress-track { width: 150px; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+.wh-progress-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+
+/* Watch Layout */
+.watch-layout {
+  display: flex; flex: 1; overflow: hidden;
+}
+@media (max-width: 992px) {
+  .watch-layout { flex-direction: column; overflow-y: auto; }
+}
+
+/* Video Area (Left) */
+.watch-video-area {
+  flex: 1; display: flex; flex-direction: column; background: #000; overflow-y: auto;
+}
+.video-container {
+  position: relative; width: 100%; padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  background: #000;
+}
+.video-container iframe, .video-container video {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+}
+.video-info {
+  background: var(--white); padding: 24px; border-bottom: 1px solid var(--gray-200);
+}
+.vi-lesson-num { color: var(--primary); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.vi-title { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); margin-bottom: 10px; }
+.vi-desc { font-size: 0.95rem; color: var(--gray-700); line-height: 1.6; }
+
+/* Playlist Area (Right) */
+.watch-playlist-area {
+  width: 350px; background: var(--white); border-left: 1px solid var(--gray-200);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+@media (max-width: 992px) {
+  .watch-playlist-area { width: 100%; border-left: none; border-top: 1px solid var(--gray-200); }
+  .watch-video-area { overflow-y: visible; }
+}
+.playlist-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ph-title { font-weight: 700; color: var(--gray-900); margin: 0; font-size: 1rem; }
+.ph-auto { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray-600); font-weight: 600; }
+.switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(14px); }
+
+.playlist-items { flex: 1; overflow-y: auto; }
+.pl-item {
+  display: flex; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--gray-100);
+  text-decoration: none; color: inherit; transition: background 0.2s; position: relative;
+}
+.pl-item:hover { background: var(--gray-50); }
+.pl-item.current { background: var(--primary-light, #eff6ff); border-left: 3px solid var(--primary); padding-left: 17px; }
+.pl-num {
+  width: 24px; font-weight: 700; color: var(--gray-500); font-size: 0.9rem; margin-top: 2px;
+}
+.pl-item.current .pl-num { color: var(--primary); }
+.pl-details { flex: 1; }
+.pl-title { font-weight: 600; font-size: 0.9rem; color: var(--gray-900); line-height: 1.3; margin-bottom: 4px; }
+.pl-type { font-size: 0.75rem; color: var(--gray-500); }
+.pl-status { color: var(--success); font-size: 0.9rem; opacity: 0; transition: opacity 0.2s; }
+.pl-status.done { opacity: 1; }
+
+/* Completion Banner */
+.course-complete-banner {
+  background: linear-gradient(135deg, #10b981, #059669); color: white;
+  padding: 20px; text-align: center; border-radius: var(--radius); margin: 20px;
+  display: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+.course-complete-banner h2 { margin: 0 0 10px 0; font-weight: 800; font-size: 1.5rem; }
+.course-complete-banner p { margin: 0; opacity: 0.9; }
+
+/* Next Lesson Countdown Overlay */
+.next-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: white; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.next-overlay.active { opacity: 1; pointer-events: all; }
+.no-text { font-size: 1.2rem; margin-bottom: 15px; color: #cbd5e1; }
+.no-title { font-size: 2rem; font-weight: 700; margin-bottom: 25px; text-align: center; max-width: 80%; }
+.no-timer { font-size: 3rem; font-weight: 800; color: var(--primary); margin-bottom: 30px; }
+.no-actions { display: flex; gap: 15px; }
+.btn-cancel { background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
+.btn-cancel:hover { background: rgba(255,255,255,0.3); }
+.btn-play-now { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; text-decoration: none; }
+.btn-play-now:hover { background: var(--primary-dark); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="watch-header">
+  <div class="wh-left">
+    <a href="{% url 'siteapp:course_detail' course.slug %}" class="wh-back" title="Back to Course Details"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1 class="wh-title">{{ course.title }}</h1>
+  </div>
+  <div class="wh-progress">
+    <span class="wh-progress-text"><span id="doneCount">{{ done_count }}</span> of {{ total }} complete</span>
+    <div class="wh-progress-track">
+      <div class="wh-progress-fill" id="overallProgress" style="width: {% widthratio done_count total 100 %}%;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="watch-layout">
+  <!-- Left Side: Video -->
+  <div class="watch-video-area">
+    <div class="video-container">
+      {% if embed_url %}
+        <!-- YouTube embed with API enabled -->
+        <iframe id="ytplayer" src="{{ embed_url }}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      {% elif tutorial.video_file %}
+        <video id="localplayer" src="{{ tutorial.video_file.url }}" controls controlsList="nodownload"></video>
+      {% else %}
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;">No video available.</div>
+      {% endif %}
+
+      <!-- Auto-advance overlay -->
+      <div class="next-overlay" id="nextOverlay">
+        <div class="no-text">Up Next</div>
+        <div class="no-title" id="nextTitle">Loading next lesson...</div>
+        <div class="no-timer" id="nextTimer">3</div>
+        <div class="no-actions">
+          <button class="btn-cancel" id="cancelAutoBtn">Cancel</button>
+          <a href="#" class="btn-play-now" id="playNowBtn">Play Now</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course completion banner -->
+    <div class="course-complete-banner" id="completionBanner">
+      <h2>🎉 Course Completed!</h2>
+      <p>Congratulations! You have finished all lessons in <strong>{{ course.title }}</strong>.</p>
+    </div>
+
+    <div class="video-info">
+      <div class="vi-lesson-num">Lesson {{ lesson_num }} of {{ total }}</div>
+      <h2 class="vi-title">{{ current_lesson.display_title }}</h2>
+      <div class="vi-desc">{{ tutorial.description|default:"No description provided." }}</div>
+    </div>
+  </div>
+
+  <!-- Right Side: Playlist -->
+  <div class="watch-playlist-area">
+    <div class="playlist-header">
+      <h3 class="ph-title">Course Content</h3>
+      <div class="ph-auto">
+        Autoplay
+        <label class="switch">
+          <input type="checkbox" id="autoplayToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="playlist-items" id="playlistItems">
+      {% for item in playlist %}
+        <a href="{% url 'siteapp:course_watch' course.slug item.num %}" 
+           class="pl-item {% if item.is_current %}current{% endif %}"
+           data-num="{{ item.num }}"
+           data-title="{{ item.lesson.display_title }}">
+          <div class="pl-num">{{ item.num }}</div>
+          <div class="pl-details">
+            <div class="pl-title">{{ item.lesson.display_title }}</div>
+            <div class="pl-type"><i class="fa-solid fa-play-circle"></i> Video</div>
+          </div>
+          <div class="pl-status {% if item.completed %}done{% endif %}" id="status-{{ item.num }}">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const tutorialId = {{ tutorial.id }};
+  const updateUrl = "{% url 'siteapp:update_video_progress' %}";
+  const csrfToken = "{{ csrf_token }}";
+  
+  const lessonNum = {{ lesson_num }};
+  const totalLessons = {{ total }};
+  const nextNum = {% if next_num %}{{ next_num }}{% else %}null{% endif %};
+  const nextUrl = nextNum ? "{% url 'siteapp:course_watch' course.slug 999999 %}".replace('999999', nextNum) : null;
+  
+  // Elements
+  const statusIcon = document.getElementById('status-' + lessonNum);
+  const doneCountEl = document.getElementById('doneCount');
+  const overallProgressEl = document.getElementById('overallProgress');
+  const completionBanner = document.getElementById('completionBanner');
+  
+  const overlay = document.getElementById('nextOverlay');
+  const timerEl = document.getElementById('nextTimer');
+  const nextTitleEl = document.getElementById('nextTitle');
+  const playNowBtn = document.getElementById('playNowBtn');
+  const cancelBtn = document.getElementById('cancelAutoBtn');
+  const autoplayToggle = document.getElementById('autoplayToggle');
+  
+  let progressSent = false;
+  let countdownTimer = null;
+  let isCompleted = {{ progress.completed|yesno:"true,false" }};
+  
+  // Scroll playlist to active item
+  const currentItem = document.querySelector('.pl-item.current');
+  if (currentItem) {
+    currentItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // Set next title in overlay
+  if (nextNum) {
+    const nextItem = document.querySelector(`.pl-item[data-num="${nextNum}"]`);
+    if (nextItem) {
+      nextTitleEl.textContent = nextItem.getAttribute('data-title');
+      playNowBtn.href = nextUrl;
+    }
+  }
+
+  function markLessonComplete() {
+    if (progressSent) return;
+    progressSent = true;
+
+    fetch(updateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ tutorial_id: tutorialId, progress: 100 })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && !isCompleted) {
+        isCompleted = true;
+        // Update UI
+        statusIcon.classList.add('done');
+        let done = parseInt(doneCountEl.textContent) + 1;
+        doneCountEl.textContent = done;
+        overallProgressEl.style.width = (done / totalLessons * 100) + '%';
+        
+        if (done >= totalLessons) {
+          completionBanner.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  function handleVideoEnd() {
+    markLessonComplete();
+    
+    // Check Autoplay
+    if (!autoplayToggle.checked) return;
+    
+    if (nextNum && nextUrl) {
+      // Start countdown
+      overlay.classList.add('active');
+      let timeLeft = 3;
+      timerEl.textContent = timeLeft;
+      
+      countdownTimer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(countdownTimer);
+          window.location.href = nextUrl;
+        }
+      }, 1000);
+    } else {
+      // Last lesson finished, ensure completion banner is visible
+      if(isCompleted || progressSent) {
+          completionBanner.style.display = 'block';
+      }
+    }
+  }
+
+  cancelBtn.addEventListener('click', () => {
+    clearInterval(countdownTimer);
+    overlay.classList.remove('active');
+  });
+
+  // Player Tracking
+  const ytPlayer = document.getElementById('ytplayer');
+  const localPlayer = document.getElementById('localplayer');
+
+  if (localPlayer) {
+    localPlayer.addEventListener('ended', handleVideoEnd);
+    localPlayer.addEventListener('timeupdate', () => {
+      const pct = (localPlayer.currentTime / localPlayer.duration) * 100;
+      if (pct >= 90 && !progressSent) {
+        markLessonComplete();
+      }
+    });
+  }
+
+  if (ytPlayer) {
+    // We need the YouTube API for this. If it's already loaded by another script great, 
+    // otherwise we listen to standard postMessage API if possible, 
+    // but the most reliable is the IFrame API.
+    // Assuming youtube Iframe API is loaded via base_student if we want to get fancy,
+    // but for now, we will add a basic listener for completion if it reaches 90%.
+    
+    // Since YT API might not be injected, let's inject it.
+    let tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    let firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    let player;
+    window.onYouTubeIframeAPIReady = function() {
+      player = new YT.Player('ytplayer', {
+        events: {
+          'onStateChange': function(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+              handleVideoEnd();
+            }
+          }
+        }
+      });
+      
+      // Poll progress
+      setInterval(() => {
+        if (player && player.getDuration) {
+          const duration = player.getDuration();
+          if (duration > 0) {
+            const pct = (player.getCurrentTime() / duration) * 100;
+            if (pct >= 90 && !progressSent) {
+              markLessonComplete();
+            }
+          }
+        }
+      }, 5000);
+    };
+  }
+});
+</script>
+{% endblock %}

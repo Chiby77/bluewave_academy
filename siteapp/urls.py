@@ -298,4 +298,21 @@ urlpatterns = [
         admin_views.export_analytics,
         name="export_analytics",
     ),
+
+    # ==================== TinyMCE Image Upload ====================
+    path("administration/blog/upload-image/", admin_views.tinymce_image_upload, name="tinymce_image_upload"),
+
+    # ==================== COURSES (Student) ====================
+    path("student/courses/", tutorial_views.course_list, name="course_list"),
+    path("student/courses/<slug:slug>/", tutorial_views.course_detail, name="course_detail"),
+    path("student/courses/<slug:slug>/enrol/", tutorial_views.course_enrol, name="course_enrol"),
+    path("student/courses/<slug:slug>/<int:lesson_num>/", tutorial_views.course_watch, name="course_watch"),
+
+    # ==================== COURSES (Admin) ====================
+    path("administration/courses/", admin_views.admin_course_list, name="admin_course_list"),
+    path("administration/courses/create/", admin_views.admin_course_create, name="admin_course_create"),
+    path("administration/courses/<int:course_id>/edit/", admin_views.admin_course_edit, name="admin_course_edit"),
+    path("administration/courses/<int:course_id>/delete/", admin_views.admin_course_delete, name="admin_course_delete"),
+    path("administration/courses/<int:course_id>/toggle/", admin_views.admin_course_toggle_status, name="admin_course_toggle"),
+    path("administration/courses/<int:course_id>/reorder/", admin_views.admin_course_reorder_lessons, name="admin_course_reorder"),
 ]

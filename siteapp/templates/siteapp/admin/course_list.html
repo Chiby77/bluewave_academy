@@ -1,0 +1,141 @@
+{% extends "siteapp/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Manage Courses — Bluewave Admin{% endblock %}
+{% block nav_courses %}active{% endblock %}
+{% block page_title %}Courses{% endblock %}
+{% block page_subtitle %}Manage curated learning paths{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="search-box" style="max-width: 300px;">
+        <i class="fa-solid fa-search text-muted position-absolute" style="left:12px; top:12px;"></i>
+        <input type="text" id="courseSearch" class="form-control ps-4" placeholder="Search courses...">
+    </div>
+    <a href="{% url 'siteapp:admin_course_create' %}" class="btn btn-primary fw-bold shadow-sm">
+        <i class="fa-solid fa-plus"></i> Create Course
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0" id="coursesTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Course Info</th>
+                    <th>Category</th>
+                    <th>Lessons</th>
+                    <th>Students</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stats %}
+                {% with c=item.course %}
+                <tr>
+                    <td class="ps-4 py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            {% if c.thumbnail %}
+                                <img src="{{ c.thumbnail.url }}" alt="{{ c.title }}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                                <div style="width: 60px; height: 40px; background: #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+                                    <i class="fa-solid fa-book"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark">{{ c.title }}</h6>
+                                <small class="text-muted">Added {{ c.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ c.category }}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2 text-muted fw-bold">
+                            <i class="fa-solid fa-film"></i> {{ item.lesson_count }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2 text-muted fw-bold">
+                            <i class="fa-solid fa-users"></i> {{ item.enrollment_count }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.status == 'published' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="fa-solid fa-check-circle me-1"></i> Published</span>
+                        {% else %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"><i class="fa-solid fa-clock me-1"></i> Draft</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border-0" type="button" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'siteapp:admin_course_edit' c.id %}">
+                                        <i class="fa-solid fa-pen-to-square text-primary me-2 w-15px"></i> Edit
+                                    </a>
+                                </li>
+                                <li>
+                                    <form action="{% url 'siteapp:admin_course_toggle' c.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">
+                                            {% if c.status == 'published' %}
+                                                <i class="fa-solid fa-eye-slash text-warning me-2 w-15px"></i> Unpublish
+                                            {% else %}
+                                                <i class="fa-solid fa-eye text-success me-2 w-15px"></i> Publish
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="confirmDelete({{ c.id }}, '{{ c.title|escapejs }}')">
+                                        <i class="fa-solid fa-trash me-2 w-15px"></i> Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Delete Form -->
+                        <form id="delete-form-{{ c.id }}" action="{% url 'siteapp:admin_course_delete' c.id %}" method="POST" style="display: none;">
+                            {% csrf_token %}
+                        </form>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-book fs-1 text-light mb-3 d-block"></i>
+                        No courses created yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function confirmDelete(id, title) {
+    if (confirm(`Are you sure you want to delete the course "${title}"?\nThis will remove all student progress for this specific course. Actual video tutorials will NOT be deleted.`)) {
+        document.getElementById(`delete-form-${id}`).submit();
+    }
+}
+
+document.getElementById('courseSearch').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#coursesTable tbody tr');
+    rows.forEach(row => {
+        if(row.cells.length > 1) { // Skip empty row
+            const title = row.querySelector('h6').textContent.toLowerCase();
+            const cat = row.cells[1].textContent.toLowerCase();
+            row.style.display = (title.includes(term) || cat.includes(term)) ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

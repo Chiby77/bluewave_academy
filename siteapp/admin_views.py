@@ -29,6 +29,9 @@ from .models import (
     BlogPost,
     Tutorial,
     VideoProgress,
+    Course,
+    CourseLesson,
+    CourseEnrollment,
 )
 from .forms import ExamAnswerForm
 from django.contrib.auth.forms import AuthenticationForm
@@ -1560,3 +1563,147 @@ def tinymce_image_upload(request):
 
     # TinyMCE expects {"location": "<url>"} in the response
     return JsonResponse({"location": url})
+
+
+# ============================================================
+# COURSE MANAGEMENT VIEWS
+# ============================================================
+
+@admin_required
+def admin_course_list(request):
+    """List all courses with lesson & enrollment stats."""
+    courses = Course.objects.prefetch_related("lessons", "enrollments").order_by("-created_at")
+    stats = [
+        {
+            "course": c,
+            "lesson_count": c.lessons.count(),
+            "enrollment_count": c.enrollments.count(),
+        }
+        for c in courses
+    ]
+    return render(request, "siteapp/admin/course_list.html", {"stats": stats})
+
+
+@admin_required
+def admin_course_create(request):
+    """Create a new course with lesson picker."""
+    tutorials = Tutorial.objects.filter(status="published").order_by("title")
+    if request.method == "POST":
+        title       = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
+        category    = request.POST.get("category", "Other")
+        status      = request.POST.get("status", "draft")
+        thumbnail   = request.FILES.get("thumbnail")
+        lesson_ids  = request.POST.getlist("lesson_ids")
+
+        if not title:
+            messages.error(request, "Title is required.")
+            return render(request, "siteapp/admin/course_form.html", {
+                "course": None, "tutorials": tutorials,
+                "category_choices": Tutorial.CATEGORY_CHOICES,
+            })
+
+        slug = slugify(title)
+        base = slug
+        n = 1
+        while Course.objects.filter(slug=slug).exists():
+            slug = f"{base}-{n}"; n += 1
+
+        course = Course(title=title, slug=slug, description=description,
+                        category=category, status=status, created_by=request.user)
+        if thumbnail:
+            course.thumbnail = thumbnail
+        course.save()
+
+        for order, tid in enumerate(lesson_ids, start=1):
+            try:
+                t = Tutorial.objects.get(pk=int(tid), status="published")
+                CourseLesson.objects.get_or_create(course=course, tutorial=t,
+                                                   defaults={"order": order})
+            except (Tutorial.DoesNotExist, ValueError):
+                pass
+
+        messages.success(request, f'Course "{title}" created.')
+        return redirect("siteapp:admin_course_list")
+
+    return render(request, "siteapp/admin/course_form.html", {
+        "course": None, "tutorials": tutorials,
+        "category_choices": Tutorial.CATEGORY_CHOICES,
+    })
+
+
+@admin_required
+def admin_course_edit(request, course_id):
+    """Edit a course, update lessons and reorder."""
+    course   = get_object_or_404(Course, pk=course_id)
+    tutorials = Tutorial.objects.filter(status="published").order_by("title")
+    existing_lessons = course.lessons.select_related("tutorial").order_by("order")
+
+    if request.method == "POST":
+        course.title       = request.POST.get("title", course.title).strip()
+        course.description = request.POST.get("description", course.description).strip()
+        course.category    = request.POST.get("category", course.category)
+        course.status      = request.POST.get("status", course.status)
+        if request.FILES.get("thumbnail"):
+            course.thumbnail = request.FILES["thumbnail"]
+        course.save()
+
+        lesson_ids = request.POST.getlist("lesson_ids")
+        # Remove lessons not in the new list
+        course.lessons.exclude(tutorial_id__in=[int(i) for i in lesson_ids if i.isdigit()]).delete()
+        for order, tid in enumerate(lesson_ids, start=1):
+            try:
+                t = Tutorial.objects.get(pk=int(tid))
+                lesson, _ = CourseLesson.objects.get_or_create(course=course, tutorial=t,
+                                                               defaults={"order": order})
+                lesson.order = order
+                lesson.save()
+            except (Tutorial.DoesNotExist, ValueError):
+                pass
+
+        messages.success(request, f'Course "{course.title}" updated.')
+        return redirect("siteapp:admin_course_list")
+
+    return render(request, "siteapp/admin/course_form.html", {
+        "course": course,
+        "tutorials": tutorials,
+        "existing_lessons": existing_lessons,
+        "category_choices": Tutorial.CATEGORY_CHOICES,
+    })
+
+
+@admin_required
+def admin_course_delete(request, course_id):
+    """Delete a course after confirmation."""
+    course = get_object_or_404(Course, pk=course_id)
+    if request.method == "POST":
+        title = course.title
+        course.delete()
+        messages.success(request, f'Course "{title}" deleted.')
+    return redirect("siteapp:admin_course_list")
+
+
+@admin_required
+def admin_course_toggle_status(request, course_id):
+    """Toggle a course between draft and published."""
+    course = get_object_or_404(Course, pk=course_id)
+    course.status = "draft" if course.status == "published" else "published"
+    course.save()
+    messages.success(request, f'Course "{course.title}" is now {course.status}.')
+    return redirect("siteapp:admin_course_list")
+
+
+@admin_required
+def admin_course_reorder_lessons(request, course_id):
+    """JSON endpoint: save lesson order from drag-drop."""
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    course = get_object_or_404(Course, pk=course_id)
+    try:
+        data = json.loads(request.body)
+        order_list = data.get("order", [])  # list of tutorial IDs in new order
+        for idx, tid in enumerate(order_list, start=1):
+            CourseLesson.objects.filter(course=course, tutorial_id=int(tid)).update(order=idx)
+        return JsonResponse({"ok": True})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
