@@ -72,10 +72,26 @@
     </div>
   </div>
   <div class="card-body">
+    <style>
+      .choice-box {
+        padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px;
+        background: var(--gray-100);
+      }
+      .choice-box.correct {
+        background: var(--success-light); border: 1px solid var(--success);
+      }
+      .tf-box {
+        padding: 8px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+        background: var(--gray-100);
+      }
+      .tf-box.correct {
+        background: var(--success-light); border: 1px solid var(--success);
+      }
+    </style>
     {% if question.question_type == 'mcq' %}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       {% for letter, text in question.get_choices %}
-      <div style="padding:8px 12px;background:{% if question.correct_answer == letter %}var(--success-light){% else %}var(--gray-100){% endif %};border-radius:var(--radius-sm);font-size:13px;{% if question.correct_answer == letter %}border:1px solid var(--success);{% endif %}">
+      <div class="choice-box {% if question.correct_answer == letter %}correct{% endif %}">
         <strong style="color:var(--primary);">{{ letter }}.</strong> {{ text }}
         {% if question.correct_answer == letter %}<span class="badge badge-green" style="float:right;"><i class="fa-solid fa-check"></i></span>{% endif %}
       </div>
@@ -83,10 +99,10 @@
     </div>
     {% elif question.question_type == 'true_false' %}
     <div style="display:flex;gap:12px;">
-      <div style="padding:8px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:{% if question.correct_answer == 'true' %}var(--success-light){% else %}var(--gray-100){% endif %};{% if question.correct_answer == 'true' %}border:1px solid var(--success);{% endif %}">
+      <div class="tf-box {% if question.correct_answer == 'true' %}correct{% endif %}">
         True {% if question.correct_answer == 'true' %}<i class="fa-solid fa-check" style="color:var(--success);"></i>{% endif %}
       </div>
-      <div style="padding:8px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:{% if question.correct_answer == 'false' %}var(--success-light){% else %}var(--gray-100){% endif %};{% if question.correct_answer == 'false' %}border:1px solid var(--success);{% endif %}">
+      <div class="tf-box {% if question.correct_answer == 'false' %}correct{% endif %}">
         False {% if question.correct_answer == 'false' %}<i class="fa-solid fa-check" style="color:var(--success);"></i>{% endif %}
       </div>
     </div>
