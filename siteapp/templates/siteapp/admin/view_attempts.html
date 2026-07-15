@@ -127,7 +127,7 @@
               {% if attempt.percentage is not None %}
                 <div style="display:flex;align-items:center;gap:8px;">
                   <div class="progress-bar" style="width:56px;">
-                    <div class="progress-fill {% if attempt.percentage >= 70 %}success{% elif attempt.percentage >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ attempt.percentage|floatformat:0 }}%;"></div>
+                    <div class="progress-fill {% if attempt.percentage >= 70 %}success{% elif attempt.percentage >= 50 %}warning{% else %}danger{% endif %}" data-width="{{ attempt.percentage|floatformat:0 }}%"></div>
                   </div>
                   <span style="font-size:12px;font-weight:700;">{{ attempt.percentage|floatformat:0 }}%</span>
                 </div>
@@ -172,4 +172,12 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('.progress-fill[data-width]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-width');
+    });
+});
+</script>
 {% endblock %}
