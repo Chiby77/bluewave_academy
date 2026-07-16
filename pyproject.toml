@@ -28,6 +28,9 @@ dependencies = [
     "boto3>=1.34.0",
     # Production: Redis cache backend
     "django-redis>=5.4.0",
+    # Background task queue (Celery + Beat scheduler)
+    "celery>=5.4.0",
+    "django-celery-beat>=2.6.0",
     # Production: process management
     "uvicorn[standard]>=0.30.0",
 ]

@@ -47,6 +47,12 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = "Student"
         verbose_name_plural = "Students"
+        indexes = [
+            # Speeds up the common analytics filter: filter(is_active_student=True)
+            models.Index(fields=["is_active_student"], name="user_active_student_idx"),
+            # Speeds up lookup by student_id in search / admin views
+            models.Index(fields=["student_id"], name="user_student_id_idx"),
+        ]
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.student_id})"
@@ -514,6 +520,15 @@ class BlogPost(models.Model):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            # Speeds up ORDER BY -created_at on home page and blog listing
+            models.Index(fields=["-created_at"], name="blogpost_created_at_idx"),
+            # Speeds up category-filtered queries
+            models.Index(fields=["category"], name="blogpost_category_idx"),
+        ]
 
     def get_absolute_url(self):
         from django.urls import reverse
@@ -1051,6 +1066,10 @@ class Notification(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
+        indexes = [
+            # Fetched together on every page load for the notification badge
+            models.Index(fields=["user", "is_read"], name="notif_user_read_idx"),
+        ]
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.title}"

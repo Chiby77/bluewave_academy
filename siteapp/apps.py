@@ -8,3 +8,6 @@ class SiteappConfig(AppConfig):
     def ready(self):
         # Register fee-notification signal
         import siteapp.classroom_access  # noqa: F401
+        # Register cache-invalidation signals
+        from .signals import connect_signals
+        connect_signals()

@@ -55,8 +55,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",    # Required for AddIndexConcurrently migrations
     "channels",
     "storages",          # django-storages (Supabase S3 backend)
+    "django_celery_beat",         # Celery periodic task scheduler
     "siteapp",
 ]
 
@@ -413,5 +415,26 @@ LOGGING = {
             "level": "WARNING",
             "propagate": False,
         },
+    },
+}
+
+# ---------------------------------------------------------------------------
+# CELERY — Background task queue using the existing Redis instance
+# ---------------------------------------------------------------------------
+CELERY_BROKER_URL = REDIS_URL or "redis://localhost:6379/1"
+CELERY_RESULT_BACKEND = REDIS_URL or "redis://localhost:6379/1"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Celery Beat — periodic task schedule (anti-stampede dashboard pre-warm)
+from celery.schedules import crontab  # noqa: E402
+CELERY_BEAT_SCHEDULE = {
+    "refresh-dashboard-stats": {
+        "task": "siteapp.tasks.refresh_dashboard_stats",
+        "schedule": 300,  # every 5 minutes
     },
 }

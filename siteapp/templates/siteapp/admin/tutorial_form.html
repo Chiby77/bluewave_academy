@@ -144,5 +144,18 @@ function setType(t) {
     document.getElementById('urlSection').classList.toggle('hidden', t !== 'url');
     document.getElementById('fileSection').classList.toggle('hidden', t !== 'file');
 }
+
+// Auto-fill title from video file name
+document.getElementById('id_video_file').addEventListener('change', function() {
+    if (this.files.length > 0) {
+        const fileName = this.files[0].name;
+        const titleWithoutExt = fileName.replace(/\.[^/.]+$/, ""); // Remove file extension
+        const titleInput = document.getElementById('id_title');
+        // Only auto-fill if title input is empty
+        if (!titleInput.value.trim()) {
+            titleInput.value = titleWithoutExt;
+        }
+    }
+});
 </script>
 {% endblock %}

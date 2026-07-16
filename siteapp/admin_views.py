@@ -8,10 +8,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.http import JsonResponse, FileResponse
-from django.db.models import Count, Avg, Q, F
+from django.db.models import Count, Avg, Q, F, Sum
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
+from django.core.cache import cache
+from django.core.paginator import Paginator
 from decimal import Decimal
 import json
 
@@ -100,51 +102,56 @@ def admin_login(request):
 
 @admin_required
 def admin_dashboard(request):
-    """Admin dashboard with real-time statistics"""
+    """Admin dashboard — reads pre-computed stats from Redis (zero direct DB queries)."""
+    from .tasks import DASHBOARD_STATS_KEY, refresh_dashboard_stats
 
-    # Statistics
-    total_exams = Exam.objects.count()
-    total_students = CustomUser.objects.filter(is_active_student=True).count()
-    total_attempts = ExamAttempt.objects.count()
-    total_graded = ExamAttempt.objects.filter(status="graded").count()
+    stats = cache.get(DASHBOARD_STATS_KEY)
 
-    # Grading statistics
-    if total_graded > 0:
-        pass_rate = (
-            ExamAttempt.objects.filter(
+    if stats is None:
+        # Cold start: cache not yet warmed by Celery Beat.
+        # Compute once synchronously, then immediately schedule the task so
+        # subsequent loads are served entirely from Redis.
+        total_graded = ExamAttempt.objects.filter(status="graded").count()
+        if total_graded > 0:
+            passed = ExamAttempt.objects.filter(
                 status="graded", score__gte=F("exam__passing_marks")
             ).count()
-            / total_graded
-        ) * 100
-    else:
-        pass_rate = 0
+            pass_rate = round((passed / total_graded) * 100, 2)
+        else:
+            pass_rate = 0.0
 
-    # Recent attempts
-    recent_attempts = ExamAttempt.objects.select_related("student", "exam").order_by(
-        "-created_at"
-    )[:10]
+        stats = {
+            "total_exams": Exam.objects.count(),
+            "total_students": CustomUser.objects.filter(is_active_student=True).count(),
+            "total_attempts": ExamAttempt.objects.count(),
+            "total_graded": total_graded,
+            "pass_rate": pass_rate,
+            "held_exams": Exam.objects.filter(is_held=True).count(),
+            "category_stats": list(
+                Exam.objects.values("category")
+                .annotate(count=Count("id"), avg_score=Avg("attempts__score"))
+                .order_by("category")
+            ),
+        }
+        # Kick off async pre-warm so next hit is Redis-only
+        refresh_dashboard_stats.delay()
 
-    # Category statistics
-    category_stats = (
-        Exam.objects.values("category")
-        .annotate(count=Count("id"), avg_score=Avg("attempts__score"))
-        .order_by("category")
+    # Recent attempts are always live (lightweight, uses indexed FK + created_at)
+    recent_attempts = (
+        ExamAttempt.objects.select_related("student", "exam")
+        .order_by("-created_at")[:10]
     )
 
-    # Held exams
-    held_exams = Exam.objects.filter(is_held=True).count()
-
     context = {
-        "total_exams": total_exams,
-        "total_students": total_students,
-        "total_attempts": total_attempts,
-        "total_graded": total_graded,
-        "pass_rate": round(pass_rate, 2),
+        "total_exams": stats["total_exams"],
+        "total_students": stats["total_students"],
+        "total_attempts": stats["total_attempts"],
+        "total_graded": stats["total_graded"],
+        "pass_rate": stats["pass_rate"],
+        "held_exams": stats["held_exams"],
+        "category_stats": stats["category_stats"],
         "recent_attempts": recent_attempts,
-        "category_stats": category_stats,
-        "held_exams": held_exams,
     }
-
     return render(request, "siteapp/admin/dashboard.html", context)
 
 
@@ -1020,8 +1027,8 @@ def exam_analytics(request):
 
 @admin_required
 def student_performance(request):
-    """View individual student performance"""
-    students = (
+    """View individual student performance with database-level aggregation and pagination."""
+    students_qs = (
         CustomUser.objects.filter(is_staff=False, is_superuser=False)
         .annotate(
             total_attempts=Count("exam_attempts", distinct=True),
@@ -1037,33 +1044,34 @@ def student_performance(request):
         .order_by("-total_attempts")
     )
 
-    # Calculate pass rates and statistics for each student
-    total_attempts = 0
-    sum_pass_rates = 0
-    for student in students:
+    # Global summary stats — computed at the DB level, no Python loops
+    summary = students_qs.aggregate(
+        total_attempts_sum=Sum("total_attempts"),
+    )
+    total_attempts_sum = summary["total_attempts_sum"] or 0
+
+    # Paginate — 50 students per page prevents OOM with 1M+ users
+    paginator = Paginator(students_qs, 50)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Annotate pass_rate and avg_score on the current page slice only
+    for student in page_obj:
         if student.total_attempts > 0:
             student.pass_rate = round(
                 (student.passed_count / student.total_attempts) * 100, 2
             )
             student.avg_score = round(student.avg_score or 0, 2)
-            total_attempts += student.total_attempts
-            sum_pass_rates += student.pass_rate
         else:
             student.pass_rate = 0
             student.avg_score = 0
 
-    # Calculate average pass rate
-    avg_pass_rate = (
-        round(sum_pass_rates / students.count(), 2) if students.count() > 0 else 0
-    )
-
     context = {
-        "students": students,
-        "total_students": students.count(),
-        "total_attempts": total_attempts,
-        "avg_pass_rate": avg_pass_rate,
+        "students": page_obj,
+        "page_obj": page_obj,
+        "total_students": paginator.count,
+        "total_attempts": total_attempts_sum,
     }
-
     return render(request, "siteapp/admin/student_performance.html", context)
 
 
@@ -1382,6 +1390,8 @@ def admin_tutorial_list(request):
     return render(request, "siteapp/admin/tutorial_list.html", {"tutorials": tutorials, "stats": stats})
 
 
+import os
+
 @admin_required
 def admin_tutorial_create(request):
     if request.method == "POST":
@@ -1393,6 +1403,10 @@ def admin_tutorial_create(request):
         video_url = request.POST.get("video_url", "").strip()
         video_file = request.FILES.get("video_file")
         thumbnail = request.FILES.get("thumbnail")
+
+        # If no title provided but there is a video file, use the file name
+        if not title and video_file and video_type == "file":
+            title = os.path.splitext(video_file.name)[0]
 
         if not title:
             messages.error(request, "Title is required.")

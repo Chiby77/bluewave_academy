@@ -1,4 +1,4 @@
-{% load static %}
+{% load static cache %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,6 +113,10 @@
     </div>
 
     <!-- Blog grid -->
+    {# Only cache when NOT searching — search results vary per query and must never be stale #}
+    {% if not request.GET.q %}
+    {% cache 600 "blog_grid" %}
+    {% endif %}
     <div class="blog-grid">
         {% for post in posts %}
         <article class="blog-card">
@@ -147,7 +151,7 @@
                 <a href="{% url 'siteapp:blog_detail' post.slug %}">
                     <h2 class="card-title">{{ post.title }}</h2>
                 </a>
-                <p class="card-excerpt">{{ post.content|truncatewords:22 }}</p>
+                <p class="card-excerpt">{{ post.content|striptags|truncatewords:22 }}</p>
                 <div class="card-footer-row">
                     <button class="like-btn-blog" data-slug="{{ post.slug }}" aria-label="Like post">
                         <i class="fa-regular fa-heart"></i>
@@ -173,6 +177,9 @@
         </div>
         {% endfor %}
     </div>
+    {% if not request.GET.q %}
+    {% endcache %}
+    {% endif %}
 </main>
 
 <!-- =================== FOOTER =================== -->

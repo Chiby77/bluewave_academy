@@ -1,4 +1,4 @@
-{% load static %}
+{% load static cache %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,6 +111,8 @@
     <section class="announcements">
         <h2 class="section-title">Latest Announcements</h2>
         <div class="announcements-container">
+            {# Cache the announcement list for 10 minutes — same for all visitors #}
+            {% cache 600 "home_announcements" %}
             {% for announcement in announcements %}
             <div class="announcement-card">
                 <div class="announcement-date">{{ announcement.created_at|date:"M d, Y" }}</div>
@@ -120,11 +122,14 @@
             {% empty %}
             <p style="text-align: center; color: #64748b;">No announcements at the moment.</p>
             {% endfor %}
+            {% endcache %}
         </div>
     </section>
 
     <section class="blog-preview">
         <h2 class="section-title">From Our Blog</h2>
+        {# Cache the blog cards for 10 minutes — invalidated by post_save signal when posts change #}
+        {% cache 600 "home_blog_cards" %}
         <div class="blog-grid">
             {% for post in latest_blogs %}
             <div class="blog-card">
@@ -146,6 +151,7 @@
             <p class="text-center">New insights coming soon. Stay tuned!</p>
             {% endfor %}
         </div>
+        {% endcache %}
     </section>
 
     <section class="cta-section">
