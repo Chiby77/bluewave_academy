@@ -25,10 +25,10 @@ except ImportError:
     HAS_PYPDF = False
 
 
-# Latest Groq models (as of 2025)
-GROQ_PRIMARY_MODEL = "openai/gpt-oss-120b"          # Primary model (GPT OSS 120B)
-GROQ_SECONDARY_MODEL = "qwen/qwen3.6-27b"           # Secondary model
-GROQ_FALLBACK_MODEL = "deepseek-ai/DeepSeek-R1-V2"  # Final fallback
+# Valid Groq model IDs (verified against https://console.groq.com/docs/models)
+GROQ_PRIMARY_MODEL   = "llama-3.3-70b-versatile"   # Best quality, fast
+GROQ_SECONDARY_MODEL = "llama3-70b-8192"            # Reliable fallback
+GROQ_FALLBACK_MODEL  = "llama3-8b-8192"             # Fastest, always available
 
 
 class GroqGradingService:
@@ -97,7 +97,8 @@ Return ONLY valid JSON:
   "improvement_tips": ["<tip 1>", "<tip 2>"],
   "reasoning": "<detailed grading explanation>"
 }}"""
-        return self._call_groq(prompt, total_marks)
+        return self._call_groq(prompt, total_marks,
+                               student_answer=student_answer, reference=answer_key)
 
     def grade_code_submission(
         self,
@@ -145,7 +146,8 @@ Return ONLY valid JSON:
   "improvement_tips": ["<tip 1>", "<tip 2>"],
   "reasoning": "<detailed explanation>"
 }}"""
-        return self._call_groq(prompt, total_marks)
+        return self._call_groq(prompt, total_marks,
+                               student_answer=student_code, reference=expected_output)
 
     def grade_pdf_submission(
         self,
@@ -174,10 +176,15 @@ Return ONLY valid JSON:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _call_groq(self, prompt: str, total_marks: int) -> Dict:
-        """Call Groq API with automatic model fallback (GPT OSS 120B first, then others)."""
+    def _call_groq(self, prompt: str, total_marks: int,
+                   student_answer: str = "", reference: str = "") -> Dict:
+        """Call Groq API with automatic model fallback.
+        Always produces a usable score — falls back to keyword matching on
+        total API failure rather than returning zeros.
+        """
         models_to_try = [GROQ_PRIMARY_MODEL, GROQ_SECONDARY_MODEL, GROQ_FALLBACK_MODEL]
-        
+
+        last_error = None
         for model in models_to_try:
             try:
                 response = self.client.chat.completions.create(
@@ -192,15 +199,21 @@ Return ONLY valid JSON:
                     temperature=0.2,
                     max_tokens=1200,
                 )
-                return self._parse_response(response.choices[0].message.content, total_marks)
+                return self._parse_response(
+                    response.choices[0].message.content, total_marks,
+                    student_answer=student_answer, reference=reference,
+                )
             except Exception as e:
-                print(f"[Groq Grading] Error with model {model}: {e}")
+                last_error = e
+                print(f"[Groq Grading] Model {model} failed: {e}")
                 continue
-                
-        # All models failed
-        return self._get_error_response(total_marks)
 
-    def _parse_response(self, text: str, total_marks: int) -> Dict:
+        # All models failed — keyword fallback, never zeros
+        print(f"[Groq Grading] All models failed. Using offline fallback. Last error: {last_error}")
+        return self._offline_grade(student_answer or "", reference or "", total_marks)
+
+    def _parse_response(self, text: str, total_marks: int,
+                        student_answer: str = "", reference: str = "") -> Dict:
         try:
             clean = text.strip()
             if clean.startswith("```json"):
@@ -219,7 +232,7 @@ Return ONLY valid JSON:
                 "score": Decimal(str(score)),
                 "percentage": percentage,
                 "is_correct": data.get("is_correct", score >= total_marks * 0.8),
-                "feedback": data.get("feedback", "Graded by Groq AI."),
+                "feedback": data.get("feedback", "Graded by AI."),
                 "strengths": data.get("strengths", []),
                 "improvements": data.get("improvements", []),
                 "improvement_tips": data.get("improvement_tips", []),
@@ -228,7 +241,8 @@ Return ONLY valid JSON:
             }
         except (json.JSONDecodeError, ValueError) as e:
             print(f"[Groq Grading] Parse error: {e} | Raw: {text[:300]}")
-            return self._get_error_response(total_marks)
+            # Fall back to keyword matching — never return zeros
+            return self._offline_grade(student_answer, reference, total_marks)
 
     def _extract_pdf_text(self, pdf_bytes: bytes) -> str:
         if not HAS_PYPDF:

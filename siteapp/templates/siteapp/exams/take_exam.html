@@ -268,12 +268,25 @@ body { background: #f1f5f9; }
 
 {% block extra_js %}
 <script>
-const TOTAL_QUESTIONS = {{ questions|length }};
-const DURATION_SECONDS = {{ exam.duration_minutes }} * 60;
-let answered = {};
-let currentQ = 1;
-let timeLeft = DURATION_SECONDS;
+(function () {
+'use strict';
 
+/* ── Constants ─────────────────────────────────────────────────── */
+const TOTAL_QUESTIONS  = {{ questions|length }};
+const DURATION_SECONDS = {{ exam.duration_minutes }} * 60;
+const ATTEMPT_ID       = {{ attempt.id }};
+const EXAM_ID          = {{ exam.id }};
+const AUTOSAVE_URL     = "{% url 'siteapp:autosave_exam' exam.id %}";
+const SUBMIT_URL       = "{% url 'siteapp:submit_exam' exam.id %}";
+const CSRF_TOKEN       = "{{ csrf_token }}";
+
+/* ── State ─────────────────────────────────────────────────────── */
+let answered   = {};   // qIndex → true
+let currentQ   = 1;
+let timeLeft   = DURATION_SECONDS;
+let submitted  = false;
+
+/* ── Question navigation ───────────────────────────────────────── */
 function showQuestion(n) {
   document.querySelectorAll('[id^="question-"]').forEach(el => el.style.display = 'none');
   const q = document.getElementById('question-' + n);
@@ -284,19 +297,21 @@ function showQuestion(n) {
   const btn = document.querySelector('.exam-qbtn[data-q="' + n + '"]');
   if (btn) btn.classList.add('active');
 
-  // Scroll top on mobile
   window.scrollTo({ top: 56, behavior: 'smooth' });
 }
 
+/* ── Option selection (MCQ / True-False) ───────────────────────── */
 function selectOption(qId, val, labelEl) {
-  const siblings = labelEl.parentElement.querySelectorAll('.option-ng');
-  siblings.forEach(s => s.classList.remove('selected'));
+  labelEl.parentElement.querySelectorAll('.option-ng')
+    .forEach(s => s.classList.remove('selected'));
   labelEl.classList.add('selected');
   const radio = labelEl.querySelector('input[type="radio"]');
   if (radio) radio.checked = true;
   markAnswered(currentQ);
+  autosave(qId, val);
 }
 
+/* ── Mark answered + update UI ─────────────────────────────────── */
 function markAnswered(qNum) {
   answered[qNum] = true;
   const btn = document.querySelector('.exam-qbtn[data-q="' + qNum + '"]');
@@ -306,74 +321,131 @@ function markAnswered(qNum) {
 
 function updateProgress() {
   const count = Object.keys(answered).length;
-  document.getElementById('answeredCount').textContent = count;
+  document.getElementById('answeredCount').textContent  = count;
   document.getElementById('headerProgress').textContent = count;
   const pct = (count / TOTAL_QUESTIONS) * 100;
-  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressFill').style.width   = pct + '%';
   document.getElementById('topProgressBar').style.width = pct + '%';
 }
 
+/* ── Autosave ──────────────────────────────────────────────────── */
+// Maps qId (model PK) → index in questions list for nav updates
+const Q_ID_TO_IDX = {
+  {% for q in questions %}"{{ q.id }}": {{ forloop.counter }},
+  {% endfor %}
+};
+
+function autosave(questionId, answerText) {
+  if (submitted) return;
+  const body = new URLSearchParams({
+    question_id:  questionId,
+    answer_text:  answerText,
+    attempt_id:   ATTEMPT_ID,
+    csrfmiddlewaretoken: CSRF_TOKEN,
+  });
+  fetch(AUTOSAVE_URL, {
+    method:  'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body:    body,
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.saved) {
+      // Briefly flash the nav button green to confirm save
+      const idx = Q_ID_TO_IDX[String(questionId)];
+      if (idx) {
+        const btn = document.querySelector('.exam-qbtn[data-q="' + idx + '"]');
+        if (btn) {
+          btn.style.boxShadow = '0 0 0 3px #10b981';
+          setTimeout(() => { btn.style.boxShadow = ''; }, 800);
+        }
+      }
+    }
+  })
+  .catch(() => { /* silent — answers are also sent on final submit */ });
+}
+
+/* ── Wire textarea autosave ────────────────────────────────────── */
+let saveTimers = {};
+
+document.querySelectorAll('textarea[name^="question_"]').forEach(ta => {
+  const qId = ta.name.replace('question_', '');
+
+  ta.addEventListener('input', () => {
+    // Mark answered immediately on first keystroke
+    const idx = Q_ID_TO_IDX[qId];
+    if (idx && !answered[idx]) markAnswered(idx);
+
+    // Debounce: autosave 800 ms after typing stops
+    clearTimeout(saveTimers[qId]);
+    saveTimers[qId] = setTimeout(() => {
+      if (ta.value.trim()) autosave(qId, ta.value);
+    }, 800);
+  });
+});
+
+/* ── Submit modal ──────────────────────────────────────────────── */
 function confirmSubmit() {
   document.getElementById('modalAnswered').textContent = Object.keys(answered).length;
-  const modal = document.getElementById('submitModal');
-  modal.style.display = 'flex';
+  document.getElementById('submitModal').style.display = 'flex';
 }
 
 function closeModal() {
   document.getElementById('submitModal').style.display = 'none';
 }
 
+/* ── Final submission ──────────────────────────────────────────── */
 function submitExam() {
-  // Disable button to prevent double submit
-  const btn = document.getElementById('submitNowBtn');
-  if (btn) btn.disabled = true;
+  if (submitted) return;
+  submitted = true;
 
-  // Close confirm modal, show grading overlay
-  document.getElementById('submitModal').style.display = 'none';
-  const overlay = document.getElementById('gradingOverlay');
-  overlay.style.display = 'flex';
+  const submitBtn = document.getElementById('submitNowBtn');
+  if (submitBtn) submitBtn.disabled = true;
 
-  // Collect form data
-  const form = document.getElementById('examForm');
+  document.getElementById('submitModal').style.display   = 'none';
+  document.getElementById('gradingOverlay').style.display = 'flex';
+  clearInterval(timerInterval);
+
+  const form     = document.getElementById('examForm');
   const formData = new FormData(form);
   formData.set('submit', 'true');
+  formData.set('attempt_id', ATTEMPT_ID);
 
-  fetch(form.action || window.location.href, {
-    method: 'POST',
-    body: formData,
+  fetch(SUBMIT_URL, {
+    method:  'POST',
+    body:    formData,
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    redirect: 'follow'
   })
-  .then(res => {
-    // Whether JSON or redirect, show ready state after brief grading animation
-    showReady(res);
+  .then(res => res.json())
+  .then(data => {
+    const url = data.redirect_url || '/student/results/';
+    showGradingReady(url);
   })
   .catch(() => {
-    // Fallback: plain submit
+    // Network error — fallback to standard form POST so answers are not lost
+    submitted = false;
     form.submit();
   });
 }
 
-function showReady(res) {
-  // Hide spinner, show ready badge
-  document.getElementById('gradingSpinner').style.display = 'none';
-  document.getElementById('gradingMsg').style.display = 'none';
-  document.getElementById('gradingSub').style.display = 'none';
-  document.getElementById('gradingReady').style.display = 'block';
+/* ── Show "ready" state on overlay, then redirect ──────────────── */
+function showGradingReady(url) {
+  // Swap spinner for tick
+  const spinner = document.getElementById('gradingSpinner');
+  const msg     = document.getElementById('gradingMsg');
+  const sub     = document.getElementById('gradingSub');
+  const ready   = document.getElementById('gradingReady');
 
-  // After short delay redirect — try JSON redirect_url first
-  res.json()
-    .then(data => {
-      setTimeout(() => { window.location.href = data.redirect_url || '/student/results/'; }, 800);
-    })
-    .catch(() => {
-      // The form POST returned HTML (redirected page) — go to results
-      setTimeout(() => { window.location.href = '/student/results/'; }, 800);
-    });
+  if (spinner) spinner.style.display = 'none';
+  if (msg)     msg.style.display     = 'none';
+  if (sub)     sub.style.display     = 'none';
+  if (ready)   ready.style.display   = 'block';
+
+  setTimeout(() => { window.location.href = url; }, 1000);
 }
 
-// Timer
-const timerPill = document.getElementById('examTimerPill');
+/* ── Timer ─────────────────────────────────────────────────────── */
+const timerPill    = document.getElementById('examTimerPill');
 const timerDisplay = document.getElementById('timerDisplay');
 
 const timerInterval = setInterval(() => {
@@ -384,31 +456,21 @@ const timerInterval = setInterval(() => {
 
   timerPill.classList.remove('warning', 'danger');
   if (timeLeft <= 300 && timeLeft > 60) timerPill.classList.add('warning');
-  if (timeLeft <= 60) timerPill.classList.add('danger');
+  if (timeLeft <= 60)                   timerPill.classList.add('danger');
   if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(); }
 }, 1000);
 
-// Textarea detection
-document.querySelectorAll('textarea').forEach(ta => {
-  ta.addEventListener('input', () => {
-    const name = ta.getAttribute('name');
-    if (name && name.startsWith('question_')) {
-      const qEl = ta.closest('[id^="question-"]');
-      if (qEl) {
-        const qIdx = parseInt(qEl.id.replace('question-', ''));
-        if (qIdx) markAnswered(qIdx);
-      }
-    }
-  });
-});
-
-// Keyboard nav
+/* ── Keyboard navigation ───────────────────────────────────────── */
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight' && currentQ < TOTAL_QUESTIONS) showQuestion(currentQ + 1);
   if (e.key === 'ArrowLeft'  && currentQ > 1)               showQuestion(currentQ - 1);
 });
 
-// Prevent accidental leave
-window.addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; });
+/* ── Prevent accidental page leave ────────────────────────────── */
+window.addEventListener('beforeunload', e => {
+  if (!submitted) { e.preventDefault(); e.returnValue = ''; }
+});
+
+})();
 </script>
 {% endblock %}

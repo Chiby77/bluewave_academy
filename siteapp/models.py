@@ -264,18 +264,28 @@ class ExamAttempt(models.Model):
         return f"{self.student.get_full_name()} - {self.exam.title}"
 
     def calculate_score(self):
-        """Calculate total score from answers"""
+        """Calculate total score from answers.
+
+        Uses update_fields so this method NEVER overwrites status, ai_graded,
+        or any other field — only score and percentage are touched.
+        """
         answers = self.answers.all()
         total_score = sum(
             answer.marks_obtained for answer in answers if answer.marks_obtained
         )
         self.score = total_score
 
-        # Calculate percentage
         if self.exam.total_marks > 0:
-            self.percentage = (total_score / self.exam.total_marks) * 100
+            self.percentage = round((total_score / self.exam.total_marks) * 100, 2)
+        else:
+            self.percentage = 0
 
-        self.save()
+        # update_fields is critical: prevents overwriting status when called
+        # mid-grading (e.g. from inside a background thread).
+        ExamAttempt.objects.filter(pk=self.pk).update(
+            score=self.score,
+            percentage=self.percentage,
+        )
         return self.score
 
     def is_passed(self):

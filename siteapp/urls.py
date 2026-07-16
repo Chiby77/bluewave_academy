@@ -68,6 +68,7 @@ urlpatterns = [
     path("student/exam/<int:exam_id>/", views.exam_detail, name="exam_detail"),
     path("student/exam/<int:exam_id>/take/", views.take_exam, name="take_exam"),
     path("student/exam/<int:exam_id>/submit/", views.submit_exam, name="submit_exam"),
+    path("student/exam/<int:exam_id>/autosave/", views.autosave_exam, name="autosave_exam"),
     path(
         "student/exam/results/<int:attempt_id>/",
         views.exam_results,
