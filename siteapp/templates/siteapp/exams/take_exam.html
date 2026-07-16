@@ -43,7 +43,7 @@ body { background: #f1f5f9; }
 
 <!-- Exam Body -->
 <div class="exam-body">
-<form method="post" id="examForm">
+<form method="post" id="examForm" action="{% url 'siteapp:submit_exam' exam.id %}">
   {% csrf_token %}
   <input type="hidden" name="submit" value="true" id="submitFlag">
 

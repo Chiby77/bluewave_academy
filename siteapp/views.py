@@ -749,7 +749,19 @@ def submit_exam(request, exam_id):
     if not attempt:
         return JsonResponse({"error": "No active attempt found"}, status=400)
 
-    # ── 1. Close the attempt timer ──────────────────────────────────────────
+    questions = exam.questions.all()
+
+    with transaction.atomic():
+        # Save all answers first
+        attempt.answers.all().delete()
+        for question in questions:
+            answer_text = request.POST.get(f"question_{question.id}")
+            if answer_text:
+                ans = Answer.objects.create(
+                    attempt=attempt, question=question, answer_text=answer_text
+                )
+
+    # ── 1. Close the attempt timer ───────────────────────────────────────────────
     attempt.end_time = timezone.now()
     time_diff = attempt.end_time - attempt.start_time
     attempt.time_taken_minutes = int(time_diff.total_seconds() / 60)
