@@ -6,7 +6,18 @@ Celery is initialised (useful for testing without a running broker).
 """
 import logging
 
-from celery import shared_task
+try:
+    from celery import shared_task
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
+
+    # Create dummy decorator that does nothing
+    def shared_task(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
 from django.core.cache import cache
 from django.db.models import Avg, Count, F, Q
 
@@ -20,7 +31,7 @@ DASHBOARD_STATS_TTL = 360  # 6 minutes
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=30)
-def refresh_dashboard_stats(self):
+def refresh_dashboard_stats(self=None):
     """
     Pre-compute all Admin Dashboard aggregations and push them to Redis.
 
@@ -70,4 +81,6 @@ def refresh_dashboard_stats(self):
 
     except Exception as exc:
         logger.error("refresh_dashboard_stats failed: %s", exc)
-        raise self.retry(exc=exc)
+        if HAS_CELERY and self:
+            raise self.retry(exc=exc)
+

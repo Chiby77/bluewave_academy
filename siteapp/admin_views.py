@@ -1600,7 +1600,7 @@ def admin_course_list(request):
 
 @admin_required
 def admin_course_create(request):
-    """Create a new course with lesson picker."""
+    """Create a new course with lesson picker and video upload."""
     tutorials = Tutorial.objects.filter(status="published").order_by("title")
     if request.method == "POST":
         title       = request.POST.get("title", "").strip()
@@ -1609,6 +1609,7 @@ def admin_course_create(request):
         status      = request.POST.get("status", "draft")
         thumbnail   = request.FILES.get("thumbnail")
         lesson_ids  = request.POST.getlist("lesson_ids")
+        lesson_videos = request.FILES.getlist("lesson_videos")
 
         if not title:
             messages.error(request, "Title is required.")
@@ -1629,11 +1630,43 @@ def admin_course_create(request):
             course.thumbnail = thumbnail
         course.save()
 
-        for order, tid in enumerate(lesson_ids, start=1):
+        # Handle uploaded lesson videos
+        new_tutorials = []
+        for video_file in lesson_videos:
+            # Auto-generate title from file name
+            base_name = os.path.splitext(video_file.name)[0]
+            t_title = base_name.replace('_', ' ').replace('-', ' ').title()
+            
+            # Create a unique slug for the tutorial
+            t_slug = slugify(t_title)
+            t_base = t_slug
+            t_n = 1
+            while Tutorial.objects.filter(slug=t_slug).exists():
+                t_slug = f"{t_base}-{t_n}"; t_n += 1
+
+            tutorial = Tutorial.objects.create(
+                title=t_title,
+                slug=t_slug,
+                video_type="file",
+                video_file=video_file,
+                category=category,  # same category as course
+                status="published",
+                created_by=request.user
+            )
+            new_tutorials.append(tutorial)
+
+        # Combine new tutorials with selected existing ones
+        current_order = 1
+        for tutorial in new_tutorials:
+            CourseLesson.objects.create(course=course, tutorial=tutorial, order=current_order)
+            current_order += 1
+            
+        for tid in lesson_ids:
             try:
                 t = Tutorial.objects.get(pk=int(tid), status="published")
                 CourseLesson.objects.get_or_create(course=course, tutorial=t,
-                                                   defaults={"order": order})
+                                                   defaults={"order": current_order})
+                current_order += 1
             except (Tutorial.DoesNotExist, ValueError):
                 pass
 
@@ -1648,7 +1681,7 @@ def admin_course_create(request):
 
 @admin_required
 def admin_course_edit(request, course_id):
-    """Edit a course, update lessons and reorder."""
+    """Edit a course, update lessons, add new uploaded videos, reorder."""
     course   = get_object_or_404(Course, pk=course_id)
     tutorials = Tutorial.objects.filter(status="published").order_by("title")
     existing_lessons = course.lessons.select_related("tutorial").order_by("order")
@@ -1663,7 +1696,42 @@ def admin_course_edit(request, course_id):
         course.save()
 
         lesson_ids = request.POST.getlist("lesson_ids")
-        # Remove lessons not in the new list
+        lesson_videos = request.FILES.getlist("lesson_videos")
+
+        # Handle uploaded lesson videos
+        new_tutorials = []
+        for video_file in lesson_videos:
+            base_name = os.path.splitext(video_file.name)[0]
+            t_title = base_name.replace('_', ' ').replace('-', ' ').title()
+            
+            t_slug = slugify(t_title)
+            t_base = t_slug
+            t_n = 1
+            while Tutorial.objects.filter(slug=t_slug).exists():
+                t_slug = f"{t_base}-{t_n}"; t_n += 1
+
+            tutorial = Tutorial.objects.create(
+                title=t_title,
+                slug=t_slug,
+                video_type="file",
+                video_file=video_file,
+                category=course.category,
+                status="published",
+                created_by=request.user
+            )
+            new_tutorials.append(tutorial)
+
+        # Get current max order for existing lessons
+        current_order = 1
+        if existing_lessons.exists():
+            current_order = existing_lessons.last().order + 1
+
+        # Add new video tutorials to course
+        for tutorial in new_tutorials:
+            CourseLesson.objects.create(course=course, tutorial=tutorial, order=current_order)
+            current_order += 1
+
+        # Update existing lessons
         course.lessons.exclude(tutorial_id__in=[int(i) for i in lesson_ids if i.isdigit()]).delete()
         for order, tid in enumerate(lesson_ids, start=1):
             try:
