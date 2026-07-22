@@ -339,6 +339,8 @@ function showQuestion(n) {
 
   window.scrollTo({ top: 56, behavior: 'smooth' });
 }
+/* Expose to global scope so onclick= attributes can call them */
+window.showQuestion = showQuestion;
 
 /* ── Mark answered + update all progress indicators ─────────────── */
 function markAnswered(qNum) {
@@ -348,6 +350,7 @@ function markAnswered(qNum) {
   if (btn) btn.classList.add('answered');
   updateProgress();
 }
+window.markAnswered = markAnswered;
 
 function updateProgress() {
   var count = Object.keys(answered).length;
@@ -408,10 +411,12 @@ function confirmSubmit() {
   document.getElementById('modalAnswered').textContent = Object.keys(answered).length;
   document.getElementById('submitModal').style.display = 'flex';
 }
+window.confirmSubmit = confirmSubmit;
 
 function closeModal() {
   document.getElementById('submitModal').style.display = 'none';
 }
+window.closeModal = closeModal;
 
 /* ── Final submission ────────────────────────────────────────────── */
 function submitExam() {
@@ -445,6 +450,7 @@ function submitExam() {
     form.submit();
   });
 }
+window.submitExam = submitExam;
 
 /* ── Grading overlay → ready state ──────────────────────────────── */
 function showGradingReady(url) {
