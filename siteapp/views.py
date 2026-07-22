@@ -418,20 +418,21 @@ def _grade_attempt_now(attempt):
     MCQ/true_false: auto-checked via check_answer().
     code/essay/short_answer: graded via Groq AI (or keyword fallback).
     Always finalises score and sets status='graded'.
+    Never overwrites unrelated fields — uses update_fields on every save.
     """
     from .examinator_service import get_grading_service
     from .models import ExamGrading
 
     svc = get_grading_service()
-    svc.is_enabled()  # re-check key in case singleton was stale
+    svc.is_enabled()  # refresh API key on stale singleton
 
-    # Step 1: MCQ / True-False — just run check_answer
+    # Step 1: MCQ / True-False — instant, pure Python
     for answer in attempt.answers.filter(
         question__question_type__in=["mcq", "true_false"]
     ).select_related("question"):
         answer.check_answer()
 
-    # Step 2: Subjective / code — Groq AI or keyword fallback
+    # Step 2: Subjective / code — Groq AI with keyword fallback
     for answer in attempt.answers.filter(
         question__question_type__in=["essay", "short_answer", "code"]
     ).select_related("question"):
@@ -439,16 +440,16 @@ def _grade_attempt_now(attempt):
         if q.question_type == "code":
             result = svc.grade_code_submission(
                 question=q.question_text,
-                rubric="",
+                rubric=getattr(q, "rubric", "") or "",
                 expected_output=q.correct_answer or "",
                 student_code=answer.answer_text or "",
-                language="python",
+                language=getattr(q, "code_language", "javascript") or "javascript",
                 total_marks=int(q.marks),
             )
         else:
             result = svc.grade_text_submission(
                 question=q.question_text,
-                rubric="",
+                rubric=getattr(q, "rubric", "") or "",
                 answer_key=q.correct_answer or "",
                 student_answer=answer.answer_text or "",
                 total_marks=int(q.marks),
@@ -457,22 +458,30 @@ def _grade_attempt_now(attempt):
         answer.is_correct = result["is_correct"]
         answer.ai_graded = True
         answer.ai_feedback = result["feedback"]
-        answer.save()
+        answer.save(update_fields=["marks_obtained", "is_correct", "ai_graded", "ai_feedback", "updated_at"])
+
         ExamGrading.objects.update_or_create(
             attempt=attempt, question=q,
             defaults={
                 "student_answer": answer.answer_text,
                 "groq_score": result["score"],
                 "groq_feedback": result["feedback"],
-                "groq_reasoning": result["reasoning"],
+                "groq_reasoning": result.get("reasoning", ""),
             },
         )
 
-    # Step 3: Finalise
+    # Step 3: Recalculate score (only touches score + percentage columns)
     attempt.calculate_score()
+
+    # Step 4: Mark graded — update_fields so status/ai_graded are the ONLY
+    # columns written; score/percentage were already written by calculate_score()
+    ExamAttempt.objects.filter(pk=attempt.pk).update(
+        status="graded",
+        ai_graded=True,
+    )
+    # Keep the in-memory object in sync for any callers that inspect it
     attempt.status = "graded"
     attempt.ai_graded = True
-    attempt.save()
 
 
 @login_required(login_url="siteapp:login")
@@ -603,34 +612,52 @@ def take_exam(request, exam_id):
                     messages.warning(request, "This exam was already submitted.")
                     return redirect("siteapp:exam_results", attempt_id=locked.id)
 
+                # Save / overwrite answers
                 locked.answers.all().delete()
                 for question in questions:
                     answer_text = request.POST.get(f"question_{question.id}")
                     if answer_text:
-                        ans = Answer.objects.create(
+                        Answer.objects.create(
                             attempt=locked, question=question, answer_text=answer_text
                         )
-                        ans.check_answer()
 
                 locked.end_time = timezone.now()
                 time_diff = locked.end_time - locked.start_time
-                locked.time_taken_minutes = int(time_diff.total_seconds() / 60)
+                locked.time_taken_minutes = max(0, int(time_diff.total_seconds() / 60))
                 locked.status = "submitted"
-                locked.save()
+                locked.save(update_fields=["end_time", "time_taken_minutes", "status"])
 
-                # Instant grading
-                _grade_attempt_now(locked)
+            # ── Grade OUTSIDE the transaction ─────────────────────────────────
+            # Groq HTTP calls can take several seconds — keeping them inside the
+            # transaction would hold the DB connection open that whole time, starving
+            # other requests. The attempt row is already committed as "submitted",
+            # so there is no risk of data loss if grading fails.
+            _grade_attempt_now(locked)
 
             results_url = f"/student/exam/results/{locked.id}/"
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse({"success": True, "redirect_url": results_url})
-            messages.success(request, "Exam submitted successfully!")
+            messages.success(request, "Exam submitted and graded!")
             return redirect("siteapp:exam_results", attempt_id=locked.id)
+
         except Exception as e:
+            import traceback
+            print(f"[take_exam submit] Error: {e}\n{traceback.format_exc()}")
+            # Safety net — never leave stuck in 'submitted'
+            try:
+                ExamAttempt.objects.filter(
+                    id=attempt.id, status="submitted"
+                ).update(status="graded", ai_graded=False)
+            except Exception:
+                pass
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return JsonResponse({"error": str(e)}, status=500)
-            messages.error(request, "Submission failed. Please try again or contact support.")
-            return redirect("siteapp:exam_list")
+                return JsonResponse({
+                    "success": True,
+                    "redirect_url": f"/student/exam/results/{attempt.id}/",
+                    "warning": "Submitted with partial grading.",
+                })
+            messages.warning(request, "Exam submitted. Results may need instructor review.")
+            return redirect("siteapp:exam_results", attempt_id=attempt.id)
 
     context = {
         "exam": exam,
@@ -885,15 +912,42 @@ def autosave_exam(request, exam_id):
 
 @login_required(login_url="siteapp:login")
 def exam_results(request, attempt_id):
-    """View exam results"""
+    """View exam results.
+
+    Handles three states:
+    - graded   → show full results page
+    - submitted → show a 'grading in progress' holding page that auto-polls
+    - in_progress → student landed here by accident; redirect back to exam
+    """
     attempt = get_object_or_404(ExamAttempt, id=attempt_id, student=request.user)
 
+    # Still in progress — shouldn't normally happen, but guard it
+    if attempt.status == "in_progress":
+        messages.info(request, "Your exam is still in progress.")
+        return redirect("siteapp:take_exam", exam_id=attempt.exam.id)
+
+    # Grading is running (submitted but not yet graded)
+    if attempt.status == "submitted":
+        # Try grading now synchronously in case the background work was missed
+        try:
+            _grade_attempt_now(attempt)
+            # Refresh from DB
+            attempt.refresh_from_db()
+        except Exception as e:
+            print(f"[exam_results] on-demand grade error: {e}")
+
+        # If still not graded after the retry, show the holding page
+        if attempt.status != "graded":
+            return render(request, "siteapp/exams/exam_results.html", {
+                "attempt": attempt,
+                "grading_pending": True,
+            })
+
+    # status == "graded" — show full results
     answers = attempt.answers.select_related("question").all()
     total_questions = answers.count()
     correct_answers = answers.filter(is_correct=True).count()
     incorrect_answers = total_questions - correct_answers
-
-    # Calculate marks needed to pass (if failed)
     marks_needed = max(0, attempt.exam.passing_marks - (attempt.score or 0))
 
     context = {
@@ -904,8 +958,8 @@ def exam_results(request, attempt_id):
         "incorrect_answers": incorrect_answers,
         "passed": attempt.is_passed(),
         "marks_needed": marks_needed,
+        "grading_pending": False,
     }
-
     return render(request, "siteapp/exams/exam_results.html", context)
 
 

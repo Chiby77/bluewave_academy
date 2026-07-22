@@ -69,31 +69,31 @@ body { background: #f1f5f9; }
             <div class="question-text-ng">{{ question.question_text }}</div>
 
             {% if question.question_type == 'mcq' %}
-            <div class="option-grid">
+            <div class="option-grid" id="opts-{{ question.id }}">
               {% if question.option_a %}
-              <label class="option-ng" id="opt-{{ question.id }}-a" onclick="selectOption('{{ question.id }}', 'a', this)">
-                <input type="radio" name="question_{{ question.id }}" value="a" class="hidden-radio" style="display:none;">
+              <label class="option-ng" id="opt-{{ question.id }}-a">
+                <input type="radio" name="question_{{ question.id }}" value="a" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">A</div>
                 <div class="opt-text">{{ question.option_a }}</div>
               </label>
               {% endif %}
               {% if question.option_b %}
-              <label class="option-ng" id="opt-{{ question.id }}-b" onclick="selectOption('{{ question.id }}', 'b', this)">
-                <input type="radio" name="question_{{ question.id }}" value="b" class="hidden-radio" style="display:none;">
+              <label class="option-ng" id="opt-{{ question.id }}-b">
+                <input type="radio" name="question_{{ question.id }}" value="b" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">B</div>
                 <div class="opt-text">{{ question.option_b }}</div>
               </label>
               {% endif %}
               {% if question.option_c %}
-              <label class="option-ng" id="opt-{{ question.id }}-c" onclick="selectOption('{{ question.id }}', 'c', this)">
-                <input type="radio" name="question_{{ question.id }}" value="c" class="hidden-radio" style="display:none;">
+              <label class="option-ng" id="opt-{{ question.id }}-c">
+                <input type="radio" name="question_{{ question.id }}" value="c" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">C</div>
                 <div class="opt-text">{{ question.option_c }}</div>
               </label>
               {% endif %}
               {% if question.option_d %}
-              <label class="option-ng" id="opt-{{ question.id }}-d" onclick="selectOption('{{ question.id }}', 'd', this)">
-                <input type="radio" name="question_{{ question.id }}" value="d" class="hidden-radio" style="display:none;">
+              <label class="option-ng" id="opt-{{ question.id }}-d">
+                <input type="radio" name="question_{{ question.id }}" value="d" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">D</div>
                 <div class="opt-text">{{ question.option_d }}</div>
               </label>
@@ -101,14 +101,14 @@ body { background: #f1f5f9; }
             </div>
 
             {% elif question.question_type == 'true_false' %}
-            <div class="option-grid">
-              <label class="option-ng" id="opt-{{ question.id }}-true" onclick="selectOption('{{ question.id }}', 'true', this)">
-                <input type="radio" name="question_{{ question.id }}" value="true" class="hidden-radio" style="display:none;">
+            <div class="option-grid" id="opts-{{ question.id }}">
+              <label class="option-ng" id="opt-{{ question.id }}-true">
+                <input type="radio" name="question_{{ question.id }}" value="true" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">T</div>
                 <div class="opt-text">True</div>
               </label>
-              <label class="option-ng" id="opt-{{ question.id }}-false" onclick="selectOption('{{ question.id }}', 'false', this)">
-                <input type="radio" name="question_{{ question.id }}" value="false" class="hidden-radio" style="display:none;">
+              <label class="option-ng" id="opt-{{ question.id }}-false">
+                <input type="radio" name="question_{{ question.id }}" value="false" class="hidden-radio" style="position:absolute; opacity:0; pointer-events:none;">
                 <div class="opt-letter">F</div>
                 <div class="opt-text">False</div>
               </label>
@@ -268,6 +268,7 @@ body { background: #f1f5f9; }
 
 {% block extra_js %}
 <script>
+// @ts-nocheck
 (function () {
 'use strict';
 
@@ -278,69 +279,92 @@ const ATTEMPT_ID       = {{ attempt.id }};
 const EXAM_ID          = {{ exam.id }};
 const AUTOSAVE_URL     = "{% url 'siteapp:autosave_exam' exam.id %}";
 const SUBMIT_URL       = "{% url 'siteapp:submit_exam' exam.id %}";
-const CSRF_TOKEN       = "{{ csrf_token }}";
+const CSRF_TOKEN       = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
 /* ── State ─────────────────────────────────────────────────────── */
-let answered   = {};   // qIndex → true
-let currentQ   = 1;
-let timeLeft   = DURATION_SECONDS;
-let submitted  = false;
+let answered  = {};   // qIndex (1-based) → true
+let currentQ  = 1;
+let timeLeft  = DURATION_SECONDS;
+let submitted = false;
 
-/* ── Question navigation ───────────────────────────────────────── */
-function showQuestion(n) {
-  document.querySelectorAll('[id^="question-"]').forEach(el => el.style.display = 'none');
-  const q = document.getElementById('question-' + n);
-  if (q) q.style.display = 'block';
-  currentQ = n;
-
-  document.querySelectorAll('.exam-qbtn').forEach(btn => btn.classList.remove('active'));
-  const btn = document.querySelector('.exam-qbtn[data-q="' + n + '"]');
-  if (btn) btn.classList.add('active');
-
-  window.scrollTo({ top: 56, behavior: 'smooth' });
-}
-
-/* ── Option selection (MCQ / True-False) ───────────────────────── */
-function selectOption(qId, val, labelEl) {
-  labelEl.parentElement.querySelectorAll('.option-ng')
-    .forEach(s => s.classList.remove('selected'));
-  labelEl.classList.add('selected');
-  const radio = labelEl.querySelector('input[type="radio"]');
-  if (radio) radio.checked = true;
-  markAnswered(currentQ);
-  autosave(qId, val);
-}
-
-/* ── Mark answered + update UI ─────────────────────────────────── */
-function markAnswered(qNum) {
-  answered[qNum] = true;
-  const btn = document.querySelector('.exam-qbtn[data-q="' + qNum + '"]');
-  if (btn) btn.classList.add('answered');
-  updateProgress();
-}
-
-function updateProgress() {
-  const count = Object.keys(answered).length;
-  document.getElementById('answeredCount').textContent  = count;
-  document.getElementById('headerProgress').textContent = count;
-  const pct = (count / TOTAL_QUESTIONS) * 100;
-  document.getElementById('progressFill').style.width   = pct + '%';
-  document.getElementById('topProgressBar').style.width = pct + '%';
-}
-
-/* ── Autosave ──────────────────────────────────────────────────── */
-// Maps qId (model PK) → index in questions list for nav updates
+/* ── Maps question DB pk → 1-based loop index ───────────────────── */
 const Q_ID_TO_IDX = {
   {% for q in questions %}"{{ q.id }}": {{ forloop.counter }},
   {% endfor %}
 };
 
+/* ══════════════════════════════════════════════════════════════════
+   Wire MCQ / True-False radio buttons.
+   We listen on the <input type="radio"> change event — NOT on the
+   <label> click — to avoid the double-fire bug that occurs when a
+   label with onclick wraps an input (label click → input click →
+   label click fires twice).
+   ══════════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.option-grid').forEach(function (grid) {
+  grid.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      /* Deselect all sibling labels in this grid */
+      grid.querySelectorAll('label.option-ng').forEach(function (lbl) {
+        lbl.classList.remove('selected');
+      });
+      /* Select the label that owns this radio */
+      var ownerLabel = radio.closest('label.option-ng');
+      if (ownerLabel) ownerLabel.classList.add('selected');
+
+      /* Extract question id from the radio name: "question_<id>" */
+      var qId  = radio.name.replace('question_', '');
+      var val  = radio.value;
+      var idx  = Q_ID_TO_IDX[qId];
+
+      markAnswered(idx);
+      autosave(qId, val);
+    });
+  });
+});
+
+/* ── Question navigation ────────────────────────────────────────── */
+function showQuestion(n) {
+  document.querySelectorAll('[id^="question-"]').forEach(function (el) {
+    el.style.display = 'none';
+  });
+  var q = document.getElementById('question-' + n);
+  if (q) q.style.display = 'block';
+  currentQ = n;
+
+  document.querySelectorAll('.exam-qbtn').forEach(function (btn) {
+    btn.classList.remove('active');
+  });
+  var btn = document.querySelector('.exam-qbtn[data-q="' + n + '"]');
+  if (btn) btn.classList.add('active');
+
+  window.scrollTo({ top: 56, behavior: 'smooth' });
+}
+
+/* ── Mark answered + update all progress indicators ─────────────── */
+function markAnswered(qNum) {
+  if (!qNum) return;
+  answered[qNum] = true;
+  var btn = document.querySelector('.exam-qbtn[data-q="' + qNum + '"]');
+  if (btn) btn.classList.add('answered');
+  updateProgress();
+}
+
+function updateProgress() {
+  var count = Object.keys(answered).length;
+  document.getElementById('answeredCount').textContent  = count;
+  document.getElementById('headerProgress').textContent = count;
+  var pct = (count / TOTAL_QUESTIONS) * 100;
+  document.getElementById('progressFill').style.width   = pct + '%';
+  document.getElementById('topProgressBar').style.width = pct + '%';
+}
+
+/* ── Autosave ────────────────────────────────────────────────────── */
 function autosave(questionId, answerText) {
   if (submitted) return;
-  const body = new URLSearchParams({
-    question_id:  questionId,
-    answer_text:  answerText,
-    attempt_id:   ATTEMPT_ID,
+  var body = new URLSearchParams({
+    question_id:         questionId,
+    answer_text:         answerText,
+    attempt_id:          ATTEMPT_ID,
     csrfmiddlewaretoken: CSRF_TOKEN,
   });
   fetch(AUTOSAVE_URL, {
@@ -348,43 +372,38 @@ function autosave(questionId, answerText) {
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
     body:    body,
   })
-  .then(r => r.json())
-  .then(data => {
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
     if (data.saved) {
-      // Briefly flash the nav button green to confirm save
-      const idx = Q_ID_TO_IDX[String(questionId)];
+      var idx = Q_ID_TO_IDX[String(questionId)];
       if (idx) {
-        const btn = document.querySelector('.exam-qbtn[data-q="' + idx + '"]');
-        if (btn) {
-          btn.style.boxShadow = '0 0 0 3px #10b981';
-          setTimeout(() => { btn.style.boxShadow = ''; }, 800);
+        var nb = document.querySelector('.exam-qbtn[data-q="' + idx + '"]');
+        if (nb) {
+          nb.style.boxShadow = '0 0 0 3px #10b981';
+          setTimeout(function () { nb.style.boxShadow = ''; }, 800);
         }
       }
     }
   })
-  .catch(() => { /* silent — answers are also sent on final submit */ });
+  .catch(function () { /* silent — answers re-sent on final submit */ });
 }
 
-/* ── Wire textarea autosave ────────────────────────────────────── */
-let saveTimers = {};
-
-document.querySelectorAll('textarea[name^="question_"]').forEach(ta => {
-  const qId = ta.name.replace('question_', '');
-
-  ta.addEventListener('input', () => {
-    // Mark answered immediately on first keystroke
-    const idx = Q_ID_TO_IDX[qId];
+/* ── Wire textarea autosave (essay / short_answer / code) ─────────── */
+var saveTimers = {};
+document.querySelectorAll('textarea[name^="question_"]').forEach(function (ta) {
+  var qId = ta.name.replace('question_', '');
+  ta.addEventListener('input', function () {
+    var idx = Q_ID_TO_IDX[qId];
     if (idx && !answered[idx]) markAnswered(idx);
 
-    // Debounce: autosave 800 ms after typing stops
     clearTimeout(saveTimers[qId]);
-    saveTimers[qId] = setTimeout(() => {
+    saveTimers[qId] = setTimeout(function () {
       if (ta.value.trim()) autosave(qId, ta.value);
     }, 800);
   });
 });
 
-/* ── Submit modal ──────────────────────────────────────────────── */
+/* ── Submit modal ────────────────────────────────────────────────── */
 function confirmSubmit() {
   document.getElementById('modalAnswered').textContent = Object.keys(answered).length;
   document.getElementById('submitModal').style.display = 'flex';
@@ -394,20 +413,20 @@ function closeModal() {
   document.getElementById('submitModal').style.display = 'none';
 }
 
-/* ── Final submission ──────────────────────────────────────────── */
+/* ── Final submission ────────────────────────────────────────────── */
 function submitExam() {
   if (submitted) return;
   submitted = true;
 
-  const submitBtn = document.getElementById('submitNowBtn');
+  var submitBtn = document.getElementById('submitNowBtn');
   if (submitBtn) submitBtn.disabled = true;
 
-  document.getElementById('submitModal').style.display   = 'none';
+  document.getElementById('submitModal').style.display    = 'none';
   document.getElementById('gradingOverlay').style.display = 'flex';
   clearInterval(timerInterval);
 
-  const form     = document.getElementById('examForm');
-  const formData = new FormData(form);
+  var form     = document.getElementById('examForm');
+  var formData = new FormData(form);
   formData.set('submit', 'true');
   formData.set('attempt_id', ATTEMPT_ID);
 
@@ -416,42 +435,40 @@ function submitExam() {
     body:    formData,
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
   })
-  .then(res => res.json())
-  .then(data => {
-    const url = data.redirect_url || '/student/results/';
-    showGradingReady(url);
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    showGradingReady(data.redirect_url || '/student/results/');
   })
-  .catch(() => {
-    // Network error — fallback to standard form POST so answers are not lost
+  .catch(function () {
+    /* Network error — fall back to plain form POST */
     submitted = false;
     form.submit();
   });
 }
 
-/* ── Show "ready" state on overlay, then redirect ──────────────── */
+/* ── Grading overlay → ready state ──────────────────────────────── */
 function showGradingReady(url) {
-  // Swap spinner for tick
-  const spinner = document.getElementById('gradingSpinner');
-  const msg     = document.getElementById('gradingMsg');
-  const sub     = document.getElementById('gradingSub');
-  const ready   = document.getElementById('gradingReady');
+  var spinner = document.getElementById('gradingSpinner');
+  var msg     = document.getElementById('gradingMsg');
+  var sub     = document.getElementById('gradingSub');
+  var ready   = document.getElementById('gradingReady');
 
   if (spinner) spinner.style.display = 'none';
   if (msg)     msg.style.display     = 'none';
   if (sub)     sub.style.display     = 'none';
   if (ready)   ready.style.display   = 'block';
 
-  setTimeout(() => { window.location.href = url; }, 1000);
+  setTimeout(function () { window.location.href = url; }, 1000);
 }
 
-/* ── Timer ─────────────────────────────────────────────────────── */
-const timerPill    = document.getElementById('examTimerPill');
-const timerDisplay = document.getElementById('timerDisplay');
+/* ── Timer ───────────────────────────────────────────────────────── */
+var timerPill    = document.getElementById('examTimerPill');
+var timerDisplay = document.getElementById('timerDisplay');
 
-const timerInterval = setInterval(() => {
+var timerInterval = setInterval(function () {
   timeLeft--;
-  const min = Math.floor(timeLeft / 60);
-  const sec = timeLeft % 60;
+  var min = Math.floor(timeLeft / 60);
+  var sec = timeLeft % 60;
   timerDisplay.textContent = min + ':' + String(sec).padStart(2, '0');
 
   timerPill.classList.remove('warning', 'danger');
@@ -460,14 +477,14 @@ const timerInterval = setInterval(() => {
   if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(); }
 }, 1000);
 
-/* ── Keyboard navigation ───────────────────────────────────────── */
-document.addEventListener('keydown', e => {
+/* ── Keyboard navigation ─────────────────────────────────────────── */
+document.addEventListener('keydown', function (e) {
   if (e.key === 'ArrowRight' && currentQ < TOTAL_QUESTIONS) showQuestion(currentQ + 1);
   if (e.key === 'ArrowLeft'  && currentQ > 1)               showQuestion(currentQ - 1);
 });
 
-/* ── Prevent accidental page leave ────────────────────────────── */
-window.addEventListener('beforeunload', e => {
+/* ── Prevent accidental leave ───────────────────────────────────── */
+window.addEventListener('beforeunload', function (e) {
   if (!submitted) { e.preventDefault(); e.returnValue = ''; }
 });
 

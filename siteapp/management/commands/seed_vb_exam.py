@@ -345,6 +345,13 @@ class Command(BaseCommand):
 
         # ── Insert questions ──────────────────────────────────────────────────
         for order, q in enumerate(questions, start=1):
+            # Normalise correct_answer to lowercase for MCQ/true_false questions
+            # so check_answer() comparison always works (template submits a/b/c/d).
+            # Short answer and code answers are left as-is (AI grader handles them).
+            answer = q["answer"]
+            if q["type"] in ("mcq", "true_false"):
+                answer = answer.lower()
+
             Question.objects.create(
                 exam=exam,
                 question_text=q["text"],
@@ -355,7 +362,7 @@ class Command(BaseCommand):
                 option_b=q["option_b"],
                 option_c=q["option_c"],
                 option_d=q["option_d"],
-                correct_answer=q["answer"],
+                correct_answer=answer,
                 explanation=q["explanation"],
             )
 

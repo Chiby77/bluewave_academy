@@ -400,7 +400,11 @@ class Command(BaseCommand):
                 option_b=q["option_b"],
                 option_c=q["option_c"],
                 option_d=q["option_d"],
-                correct_answer=q["answer"],
+                # Normalise to lowercase so check_answer() comparison always works.
+                # The template submits lowercase values (a/b/c/d) and check_answer()
+                # does .lower() on both sides, but storing lowercase avoids any
+                # edge case when the admin edits the question directly.
+                correct_answer=q["answer"].lower(),
                 explanation=q["explanation"],
             )
 

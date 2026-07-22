@@ -8,6 +8,30 @@
 
 {% block content %}
 
+{% if grading_pending %}
+{# ── Grading still in progress — show spinner and auto-refresh ── #}
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px;">
+  <div style="width:80px;height:80px;border-radius:50%;border:6px solid var(--gray-200);border-top-color:var(--primary);animation:spin .8s linear infinite;margin-bottom:28px;"></div>
+  <h2 style="font-size:22px;font-weight:800;color:var(--dark);margin-bottom:10px;">Examinator is Grading Your Paper</h2>
+  <p style="font-size:14px;color:var(--gray-400);max-width:380px;line-height:1.7;margin-bottom:24px;">
+    Your answers have been submitted. The AI grader is working through your responses right now.<br>
+    This page will refresh automatically every 5 seconds.
+  </p>
+  <div style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--primary-light);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--primary);">
+    <i class="fa-solid fa-robot"></i> AI grading in progress…
+  </div>
+  <p style="font-size:11px;color:var(--gray-400);margin-top:20px;">Attempt #{{ attempt.attempt_number }} &bull; {{ attempt.exam.title }}</p>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<script>
+  // Auto-refresh every 5 seconds until grading completes
+  setTimeout(function () { window.location.reload(); }, 5000);
+</script>
+
+{% else %}
+
+{# ── Full results ── #}
+
 <!-- Report Hero -->
 <div class="report-hero {% if passed %}pass{% else %}fail{% endif %}" style="margin-bottom:24px;">
 
@@ -187,6 +211,8 @@
   </div>
 </div>
 {% endif %}
+
+{% endif %}{# end grading_pending #}
 
 {% endblock %}
 

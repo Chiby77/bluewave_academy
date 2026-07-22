@@ -195,14 +195,14 @@ def exam_list_admin(request):
 
 @admin_required
 def create_exam(request):
-    """Create new exam"""
+    """Create new exam."""
 
     if request.method == "POST":
         try:
             with transaction.atomic():
                 exam = Exam.objects.create(
                     title=request.POST.get("title"),
-                    description=request.POST.get("description"),
+                    description=request.POST.get("description", ""),
                     category=request.POST.get("category"),
                     level=request.POST.get("level"),
                     duration_minutes=int(request.POST.get("duration_minutes", 60)),
@@ -211,18 +211,15 @@ def create_exam(request):
                     start_date=request.POST.get("start_date"),
                     end_date=request.POST.get("end_date"),
                     is_active=request.POST.get("is_active") == "on",
-                    enable_instant_grading=request.POST.get("enable_instant_grading")
-                    == "on",
-                    show_answers_after_submit=request.POST.get(
-                        "show_answers_after_submit"
-                    )
-                    == "on",
+                    is_held=False,   # always explicitly False on creation
+                    enable_instant_grading=request.POST.get("enable_instant_grading") == "on",
+                    show_answers_after_submit=request.POST.get("show_answers_after_submit") == "on",
                     shuffle_questions=request.POST.get("shuffle_questions") == "on",
                     shuffle_options=request.POST.get("shuffle_options") == "on",
                     created_by=request.user,
                 )
 
-                messages.success(request, f'Exam "{exam.title}" created successfully!')
+                messages.success(request, f'Exam "{exam.title}" created! Now add your questions below.')
                 return redirect("siteapp:edit_exam", exam_id=exam.id)
 
         except Exception as e:
@@ -232,7 +229,6 @@ def create_exam(request):
         "categories": Exam.CATEGORY_CHOICES,
         "levels": Exam.LEVEL_CHOICES,
     }
-
     return render(request, "siteapp/admin/create_exam.html", context)
 
 
@@ -466,9 +462,10 @@ def grade_attempt(request, attempt_id):
                     answer.save()
 
                 attempt.calculate_score()
+                ExamAttempt.objects.filter(pk=attempt.pk).update(
+                    status="graded", ai_graded=True
+                )
                 attempt.status = "graded"
-                attempt.ai_graded = True
-                attempt.save()
 
                 # Send notification
                 try:
@@ -556,9 +553,10 @@ def auto_grade_attempt(request, attempt_id):
                 answer.save()
 
             attempt.calculate_score()
+            ExamAttempt.objects.filter(pk=attempt.pk).update(
+                status="graded", ai_graded=True
+            )
             attempt.status = "graded"
-            attempt.ai_graded = True
-            attempt.save()
 
             # Send notification
             try:

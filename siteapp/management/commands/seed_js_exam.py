@@ -448,17 +448,21 @@ class Command(BaseCommand):
 
         # ── Insert questions ──────────────────────────────────────────────────
         for order, q in enumerate(questions, start=1):
+            # Map 'coding' → 'code' to match the Question model's QUESTION_TYPE_CHOICES.
+            # Normalise correct_answer to lowercase so check_answer() comparison
+            # always works regardless of how the admin entered the answer key.
+            qtype = "code" if q["type"] == "coding" else q["type"]
             Question.objects.create(
                 exam=exam,
                 question_text=q["text"],
-                question_type=q["type"],
+                question_type=qtype,
                 marks=q["marks"],
                 order=order,
                 option_a=q["option_a"],
                 option_b=q["option_b"],
                 option_c=q["option_c"],
                 option_d=q["option_d"],
-                correct_answer=q["answer"],
+                correct_answer=q["answer"].lower(),
                 explanation=q["explanation"],
             )
 
