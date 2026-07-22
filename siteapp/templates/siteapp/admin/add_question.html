@@ -70,7 +70,7 @@
         <div class="card-body">
           {% for letter in "ABCD" %}
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <input type="radio" name="correct_answer" value="{{ letter }}" id="correct_{{ letter }}"
+            <input type="radio" name="mcq_correct_answer" value="{{ letter }}" id="correct_{{ letter }}"
                    style="width:18px;height:18px;flex-shrink:0;accent-color:var(--primary);">
             <label for="correct_{{ letter }}" style="font-weight:700;width:20px;color:var(--primary);">{{ letter }}</label>
             <input type="text" name="option_{{ letter|lower }}" class="form-control" placeholder="Option {{ letter }}">
@@ -87,10 +87,10 @@
         <div class="card-body">
           <div style="display:flex;gap:24px;">
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;">
-              <input type="radio" name="correct_answer" value="true" style="width:18px;height:18px;accent-color:var(--success);"> True
+              <input type="radio" name="tf_correct_answer" value="true" style="width:18px;height:18px;accent-color:var(--success);"> True
             </label>
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;">
-              <input type="radio" name="correct_answer" value="false" style="width:18px;height:18px;accent-color:var(--danger);"> False
+              <input type="radio" name="tf_correct_answer" value="false" style="width:18px;height:18px;accent-color:var(--danger);"> False
             </label>
           </div>
         </div>
@@ -106,7 +106,7 @@
         <div class="card-body">
           <div class="form-group" id="correct-answer-field" style="display:none;">
             <label class="form-label">Model Answer <span class="required">*</span></label>
-            <textarea name="correct_answer" class="form-control" rows="4"
+            <textarea name="open_correct_answer" class="form-control" rows="4"
                       placeholder="Write the expected answer here (used by Groq AI for grading)..."></textarea>
           </div>
           <div class="form-group">

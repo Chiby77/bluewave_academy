@@ -1201,13 +1201,13 @@ def add_question(request, exam_id):
                 question.option_b = request.POST.get("option_b", "")
                 question.option_c = request.POST.get("option_c", "")
                 question.option_d = request.POST.get("option_d", "")
-                question.correct_answer = request.POST.get("correct_answer", "")
+                question.correct_answer = request.POST.get("mcq_correct_answer", "")
                 question.save()
             elif question_type == "true_false":
-                question.correct_answer = request.POST.get("correct_answer", "true")
+                question.correct_answer = request.POST.get("tf_correct_answer", "true")
                 question.save()
             else:
-                question.correct_answer = request.POST.get("correct_answer", "")
+                question.correct_answer = request.POST.get("open_correct_answer", "")
                 question.save()
 
             messages.success(request, "Question added successfully!")
@@ -1250,11 +1250,11 @@ def edit_question(request, exam_id, question_id):
                 question.option_b = request.POST.get("option_b", "")
                 question.option_c = request.POST.get("option_c", "")
                 question.option_d = request.POST.get("option_d", "")
-                question.correct_answer = request.POST.get("correct_answer", "")
+                question.correct_answer = request.POST.get("mcq_correct_answer", "")
             elif question.question_type == "true_false":
-                question.correct_answer = request.POST.get("correct_answer", "true")
+                question.correct_answer = request.POST.get("tf_correct_answer", "true")
             else:
-                question.correct_answer = request.POST.get("correct_answer", "")
+                question.correct_answer = request.POST.get("open_correct_answer", "")
 
             question.save()
             messages.success(request, "Question updated successfully!")
