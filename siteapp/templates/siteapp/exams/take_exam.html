@@ -294,27 +294,36 @@ const Q_ID_TO_IDX = {
 };
 
 /* ══════════════════════════════════════════════════════════════════
-   Wire MCQ / True-False radio buttons.
-   We listen on the <input type="radio"> change event — NOT on the
-   <label> click — to avoid the double-fire bug that occurs when a
-   label with onclick wraps an input (label click → input click →
-   label click fires twice).
+   Wire MCQ / True-False option selection.
+   We listen on the <label> click — NOT the radio change — because
+   pointer-events:none on the hidden radio prevents the change event
+   from firing in most browsers when the label is clicked.
+   We programmatically set radio.checked=true so that FormData picks
+   up the answer when the form is submitted.
    ══════════════════════════════════════════════════════════════════ */
 document.querySelectorAll('.option-grid').forEach(function (grid) {
-  grid.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
+  grid.querySelectorAll('label.option-ng').forEach(function (label) {
+    label.addEventListener('click', function (e) {
+      e.preventDefault(); /* Stop default label→radio activation */
+
+      var radio = label.querySelector('input[type="radio"]');
+      if (!radio) return;
+
       /* Deselect all sibling labels in this grid */
       grid.querySelectorAll('label.option-ng').forEach(function (lbl) {
         lbl.classList.remove('selected');
+        var r = lbl.querySelector('input[type="radio"]');
+        if (r) r.checked = false;
       });
-      /* Select the label that owns this radio */
-      var ownerLabel = radio.closest('label.option-ng');
-      if (ownerLabel) ownerLabel.classList.add('selected');
+
+      /* Check this radio and highlight its label */
+      radio.checked = true;
+      label.classList.add('selected');
 
       /* Extract question id from the radio name: "question_<id>" */
-      var qId  = radio.name.replace('question_', '');
-      var val  = radio.value;
-      var idx  = Q_ID_TO_IDX[qId];
+      var qId = radio.name.replace('question_', '');
+      var val = radio.value;
+      var idx = Q_ID_TO_IDX[qId];
 
       markAnswered(idx);
       autosave(qId, val);

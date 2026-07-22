@@ -6,6 +6,7 @@ Grades text, code, essay and PDF submissions with fallback keyword scoring.
 
 import os
 import json
+import re
 import threading
 from decimal import Decimal
 from typing import Dict, Optional
@@ -264,14 +265,27 @@ Return ONLY valid JSON:
 
     def _offline_grade(self, student_answer: str, reference: str, total_marks: int) -> Dict:
         """Keyword-matching fallback when Groq is unavailable."""
-        student_lower = student_answer.lower()
-        ref_lower = reference.lower()
-        keywords = {w for w in ref_lower.split() if len(w) > 3}
-        if keywords:
-            matched = sum(1 for w in keywords if w in student_lower)
-            ratio = matched / len(keywords)
+        student_lower = (student_answer or "").strip().lower()
+        ref_lower = (reference or "").strip().lower()
+        
+        if not ref_lower:
+            ratio = 0.0
+        elif student_lower == ref_lower:
+            ratio = 1.0
         else:
-            ratio = 0.5
+            ref_words = set(re.findall(r'[a-z0-9]+', ref_lower))
+            if len(ref_words) > 3:
+                keywords = {w for w in ref_words if len(w) > 2 and w not in {"the", "and", "for", "that", "this"}}
+            else:
+                keywords = ref_words
+                
+            if keywords:
+                student_words = set(re.findall(r'[a-z0-9]+', student_lower))
+                matched = len(keywords.intersection(student_words))
+                ratio = matched / len(keywords)
+            else:
+                ratio = 1.0 if ref_lower in student_lower else 0.0
+                
         score = max(0, min(round(ratio * total_marks), total_marks))
         return {
             "score": Decimal(str(score)),
