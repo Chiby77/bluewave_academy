@@ -6,6 +6,8 @@ from . import examinator_views
 from . import zuri_views
 from . import tutorial_views
 from . import api_views
+from . import api_auth
+from . import api_mobile
 from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 app_name = "siteapp"
@@ -316,4 +318,17 @@ urlpatterns = [
     path("administration/courses/<int:course_id>/delete/", admin_views.admin_course_delete, name="admin_course_delete"),
     path("administration/courses/<int:course_id>/toggle/", admin_views.admin_course_toggle_status, name="admin_course_toggle"),
     path("administration/courses/<int:course_id>/reorder/", admin_views.admin_course_reorder_lessons, name="admin_course_reorder"),
+
+    # ==================== MOBILE API ====================
+    path("api/mobile/auth/login/", api_auth.api_login, name="mobile_api_login"),
+    path("api/mobile/auth/register/", api_auth.api_register, name="mobile_api_register"),
+    path("api/mobile/auth/profile/", api_auth.api_profile, name="mobile_api_profile"),
+    
+    path("api/mobile/dashboard/", api_mobile.api_dashboard, name="mobile_api_dashboard"),
+    path("api/mobile/exam/<int:exam_id>/take/", api_mobile.api_exam_take, name="mobile_api_exam_take"),
+    path("api/mobile/exam/<int:exam_id>/submit/", api_mobile.api_exam_submit, name="mobile_api_exam_submit"),
+    path("api/mobile/exam-attempt/<int:attempt_id>/status/", api_mobile.api_exam_status, name="mobile_api_exam_status"),
+    
+    path("api/mobile/tutor/conversation/", api_mobile.api_mobile_tutor_conversation, name="mobile_api_tutor_conversation"),
+    path("api/mobile/tutor/send-message/", api_mobile.api_mobile_tutor_send_message, name="mobile_api_tutor_send_message"),
 ]

@@ -33,4 +33,6 @@ dependencies = [
     "django-celery-beat>=2.6.0",
     # Production: process management
     "uvicorn[standard]>=0.30.0",
+    "djangorestframework>=3.18.0",
+    "django-cors-headers>=4.9.0",
 ]

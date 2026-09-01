@@ -7,6 +7,7 @@ Grades text, code, essay and PDF submissions with fallback keyword scoring.
 import os
 import json
 import re
+import time
 import threading
 from decimal import Decimal
 from typing import Dict, Optional
@@ -26,10 +27,10 @@ except ImportError:
     HAS_PYPDF = False
 
 
-# Valid Groq model IDs (verified against https://console.groq.com/docs/models)
-GROQ_PRIMARY_MODEL   = "llama-3.3-70b-versatile"   # Best quality, fast
-GROQ_SECONDARY_MODEL = "llama3-70b-8192"            # Reliable fallback
-GROQ_FALLBACK_MODEL  = "llama3-8b-8192"             # Fastest, always available
+# Valid Groq model IDs supported by current endpoint
+GROQ_PRIMARY_MODEL   = "openai/gpt-oss-120b"   # Best quality, deep reasoning & accurate scoring
+GROQ_SECONDARY_MODEL = "qwen/qwen3.6-27b"      # Fast, reliable secondary
+GROQ_FALLBACK_MODEL  = "openai/gpt-oss-20b"     # Lightweight, fast fallback
 
 
 class GroqGradingService:
@@ -179,7 +180,7 @@ Return ONLY valid JSON:
 
     def _call_groq(self, prompt: str, total_marks: int,
                    student_answer: str = "", reference: str = "") -> Dict:
-        """Call Groq API with automatic model fallback.
+        """Call Groq API with automatic model fallback and rate-limit backoff.
         Always produces a usable score — falls back to keyword matching on
         total API failure rather than returning zeros.
         """
@@ -187,27 +188,35 @@ Return ONLY valid JSON:
 
         last_error = None
         for model in models_to_try:
-            try:
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert academic grader. Return only valid JSON as instructed.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    temperature=0.2,
-                    max_tokens=1200,
-                )
-                return self._parse_response(
-                    response.choices[0].message.content, total_marks,
-                    student_answer=student_answer, reference=reference,
-                )
-            except Exception as e:
-                last_error = e
-                print(f"[Groq Grading] Model {model} failed: {e}")
-                continue
+            for attempt in range(2):  # up to 2 attempts per model with jittered backoff on rate limits
+                try:
+                    response = self.client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are an expert academic grader. Return only valid JSON as instructed.",
+                            },
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.2,
+                        max_tokens=1200,
+                    )
+                    return self._parse_response(
+                        response.choices[0].message.content, total_marks,
+                        student_answer=student_answer, reference=reference,
+                    )
+                except Exception as e:
+                    last_error = e
+                    err_str = str(e).lower()
+                    if "429" in err_str or "rate limit" in err_str or "too many requests" in err_str:
+                        sleep_time = 0.8 * (attempt + 1)
+                        print(f"[Groq Grading] Rate limit on model {model}, backing off for {sleep_time}s...")
+                        time.sleep(sleep_time)
+                        continue
+                    else:
+                        print(f"[Groq Grading] Model {model} failed: {e}")
+                        break
 
         # All models failed — keyword fallback, never zeros
         print(f"[Groq Grading] All models failed. Using offline fallback. Last error: {last_error}")
@@ -216,14 +225,14 @@ Return ONLY valid JSON:
     def _parse_response(self, text: str, total_marks: int,
                         student_answer: str = "", reference: str = "") -> Dict:
         try:
-            clean = text.strip()
-            if clean.startswith("```json"):
-                clean = clean[7:]
-            if clean.startswith("```"):
-                clean = clean[3:]
-            if clean.endswith("```"):
-                clean = clean[:-3]
-            clean = clean.strip()
+            clean = (text or "").strip()
+            # Remove reasoning/thought tags emitted by thinking models (e.g. Qwen, DeepSeek, GPT-OSS)
+            clean = re.sub(r"<think>[\s\S]*?</think>", "", clean, flags=re.DOTALL).strip()
+
+            # Extract outermost JSON object if present
+            json_match = re.search(r"\{[\s\S]*\}", clean)
+            if json_match:
+                clean = json_match.group(0)
 
             data = json.loads(clean)
             score = max(0, min(int(data.get("score", 0)), total_marks))

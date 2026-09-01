@@ -1186,29 +1186,35 @@ def add_question(request, exam_id):
         try:
             question_type = request.POST.get("question_type", "mcq")
 
+            # Determine correct answer and options based on question type
+            option_a = ""
+            option_b = ""
+            option_c = ""
+            option_d = ""
+            if question_type == "mcq":
+                option_a = request.POST.get("option_a", "")
+                option_b = request.POST.get("option_b", "")
+                option_c = request.POST.get("option_c", "")
+                option_d = request.POST.get("option_d", "")
+                correct_answer = request.POST.get("mcq_correct_answer", "")
+            elif question_type == "true_false":
+                correct_answer = request.POST.get("tf_correct_answer", "true")
+            else:
+                correct_answer = request.POST.get("open_correct_answer", "")
+
             question = Question.objects.create(
                 exam=exam,
                 question_text=request.POST.get("question_text"),
                 question_type=question_type,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
+                correct_answer=correct_answer,
                 marks=int(request.POST.get("marks", 1)),
                 order=exam.questions.count() + 1,
                 explanation=request.POST.get("explanation", ""),
             )
-
-            # Handle MCQ options
-            if question_type == "mcq":
-                question.option_a = request.POST.get("option_a", "")
-                question.option_b = request.POST.get("option_b", "")
-                question.option_c = request.POST.get("option_c", "")
-                question.option_d = request.POST.get("option_d", "")
-                question.correct_answer = request.POST.get("mcq_correct_answer", "")
-                question.save()
-            elif question_type == "true_false":
-                question.correct_answer = request.POST.get("tf_correct_answer", "true")
-                question.save()
-            else:
-                question.correct_answer = request.POST.get("open_correct_answer", "")
-                question.save()
 
             messages.success(request, "Question added successfully!")
             action = request.POST.get("action", "save")

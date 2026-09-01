@@ -1,4 +1,7 @@
 import threading
+import time
+import random
+import contextlib
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
@@ -12,7 +15,10 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse_lazy
 from django.views.decorators.cache import cache_control
-from django.db import transaction
+from django.db import transaction, connection, OperationalError
+
+# Process-level thread synchronization lock for SQLite write serialization
+_DB_WRITE_LOCK = threading.RLock()
 
 from .models import (
     CustomUser,
@@ -458,30 +464,39 @@ def _grade_attempt_now(attempt):
         answer.is_correct = result["is_correct"]
         answer.ai_graded = True
         answer.ai_feedback = result["feedback"]
-        answer.save(update_fields=["marks_obtained", "is_correct", "ai_graded", "ai_feedback", "updated_at"])
 
-        ExamGrading.objects.update_or_create(
-            attempt=attempt, question=q,
-            defaults={
-                "student_answer": answer.answer_text,
-                "groq_score": result["score"],
-                "groq_feedback": result["feedback"],
-                "groq_reasoning": result.get("reasoning", ""),
-            },
-        )
+        # Retry write in case another worker thread has an active transaction
+        for retry in range(5):
+            try:
+                answer.save(update_fields=["marks_obtained", "is_correct", "ai_graded", "ai_feedback", "updated_at"])
+                ExamGrading.objects.update_or_create(
+                    attempt=attempt, question=q,
+                    defaults={
+                        "student_answer": answer.answer_text,
+                        "groq_score": result["score"],
+                        "groq_feedback": result["feedback"],
+                        "groq_reasoning": result.get("reasoning", ""),
+                    },
+                )
+                break
+            except OperationalError:
+                import time, random
+                time.sleep(0.05 * (2 ** retry) + random.uniform(0.02, 0.08))
 
-    # Step 3: Recalculate score (only touches score + percentage columns)
-    attempt.calculate_score()
-
-    # Step 4: Mark graded — update_fields so status/ai_graded are the ONLY
-    # columns written; score/percentage were already written by calculate_score()
-    ExamAttempt.objects.filter(pk=attempt.pk).update(
-        status="graded",
-        ai_graded=True,
-    )
-    # Keep the in-memory object in sync for any callers that inspect it
-    attempt.status = "graded"
-    attempt.ai_graded = True
+    # Step 3: Recalculate score with retry
+    for retry in range(5):
+        try:
+            attempt.calculate_score()
+            ExamAttempt.objects.filter(pk=attempt.pk).update(
+                status="graded",
+                ai_graded=True,
+            )
+            attempt.status = "graded"
+            attempt.ai_graded = True
+            break
+        except OperationalError:
+            import time, random
+            time.sleep(0.05 * (2 ** retry) + random.uniform(0.02, 0.08))
 
 
 @login_required(login_url="siteapp:login")
@@ -612,17 +627,29 @@ def take_exam(request, exam_id):
                     messages.warning(request, "This exam was already submitted.")
                     return redirect("siteapp:exam_results", attempt_id=locked.id)
 
-                # Save / overwrite answers
-                locked.answers.all().delete()
+                # Fast Batch Save answers
+                existing_answers = {
+                    a.question_id: a for a in Answer.objects.filter(attempt=locked)
+                }
+                to_create = []
+                to_update = []
                 for question in questions:
-                    answer_text = request.POST.get(f"question_{question.id}")
+                    answer_text = (request.POST.get(f"question_{question.id}") or "").strip()
                     if answer_text:
-                        Answer.objects.create(
-                            attempt=locked, question=question, answer_text=answer_text
-                        )
+                        if question.id in existing_answers:
+                            ans = existing_answers[question.id]
+                            ans.answer_text = answer_text
+                            to_update.append(ans)
+                        else:
+                            to_create.append(Answer(attempt=locked, question=question, answer_text=answer_text))
+
+                if to_create:
+                    Answer.objects.bulk_create(to_create)
+                if to_update:
+                    Answer.objects.bulk_update(to_update, ["answer_text"])
 
                 locked.end_time = timezone.now()
-                time_diff = locked.end_time - locked.start_time
+                time_diff = locked.end_time - (locked.start_time or locked.created_at)
                 locked.time_taken_minutes = max(0, int(time_diff.total_seconds() / 60))
                 locked.status = "submitted"
                 locked.save(update_fields=["end_time", "time_taken_minutes", "status"])
@@ -792,36 +819,58 @@ def submit_exam(request, exam_id):
     questions = list(exam.questions.select_related().all())
 
     try:
-        with transaction.atomic():
-            # Lock the row so concurrent submits are safe
-            locked = ExamAttempt.objects.select_for_update().get(id=attempt.id)
+        # Retry loop for database write contention under heavy concurrent load (e.g. 30+ simultaneous submissions)
+        max_retries = 5
+        locked = None
+        for retry_attempt in range(max_retries):
+            try:
+                with transaction.atomic():
+                    # Lock the attempt row so concurrent submits are safe
+                    locked = ExamAttempt.objects.select_for_update().get(id=attempt.id)
 
-            if locked.status in ["submitted", "graded"]:
-                return JsonResponse({
-                    "success": True,
-                    "redirect_url": f"/student/exam/results/{locked.id}/",
-                })
+                    if locked.status in ["submitted", "graded"]:
+                        return JsonResponse({
+                            "success": True,
+                            "redirect_url": f"/student/exam/results/{locked.id}/",
+                        })
 
-            # ── Save answers (upsert per question) ────────────────────────────
-            for question in questions:
-                answer_text = (request.POST.get(f"question_{question.id}") or "").strip()
-                if answer_text:
-                    Answer.objects.update_or_create(
-                        attempt=locked,
-                        question=question,
-                        defaults={"answer_text": answer_text},
-                    )
+                    # ── Fast Batch Save answers ───────────────────────────────────────
+                    existing_answers = {
+                        a.question_id: a for a in Answer.objects.filter(attempt=locked)
+                    }
+                    to_create = []
+                    to_update = []
+                    for question in questions:
+                        answer_text = (request.POST.get(f"question_{question.id}") or "").strip()
+                        if answer_text:
+                            if question.id in existing_answers:
+                                ans = existing_answers[question.id]
+                                ans.answer_text = answer_text
+                                to_update.append(ans)
+                            else:
+                                to_create.append(Answer(attempt=locked, question=question, answer_text=answer_text))
 
-            # ── Record timing ─────────────────────────────────────────────────
-            locked.end_time = timezone.now()
-            time_diff = locked.end_time - locked.start_time
-            locked.time_taken_minutes = max(0, int(time_diff.total_seconds() / 60))
-            locked.status = "submitted"
-            locked.save(update_fields=["end_time", "time_taken_minutes", "status"])
+                    if to_create:
+                        Answer.objects.bulk_create(to_create)
+                    if to_update:
+                        Answer.objects.bulk_update(to_update, ["answer_text"])
 
-        # ── Grade synchronously — always completes, never gets stuck ─────────
-        # _grade_attempt_now handles MCQ, true/false, essay, code, and short_answer.
-        # It uses Groq AI with keyword-matching fallback so it always finishes.
+                    # ── Record timing ─────────────────────────────────────────────────
+                    locked.end_time = timezone.now()
+                    time_diff = locked.end_time - (locked.start_time or locked.created_at)
+                    locked.time_taken_minutes = max(0, int(time_diff.total_seconds() / 60))
+                    locked.status = "submitted"
+                    locked.save(update_fields=["end_time", "time_taken_minutes", "status"])
+                break  # Committed successfully
+            except OperationalError as db_lock_err:
+                if retry_attempt < max_retries - 1:
+                    import random
+                    sleep_time = 0.05 * (2 ** retry_attempt) + random.uniform(0.02, 0.08)
+                    time.sleep(sleep_time)
+                else:
+                    raise db_lock_err
+
+        # ── Grade outside transaction ─────────────────────────────────────────
         _grade_attempt_now(locked)
 
         # ── Notify student ────────────────────────────────────────────────────

@@ -58,6 +58,9 @@ INSTALLED_APPS = [
     "django.contrib.postgres",    # Required for AddIndexConcurrently migrations
     "channels",
     "storages",          # django-storages (Supabase S3 backend)
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
     "siteapp",
 ]
 
@@ -73,6 +76,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",   # serve static files efficiently
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -140,14 +144,21 @@ elif os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST") or os.environ.g
         }
     }
 else:
-    # Local SQLite fallback
+    # Local SQLite fallback with high-concurrency WAL mode
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
             "OPTIONS": {
-                "timeout": 20,
+                "timeout": 60,
                 "check_same_thread": False,
+                "init_command": (
+                    "PRAGMA journal_mode=WAL;"
+                    "PRAGMA synchronous=NORMAL;"
+                    "PRAGMA busy_timeout=60000;"
+                    "PRAGMA cache_size=-64000;"
+                    "PRAGMA mmap_size=268435456;"
+                ),
             },
             "CONN_MAX_AGE": 60,
         }
@@ -213,11 +224,15 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# WhiteNoise: Brotli + gzip compression, long-lived cache headers for
-# fingerprinted files, no-cache for non-fingerprinted ones.
+# WhiteNoise: Brotli + gzip compression
+# Uses CompressedManifestStaticFilesStorage in production and regular static storage in DEBUG/test
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "whitenoise.storage.CompressedStaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
     # Media backend is set below — depends on whether Supabase is configured.
     "default": {
@@ -430,14 +445,22 @@ LOGGING = {
 try:
     from celery.schedules import crontab
     HAS_CELERY = True
-    CELERY_BROKER_URL = REDIS_URL or "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND = REDIS_URL or "redis://localhost:6379/1"
+    if REDIS_URL:
+        CELERY_BROKER_URL = REDIS_URL
+        CELERY_RESULT_BACKEND = REDIS_URL
+        CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+    else:
+        # Development / Test mode without active Redis
+        CELERY_BROKER_URL = "memory://"
+        CELERY_RESULT_BACKEND = "cache+memory://"
+        CELERY_TASK_ALWAYS_EAGER = True
+        CELERY_TASK_EAGER_PROPAGATES = True
+
     CELERY_ACCEPT_CONTENT = ["json"]
     CELERY_TASK_SERIALIZER = "json"
     CELERY_RESULT_SERIALIZER = "json"
     CELERY_TIMEZONE = TIME_ZONE
     CELERY_TASK_TRACK_STARTED = True
-    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
     # Celery Beat — periodic task schedule (anti-stampede dashboard pre-warm)
     CELERY_BEAT_SCHEDULE = {
@@ -449,3 +472,19 @@ try:
 except ImportError:
     HAS_CELERY = False
 
+# ---------------------------------------------------------------------------
+# DJANGO REST FRAMEWORK & CORS
+# ---------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+}
+
+# For mobile dev, you can allow all origins or restrict to local network IPs
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
