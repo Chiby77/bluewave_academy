@@ -132,3 +132,59 @@ python manage.py runserver
 - **WebSockets**: Channels uses Redis as the layer. The UvicornWorker supports both HTTP and WebSocket connections in a single process.
 - **Sessions**: Stored in Redis (production) — zero database hits per request for session reads.
 - **Static files**: WhiteNoise serves Brotli-compressed, content-hashed static files with long-lived `Cache-Control` headers. No CDN needed for static assets.
+
+---
+
+## 8. Mobile App Deployment (Next Steps)
+
+The mobile application is built with React Native and Expo. To distribute the app to users, you need to build standalone binaries (APK/AAB for Android, IPA for iOS) using **Expo Application Services (EAS)**.
+
+### 8.1 Build Prerequisites
+1. Create a free account at [expo.dev](https://expo.dev).
+2. Install the EAS CLI globally:
+   ```bash
+   npm install -g eas-cli
+   ```
+3. Log in to your Expo account via terminal:
+   ```bash
+   eas login
+   ```
+4. From the `mobile/` directory, initialize the project for EAS:
+   ```bash
+   eas build:configure
+   ```
+
+### 8.2 Building for Android (APK / Play Store)
+To build an APK that you can directly install on any Android device (side-loading) or an AAB for the Google Play Store:
+
+1. **For direct installation (APK)**, ensure your `eas.json` has `buildType: "apk"` under the preview profile:
+   ```json
+   "preview": {
+     "android": {
+       "buildType": "apk"
+     }
+   }
+   ```
+2. **Run the Android Build:**
+   ```bash
+   eas build -p android --profile preview
+   ```
+3. **Download & Distribute:** Once the build finishes on Expo's cloud servers, you will receive a QR code and a direct download link for the `.apk` file.
+
+*To submit to the Google Play Store, use `eas submit -p android` after generating an AAB production build.*
+
+### 8.3 Building for iOS (App Store / TestFlight)
+To build for iOS, you must have an active **Apple Developer Program** membership ($99/yr).
+
+1. **Run the iOS Build:**
+   ```bash
+   eas build -p ios --profile production
+   ```
+   *EAS will automatically guide you through signing in to your Apple account and provisioning your certificates.*
+2. **Submit to TestFlight:**
+   ```bash
+   eas submit -p ios
+   ```
+
+### 8.4 Mobile Assets & Icons
+The required splash screens, icons, and adaptive icons have been generated and securely placed in the `mobile/assets/images/` directory. They will automatically be compiled into the binary during the EAS build process as configured in `app.json`.

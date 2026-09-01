@@ -1,0 +1,14 @@
+# Ignore local environment and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+db.sqlite3
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore the mobile application (compiled separately via EAS)
+mobile/
